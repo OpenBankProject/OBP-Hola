@@ -1,0 +1,40 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bootstrap 101 Template</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!--[if lt IE 9]>
+    <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+    <![endif]-->
+</head>
+<body>
+<h1>Hello <span th:text="${user.username}"></span></h1>
+
+current user:
+email: <span th:text="${user.email}"></span> <br>
+useName: <span th:text="${user.username}"></span> <br>
+
+<h2>Account list:</h2>
+
+<div th:each="account:${accounts}">
+    AccountId: <span th:text="${account.AccountId}"></span><br>
+    Currency: <span th:text="${account.Currency}"></span><br>
+    Nickname: <span th:text="${account.Nickname}"></span><br>
+    <div th:if="${account.Account != null}">
+        SchemeName: <span th:text="${account.Account.SchemeName}"></span><br>
+        Identification: <span th:text="${account.Account.Identification}"></span><br>
+        Name:<span th:text="${account.Account.Name}"></span><br>
+    </div>
+    <hr>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
+</body>
+</html>

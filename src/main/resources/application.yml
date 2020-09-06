@@ -1,0 +1,20 @@
+server:
+  port: 8081
+
+hydra:
+  admin_url: https://oauth2.ofpilot.com/hydra-private
+  public_url: https://oauth2.ofpilot.com/hydra-public
+  redirect_uri: http://127.0.0.1:8081/main.html
+  client_id: auth-code-cliente
+  client_secret: secret
+  client_scope:
+    ReadAccountsBasic,
+    ReadAccountsDetail,
+    ReadBalances,
+    ReadTransactionsBasic,
+    ReadTransactionsDebits,
+    ReadTransactionsDetail
+
+obp:
+  base_url:
+    https://apisandbox.ofpilot.com
