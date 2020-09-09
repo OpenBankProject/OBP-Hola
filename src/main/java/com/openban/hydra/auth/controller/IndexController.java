@@ -26,18 +26,18 @@ import java.util.stream.Collectors;
 @Controller
 public class IndexController {
 
-    @Value("openid,offline,${hydra.client_scope}")
+    @Value("openid,offline,${oauth2.client_scope}")
     private List<String> scopeList;
 
-    @Value("${hydra.public_url}/oauth2/auth?client_id=${hydra.client_id}&response_type=code")
+    @Value("${oauth2.public_url}/oauth2/auth?client_id=${oauth2.client_id}&response_type=code")
     private String hydraLoginUrl;
-    @Value("${hydra.public_url}/oauth2/token")
+    @Value("${oauth2.public_url}/oauth2/token")
     private String hydraTokenUrl;
-    @Value("${hydra.redirect_uri}")
+    @Value("${oauth2.redirect_uri}")
     private String redirectUri;
-    @Value("${hydra.client_id}")
+    @Value("${oauth2.client_id}")
     private String clientId;
-    @Value("${hydra.client_secret}")
+    @Value("${oauth2.client_secret}")
     private String clientSecret;
 
     @Value("${obp.base_url}/obp/v4.0.0/users/current")
