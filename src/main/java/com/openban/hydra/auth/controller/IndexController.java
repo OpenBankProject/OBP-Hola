@@ -98,6 +98,7 @@ public class IndexController {
             session.setAttribute("state", state);
 
             System.out.println("idToken:" + tokenResponse.getId_token());
+            System.out.println("accessToken:" + tokenResponse.getAccess_token());
         }
 
         HttpHeaders headers = new HttpHeaders();
