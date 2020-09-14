@@ -29,7 +29,7 @@ public class IndexController {
     @Value("openid,offline,${oauth2.client_scope}")
     private List<String> scopeList;
 
-    @Value("${oauth2.public_url}/oauth2/auth?client_id=${oauth2.client_id}&response_type=code")
+    @Value("${oauth2.public_url}/oauth2/auth?client_id=${oauth2.client_id}&response_type=code&nonce=n-0S6_WzA2Mj")
     private String hydraLoginUrl;
     @Value("${oauth2.public_url}/oauth2/token")
     private String hydraTokenUrl;
