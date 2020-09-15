@@ -119,23 +119,6 @@ public class IndexController {
         }
         model.addAttribute("user", user);
 
-        RestTemplate restTemplate = new RestTemplate();
-        String idToken = (String) session.getAttribute("idToken");
-        String accessToken = (String) session.getAttribute("access_token");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "Authorization: Bearer " + accessToken);
-        headers.add("Content-Type", "application/json");
-        HttpEntity<String> entity = new HttpEntity<>(headers);
-
-        ResponseEntity<AccountDataValue> exchange = restTemplate.exchange(getAccountsUrl, HttpMethod.GET, entity, AccountDataValue.class);
-        AccountDataValue accountDataValue = exchange.getBody();
-        System.out.println("account:" + accountDataValue);
-        List<Account> accounts = new ArrayList<>() ;
-        if(accountDataValue.getData() != null) {
-            accounts = accountDataValue.getData().getAccount();
-            System.out.println("accounts:" + accounts);
-        }
-        model.addAttribute("accounts", accounts);
         return "main";
     }
 }
