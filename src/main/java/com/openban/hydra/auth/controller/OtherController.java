@@ -84,6 +84,7 @@ public class OtherController {
 
     @ExceptionHandler
     void handleIllegalArgumentException(Exception e, HttpServletResponse response) throws IOException {
-        response.sendError(500, e.getMessage());
+        String errorMsg = e.getMessage().replaceFirst(".*?\\[(.*)\\]", "$1");
+        response.getWriter().write(errorMsg);
     }
 }
