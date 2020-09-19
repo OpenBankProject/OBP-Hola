@@ -7,19 +7,94 @@
     <title>MXOF Pilot App</title>
 
     <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap.min.css}" />
+    <link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap-datetimepicker.min.css}" />
+    <link rel="stylesheet" type="text/css" th:href="@{/css/custom.css}" />
 
     <!--[if lt IE 9]>
-    <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+    <script type="text/javascript" th:src="@{/js/html5shiv.min.js}"></script>
+    <script type="text/javascript" th:src="@{/js/respond.min.js}" ></script>
     <![endif]-->
 </head>
 <body>
-<h1>¡Hola!</h1>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-6 col-lg-offset-3">
+                <h2>Request consents</h2>
+                <form th:action="@{/request_consents}" method="post">
+                    <div class="form-group">
+                        <label for="bank">Select one Bank</label>
+                        <select class="form-control" name="bank" id="bank">
+                            <option value="">--select one bank--</option>
+                            <option th:each="bank : ${banks}" th:value="${bank.id}" th:text="${bank.full_name}" >
+                            </option>
+                        </select>
+                    </div>
 
-<a th:href="${loginUrl}">Login</a>
+                    <label>Select one or more Consents</label>
+                    <div class="form-group">
+                        <div class="checkbox" th:each="consent : ${consents}">
+                            <label>
+                                <input type="checkbox" name="consents" th:value="${consent}">
+                                <span th:text="${consent}">ReadAccountsBasic</span>
+                            </label>
+                        </div>
+                        <span id="consents_error"></span>
+                    </div>
 
-<script src="https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
+                    <div class="form-group">
+                        <label for="transaction_from_time">TransactionFromDateTime</label>
+                        <input type="text" name="transaction_from_time" id="transaction_from_time" class="form-control" data-date-format="YYYY-MM-DDTHH:mm:ss">
+                    </div>
+                    <div class="form-group">
+                        <label for="transaction_to_time">TransactionToDateTime</label>
+                        <input type="text" name="transaction_to_time" id="transaction_to_time" class="form-control" data-date-format="YYYY-MM-DDTHH:mm:ss">
+                    </div>
+                    <button type="submit" class="btn btn-default">Request Consents</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript" th:src="@{/js/jquery-1.12.4.min.js}" ></script>
+    <script type="text/javascript" th:src="@{/js/jquery-validate-1.19.2.min.js}" ></script>
+    <script type="text/javascript" th:src="@{/js/bootstrap.min.js}" ></script>
+    <script type="text/javascript" th:src="@{/js/moment-with-locales.min.js}" ></script>
+    <script type="text/javascript" th:src="@{/js/bootstrap-datetimepicker.min.js}" ></script>
+    <script type="text/javascript">
+        $(function(){
+            $("form").validate({
+                rules: {
+                    bank: "required",
+                    consents: "required",
+                    transaction_from_time: "required",
+                    transaction_to_time: "required",
+                },
+                messages: {
+                    bank: "Bank should not be empty",
+                    consents: "At least select one consent",
+                    transaction_from_time: "TransactionToDateTime should not be empty",
+                    transaction_to_time: "TransactionToDateTime should not be empty",
+                },
+                errorPlacement: function(error, element) {
+                    error.addClass('text-danger');
+                    if (element.attr("name") == "consents") {
+                        error.appendTo("#consents_error");
+                    } else {
+                        error.insertAfter(element);
+                    }
+                }
+            });
+
+            $('#transaction_from_time').datetimepicker({
+                defaultDate: new Date(new Date().setFullYear(new Date().getFullYear() - 1))
+            });
+
+            $('#transaction_to_time').datetimepicker({
+                defaultDate: new Date()
+            });
+        });
+
+    </script>
 </body>
 </html>

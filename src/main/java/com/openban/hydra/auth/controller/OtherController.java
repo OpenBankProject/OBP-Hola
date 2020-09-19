@@ -1,7 +1,7 @@
 package com.openban.hydra.auth.controller;
 
-import com.openban.hydra.auth.VO.Account;
 import com.openban.hydra.auth.VO.AccountDataValue;
+import com.openban.hydra.auth.VO.SessionData;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
@@ -30,28 +31,25 @@ public class OtherController {
     @Value("${obp.base_url}/mx-open-finance/v0.0.1/accounts/ACCOUNT_ID/transactions")
     private String getTransactionsUrl;
 
+    @Resource
+    private RestTemplate restTemplate;
+
     @GetMapping("/accounts")
-    public List<Account> getAccounts(HttpSession session) {
-        RestTemplate restTemplate = new RestTemplate();
-        String idToken = (String) session.getAttribute("idToken");
-        String accessToken = (String) session.getAttribute("access_token");
+    public Object getAccounts(HttpSession session) {
+        String accessToken = SessionData.getAccessToken(session);
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "Authorization: Bearer " + accessToken);
-        headers.add("Content-Type", "application/json");
+        headers.setBearerAuth(accessToken);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<AccountDataValue> exchange = restTemplate.exchange(getAccountsUrl, HttpMethod.GET, entity, AccountDataValue.class);
-        return exchange.getBody().getData().getAccount();
+        return exchange.getBody().getData();
     }
 
     @GetMapping("/balances/account_id/{accountId}")
     public Object getBalances(@PathVariable String accountId, HttpSession session) {
-        RestTemplate restTemplate = new RestTemplate();
-        String idToken = (String) session.getAttribute("idToken");
-        String accessToken = (String) session.getAttribute("access_token");
+        String accessToken = SessionData.getAccessToken(session);
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "Authorization: Bearer " + accessToken);
-        headers.add("Content-Type", "application/json");
+        headers.setBearerAuth(accessToken);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getBalanceUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
@@ -64,12 +62,9 @@ public class OtherController {
     }
     @GetMapping("/transactions/account_id/{accountId}")
     public Object getTransactions(@PathVariable String accountId, HttpSession session) {
-        RestTemplate restTemplate = new RestTemplate();
-        String idToken = (String) session.getAttribute("idToken");
-        String accessToken = (String) session.getAttribute("access_token");
+        String accessToken = SessionData.getAccessToken(session);
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "Authorization: Bearer " + accessToken);
-        headers.add("Content-Type", "application/json");
+        headers.setBearerAuth(accessToken);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getTransactionsUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);

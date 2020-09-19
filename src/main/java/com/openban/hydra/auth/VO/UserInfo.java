@@ -1,5 +1,7 @@
 package com.openban.hydra.auth.VO;
 
+import java.util.List;
+
 public class UserInfo {
     private String user_id;
     private String email;
@@ -63,5 +65,89 @@ public class UserInfo {
 
     public void setViews(ViewList views) {
         this.views = views;
+    }
+}
+
+class EntitlementList {
+    private List<Entitlement> list;
+
+    public List<Entitlement> getList() {
+        return list;
+    }
+
+    public void setList(List<Entitlement> list) {
+        this.list = list;
+    }
+}
+
+class Entitlement {
+    private String entitlement_id;
+    private String role_name;
+    private String bank_id;
+
+    public String getEntitlement_id() {
+        return entitlement_id;
+    }
+
+    public void setEntitlement_id(String entitlement_id) {
+        this.entitlement_id = entitlement_id;
+    }
+
+    public String getRole_name() {
+        return role_name;
+    }
+
+    public void setRole_name(String role_name) {
+        this.role_name = role_name;
+    }
+
+    public String getBank_id() {
+        return bank_id;
+    }
+
+    public void setBank_id(String bank_id) {
+        this.bank_id = bank_id;
+    }
+}
+
+class ViewList {
+    private List<View> list;
+
+    public List<View> getList() {
+        return list;
+    }
+
+    public void setList(List<View> list) {
+        this.list = list;
+    }
+}
+
+class View {
+    private String view_id;
+    private String bank_id;
+    private String account_id;
+
+    public String getView_id() {
+        return view_id;
+    }
+
+    public void setView_id(String view_id) {
+        this.view_id = view_id;
+    }
+
+    public String getBank_id() {
+        return bank_id;
+    }
+
+    public void setBank_id(String bank_id) {
+        this.bank_id = bank_id;
+    }
+
+    public String getAccount_id() {
+        return account_id;
+    }
+
+    public void setAccount_id(String account_id) {
+        this.account_id = account_id;
     }
 }

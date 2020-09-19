@@ -40,7 +40,7 @@ $(function(){
     $('#get_accounts').click(function(){
         $.getJSON("/accounts", function(data) {
             const container = $('#account_list').empty().append('<h1>Account List:</h1>');
-            $.each(data, function(index, account){
+            $.each(data.Account, function(index, account) {
                 let a = '';
                 if(account.Account) {
                     a = `<br>
