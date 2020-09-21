@@ -14,23 +14,25 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.client.RestTemplate;
 import sh.ory.hydra.ApiException;
 import sh.ory.hydra.api.AdminApi;
 import sh.ory.hydra.api.PublicApi;
-import sh.ory.hydra.model.OAuth2Client;
+import sh.ory.hydra.model.OAuth2TokenIntrospection;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Controller
 public class IndexController {
@@ -38,7 +40,7 @@ public class IndexController {
 
     // if need idToken, add openid; if need refreshToken, add offline
     @Value("openid,offline,${oauth2.client_scope}")
-    private Set<String> scopeList;
+    private LinkedHashSet<String> allScopes;
 
     @Value("${oauth2.public_url}/oauth2/token")
     private String hydraTokenUrl;
@@ -71,21 +73,14 @@ public class IndexController {
     @Resource
     private PublicApi hydraPublic;
 
-    private String scope;
-
-    @PostConstruct
-    private void initiate() {
-        scope = scopeList.stream().distinct().collect(Collectors.joining("+"));
-    }
-
     @GetMapping({"/", "/index", "index.html"})
-    public String index(Model model, HttpSession session) throws ApiException {
-        {// initiate all consent names
-            OAuth2Client oAuth2Client = hydraAdmin.getOAuth2Client(clientId);
-            String[] allConsents = StringUtils.split(oAuth2Client.getScope(), " ");
-            String[] consents = ArrayUtils.removeElements(allConsents, "openid", "offline");
+    public String index(Model model) throws ApiException {
+        {// initiate consent names
+            // exclude "openid" and "offline", they are used by hydra
+            String[] consents = allScopes.stream()
+                    .filter(it -> !"openid".equals(it) && !"offline".equals(it))
+                    .toArray(String[]::new);
             model.addAttribute("consents", consents);
-            SessionData.setAllConsents(session,consents);
         }
         { // initiate all bank names and bank ids
             Banks banks = restTemplate.getForObject(getBanksUrl, Banks.class);
@@ -99,9 +94,7 @@ public class IndexController {
     public String requestConsents(@RequestParam("bank") String bankId,
                                   @RequestParam String[] consents,
                                   @RequestParam String transaction_from_time,
-                                  @RequestParam String transaction_to_time,
-                                  HttpSession session) throws UnsupportedEncodingException {
-        SessionData.setBankId(session, bankId);
+                                  @RequestParam String transaction_to_time) throws UnsupportedEncodingException {
         final String consentId;
         {   // create consents
             String clientCredentialsToken = getClientCredentialsToken();
@@ -128,15 +121,17 @@ public class IndexController {
         queryParam.put("bank_id", bankId);
         queryParam.put("consent_id", consentId);
         queryParam.put("response_type", "code");
-        // if need idToken add openid, if need refreshToken, add offline scope
-        String scope = "openid+offline+" + StringUtils.join((Object[]) consents, '+');
+        // keep the selected consents, only if it exists in allScopes, keep "openid" and "offline" if it exists in allScopes
+        String scope =
+                allScopes.stream().filter(it ->
+                    "openid".equals(it) || "offline".equals(it) || ArrayUtils.contains(consents, it)
+                ).collect(Collectors.joining("+"));
+
         queryParam.put("scope", scope);
         String encodeRedirectUri = URLEncoder.encode(redirectUri, "UTF-8");
         queryParam.put("redirect_uri", encodeRedirectUri);
         String state = UUID.randomUUID().toString();
         queryParam.put("state", state);
-
-        SessionData.setState(session, state);
 
         String queryParamStr = queryParam.entrySet().stream().map(it -> it.getKey() + "=" + it.getValue()).collect(Collectors.joining("&"));
         String redirectUrl = "redirect:" + authenticateUrl + "?" + queryParamStr;
@@ -147,7 +142,7 @@ public class IndexController {
     @GetMapping(value={"/main", "main.html"}, params="code")
     public String callBackMain(@RequestParam("code") String code, @RequestParam("scope") String scope, @RequestParam("state") String state,
                        Model model,
-                       HttpSession session) {
+                       HttpSession session) throws ApiException {
         // when repeat call with same code, just do nothing.
         if(code.equals(SessionData.getCode(session))) {
             return "accounts";
@@ -174,11 +169,6 @@ public class IndexController {
             SessionData.setAccessToken(session, tokenResponse.getAccess_token());
             SessionData.setRefreshToken(session, tokenResponse.getRefresh_token());
 
-            if(state.equals(SessionData.getState(session))) {
-                // should throw exception
-                logger.error("send state is:"+ SessionData.getState(session) + ", but return state is:" + state);
-            }
-
             logger.debug("idToken:" + tokenResponse.getId_token());
             logger.debug("accessToken:" + tokenResponse.getAccess_token());
         }
@@ -192,7 +182,13 @@ public class IndexController {
             ResponseEntity<UserInfo> userInfoResponse = restTemplate.exchange(currentUserUrl, HttpMethod.GET, entity, UserInfo.class);
             SessionData.setUserInfo(session, userInfoResponse.getBody());
         }
-
+        {
+            OAuth2TokenIntrospection oAuth2TokenIntrospection = hydraAdmin.introspectOAuth2Token(SessionData.getAccessToken(session), null);
+            Map<String, String> accessExt = (Map<String, String>) oAuth2TokenIntrospection.getExt();
+            String bankId = accessExt.get("bank_id");
+//            String consentId = accessExt.get("consent_id");
+            SessionData.setBankId(session, bankId);
+        }
         {
             String bankId = SessionData.getBankId(session);
             ResponseEntity<Accounts> accounts = restTemplate.exchange(getAccountsUrl.replace("BANK_ID", bankId), HttpMethod.GET, entity, Accounts.class);
@@ -208,27 +204,26 @@ public class IndexController {
     public String resetAccessToViews(@RequestParam("accounts") String[] accountIs, HttpSession session) {
         String bankId = SessionData.getBankId(session);
         String[] selectConsents = SessionData.getSelectConsents(session);
-        String[] allConsents = SessionData.getAllConsents(session);
 
         HttpHeaders headers = new HttpHeaders();
         String accessToken = SessionData.getAccessToken(session);
         headers.setBearerAuth(accessToken);
 
         { // process selected accounts
-            AccessToViewRequest body = new AccessToViewRequest(allConsents, selectConsents);
+            AccessToViewRequest body = new AccessToViewRequest(selectConsents);
             HttpEntity<AccessToViewRequest> entity = new HttpEntity<>(body, headers);
             for (String accountId : accountIs) {
-                String url = getAccountsUrl.replace("BANK_ID", bankId).replace("ACCOUNT_ID", accountId);
+                String url = resetAccessViewUrl.replace("BANK_ID", bankId).replace("ACCOUNT_ID", accountId);
                 restTemplate.exchange(url, HttpMethod.PUT, entity, HashMap.class);
             }
         }
 
         { // process not selected accounts
             String[] notSelectAccountIds = ArrayUtils.removeElements(SessionData.getAllAccountIds(session), accountIs);
-            AccessToViewRequest body = new AccessToViewRequest(allConsents);
+            AccessToViewRequest body = new AccessToViewRequest(ArrayUtils.EMPTY_STRING_ARRAY);
             HttpEntity<AccessToViewRequest> entity = new HttpEntity<>(body, headers);
             for (String accountId : notSelectAccountIds) {
-                String url = getAccountsUrl.replace("BANK_ID", bankId).replace("ACCOUNT_ID", accountId);
+                String url = resetAccessViewUrl.replace("BANK_ID", bankId).replace("ACCOUNT_ID", accountId);
                 restTemplate.exchange(url, HttpMethod.PUT, entity, HashMap.class);
             }
         }
@@ -238,7 +233,7 @@ public class IndexController {
 
     @GetMapping(value={"/main", "main.html"}, params="!code")
     public String main(HttpSession session, Model model) {
-        UserInfo user = (UserInfo) session.getAttribute("user");
+        UserInfo user = SessionData.getUserInfo(session);
         if(user == null) {
             return "redirect:/index.html";
         }

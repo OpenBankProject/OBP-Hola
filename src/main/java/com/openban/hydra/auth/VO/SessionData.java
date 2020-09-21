@@ -6,7 +6,6 @@ import javax.servlet.http.HttpSession;
  * informations keet in session
  */
 public class SessionData {
-    private String[] allConsents;
     private String[] selectConsents;
     private String bankId;
     private String[] allAccountIds;
@@ -19,13 +18,6 @@ public class SessionData {
     private UserInfo userInfo;
 
     private SessionData() {}
-
-    public static void setAllConsents(HttpSession session, String[] allConsents) {
-        getOrCreateSessionData(session).allConsents = allConsents;
-    }
-    public static boolean hasAllConsents(HttpSession session) {
-        return getOrCreateSessionData(session).allConsents != null;
-    }
 
     public static void setSelectConsents(HttpSession session, String[] selectConsents) {
         getOrCreateSessionData(session).selectConsents = selectConsents;
@@ -97,9 +89,6 @@ public class SessionData {
         return getOrCreateSessionData(session).userInfo != null;
     }
 //////////////////////////////////////////////////////////////////////////
-    public static String[] getAllConsents(HttpSession session) {
-        return getOrCreateSessionData(session).allConsents;
-    }
 
     public static String[] getSelectConsents(HttpSession session) {
         return getOrCreateSessionData(session).selectConsents;
@@ -139,6 +128,11 @@ public class SessionData {
 
     public static UserInfo getUserInfo(HttpSession session) {
         return getOrCreateSessionData(session).userInfo;
+    }
+
+    public static boolean isAuthenticated(HttpSession session) {
+        SessionData sessionData = (SessionData) session.getAttribute("session_data");
+        return sessionData != null;
     }
 
     private static SessionData getOrCreateSessionData(HttpSession session) {
