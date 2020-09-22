@@ -59,7 +59,7 @@ public class IndexController {
     private String getBanksUrl;
     @Value("${obp.base_url}/mx-open-finance/v0.0.1/account-access-consents")
     private String createConsentsUrl;
-    @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/accounts/private")
+    @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/accounts-held")
     private String getAccountsUrl;
     @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/accounts/ACCOUNT_ID/account-access")
     private String resetAccessViewUrl;
