@@ -94,15 +94,17 @@ public class IndexController {
     public String requestConsents(@RequestParam("bank") String bankId,
                                   @RequestParam String[] consents,
                                   @RequestParam String transaction_from_time,
-                                  @RequestParam String transaction_to_time) throws UnsupportedEncodingException {
+                                  @RequestParam String transaction_to_time,
+                                  @RequestParam String expiration_time
+                                  ) throws UnsupportedEncodingException {
         final String consentId;
         {   // create consents
             String clientCredentialsToken = getClientCredentialsToken();
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(clientCredentialsToken);
 
-            // TODO just set one week later time
-            String expirationDateTime = LocalDateTime.now().plusWeeks(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+            // TODO it should have relation with rememberMe time
+            String expirationDateTime = convertTimeFormat(expiration_time);
             ConsentPostBodyMXOFV001 body = new ConsentPostBodyMXOFV001(
                     bankId,
                     consents,

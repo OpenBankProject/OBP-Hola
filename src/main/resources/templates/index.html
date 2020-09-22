@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>MXOF Pilot App</title>
+    <title>MXOF Pilot App - Grant Permissions</title>
 
     <!-- Bootstrap -->
     <link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap.min.css}" />
@@ -20,10 +20,10 @@
     <div class="container">
         <div class="row">
             <div class="col-sm-6 col-lg-offset-3">
-                <h2>Request consents</h2>
+                <h2>Give Consent</h2>
                 <form th:action="@{/request_consents}" method="post">
                     <div class="form-group">
-                        <label for="bank">Select one Bank</label>
+                        <label for="bank">Select your Bank</label>
                         <select class="form-control" name="bank" id="bank">
                             <option value="">--select one bank--</option>
                             <option th:each="bank : ${banks}" th:value="${bank.id}" th:text="${bank.full_name}" >
@@ -31,7 +31,7 @@
                         </select>
                     </div>
 
-                    <label>Select one or more Consents</label>
+                    <label>Select one or more Permissions</label>
                     <div class="form-group">
                         <div class="checkbox" th:each="consent : ${consents}">
                             <label>
@@ -43,14 +43,18 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="transaction_from_time">TransactionFromDateTime</label>
+                        <label for="transaction_from_time">Transaction From Date Time</label>
                         <input type="text" name="transaction_from_time" id="transaction_from_time" class="form-control" data-date-format="YYYY-MM-DDTHH:mm:ss">
                     </div>
                     <div class="form-group">
-                        <label for="transaction_to_time">TransactionToDateTime</label>
+                        <label for="transaction_to_time">Transaction To Date Time</label>
                         <input type="text" name="transaction_to_time" id="transaction_to_time" class="form-control" data-date-format="YYYY-MM-DDTHH:mm:ss">
                     </div>
-                    <button type="submit" class="btn btn-default">Request Consents</button>
+                    <div class="form-group">
+                        <label for="transaction_to_time">Expiration Date Time</label>
+                        <input type="text" name="expiration_time" id="expiration_time" class="form-control" data-date-format="YYYY-MM-DDTHH:mm:ss">
+                    </div>
+                    <button type="submit" class="btn btn-default">Give Consent</button>
                 </form>
             </div>
         </div>
@@ -92,6 +96,10 @@
 
             $('#transaction_to_time').datetimepicker({
                 defaultDate: new Date()
+            });
+
+            $('#expiration_time').datetimepicker({
+                defaultDate: new Date(new Date().setDate(new Date().getDate() + 7))
             });
         });
 

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>MXOF Pilot App -  Select accounts</title>
+    <title>MXOF Pilot App - Grant Access</title>
 
     <!-- Bootstrap -->
     <link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap.min.css}" />
@@ -19,9 +19,9 @@
     <div class="container">
         <div class="row">
             <div class="col-sm-6 col-lg-offset-3">
-                <h2>Request Access View</h2>
+                <h2>Grant Access</h2>
                 <form th:action="@{/reset_access_to_views}" method="post">
-                    <label>Select one or more Accounts</label>
+                    <label>I grant access to the following accounts</label>
                     <div class="form-group">
                         <div class="checkbox" th:each="account : ${accounts}">
                             <label>
@@ -31,7 +31,7 @@
                         </div>
                         <span id="accounts_error"></span>
                     </div>
-                    <button type="submit" class="btn btn-default">Submit</button>
+                    <button type="submit" class="btn btn-default">Confirm</button>
                 </form>
             </div>
         </div>
