@@ -20,7 +20,8 @@
 current user:
 email: <span th:text="${user.email}"></span> <br>
 useName: <span th:text="${user.username}"></span> <br>
-<a th:href="@{/logout}">Logout</a>
+<a btn btn-primary th:href="@{/logout}">Logout</a>
+<br>
 <div>
     <button id="get_accounts">Get accounts</button>
     <div id="account_list">
