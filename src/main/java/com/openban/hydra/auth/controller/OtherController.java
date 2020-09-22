@@ -26,6 +26,8 @@ import java.util.Map;
 public class OtherController {
     @Value("${obp.base_url}/mx-open-finance/v0.0.1/accounts")
     private String getAccountsUrl;
+    @Value("${obp.base_url}/mx-open-finance/v0.0.1/accounts/ACCOUNT_ID")
+    private String getAccountUrl;
     @Value("${obp.base_url}/mx-open-finance/v0.0.1/accounts/ACCOUNT_ID/balances")
     private String getBalanceUrl;
     @Value("${obp.base_url}/mx-open-finance/v0.0.1/accounts/ACCOUNT_ID/transactions")
@@ -34,7 +36,7 @@ public class OtherController {
     @Resource
     private RestTemplate restTemplate;
 
-    @GetMapping("/accounts")
+    @GetMapping("/account")
     public Object getAccounts(HttpSession session) {
         String accessToken = SessionData.getAccessToken(session);
         HttpHeaders headers = new HttpHeaders();
@@ -43,6 +45,17 @@ public class OtherController {
 
         ResponseEntity<AccountDataValue> exchange = restTemplate.exchange(getAccountsUrl, HttpMethod.GET, entity, AccountDataValue.class);
         return exchange.getBody().getData();
+    }
+    @GetMapping("/account/{accountId}")
+    public Object getAccount(@PathVariable String accountId, HttpSession session) {
+        String accessToken = SessionData.getAccessToken(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<HashMap> exchange = restTemplate.exchange(getAccountUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+        Map<String, Object> accountDetail = (Map<String, Object>) exchange.getBody().get("Data");
+        return accountDetail;
     }
 
     @GetMapping("/balances/account_id/{accountId}")
