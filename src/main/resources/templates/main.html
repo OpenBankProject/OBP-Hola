@@ -20,7 +20,8 @@
 current user:
 email: <span th:text="${user.email}"></span> <br>
 useName: <span th:text="${user.username}"></span> <br>
-<a btn btn-primary th:href="@{/logout}">Logout</a>
+<a class="btn btn-info" th:href="@{/logout}">Logout</a>
+<br>
 <br>
 <div>
     <button id="get_accounts">Get accounts</button>
@@ -42,24 +43,17 @@ $(function(){
         $.getJSON("/accounts", function(data) {
             const container = $('#account_list').empty().append('<h1>Account List:</h1>');
             $.each(data.Account, function(index, account) {
-                let a = '';
-                if(account.Account) {
-                    a = `<br>
-                    SchemeName: ${account.Account.schemeName}<br>
-                    Identification: ${account.Account.Identification}<br>
-                    Name:${account.Account.Name}`;
-                }
+                let zson = JSON.stringify(account, null, 2);
                 container.append(`
-            <div>
-                AccountId: ${account.accountId} <br>
-                Currency: ${account.currency} <br>
-                Nickname: ${account.nickname} ${a}<br>
-                <button class="get_balances" account_id="${account.accountId}">Get Balances</button> <button class="get_transactions" account_id="${account.accountId}">Get Transactions</button>
-                <div class="balances"></div>
-                <div class="transactions"></div>
-                <hr>
-            </div>
-            `);
+                    <div>
+                        <code>${zson}</code><br>
+                        <button class="get_balances" account_id="${account.accountId}">Get Balances</button>
+                        <button class="get_transactions" account_id="${account.accountId}">Get Transactions</button>
+                        <div class="balances"></div>
+                        <div class="transactions"></div>
+                        <hr>
+                    </div>
+                `);
             });
             $('.get_balances').click(function(){
                 let balancesEle = $(this).siblings('.balances').empty().append('<h3>Balance List:</h3>');;
