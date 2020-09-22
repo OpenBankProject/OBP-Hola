@@ -70,36 +70,16 @@ $(function(){
                 let balancesEle = $(this).siblings('.balances').empty().append('<h3>Balance List:</h3>');;
                 let accountId =  $(this).attr('account_id');
                 $.getJSON('/balances/account_id/'+ accountId, function(data){
-                    if(Array.isArray(data)) {
-                        $.each(data, function(i, it){
-                            let zson = JSON.stringify(it, null, 2);
-                            balancesEle.append(`<code>${zson}<code>`).append('<br>');
-                        });
-                        if(!data || data.length === 0) {
-                            balancesEle.append(' Empty');
-                        }
-                    } else {
-                        let zson = JSON.stringify(data, null, 2);
-                        balancesEle.append(`<code>${zson}<code>`).append('<br>');
-                    }
+                    let zson = JSON.stringify(data, null, 2);
+                    balancesEle.append(`<code>${zson}<code>`).append('<br>');
                 });
             });
             $('.get_transactions').click(function(){
                 let accountsEle = $(this).siblings('.transactions').empty().append('<h3>Transaction List:</h3>');
                 let accountId =  $(this).attr('account_id');
                 $.getJSON('/transactions/account_id/'+ accountId, function(data){
-                    if(Array.isArray(data)) {
-                        $.each(data, function(i, it){
-                            let zson = JSON.stringify(it, null, 2);
-                            accountsEle.append(`<code>${zson}<code>`).append('<br>');
-                        });
-                        if(!data || data.length === 0) {
-                            accountsEle.append(' Empty');
-                        }
-                    } else {
-                        let zson = JSON.stringify(data, null, 2);
-                        accountsEle.append(`<code>${zson}<code>`).append('<br>');
-                    }
+                    let zson = JSON.stringify(data, null, 2);
+                    accountsEle.append(`<code>${zson}<code>`).append('<br>');
                 });
             });
         });

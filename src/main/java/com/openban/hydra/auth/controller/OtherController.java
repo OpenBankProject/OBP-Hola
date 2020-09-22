@@ -54,7 +54,7 @@ public class OtherController {
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getAccountUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
-        Map<String, Object> accountDetail = (Map<String, Object>) exchange.getBody().get("Data");
+        Map<String, Object> accountDetail = (Map<String, Object>) exchange.getBody();
         return accountDetail;
     }
 
@@ -66,9 +66,9 @@ public class OtherController {
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getBalanceUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
-        Map<String, Object> balances = (Map<String, Object>) exchange.getBody().get("Data");
+        Map<String, Object> balances = (Map<String, Object>) exchange.getBody();
         if(balances != null) {
-            return balances.get("Balance");
+            return balances;
         } else {
             return new HashMap<String, Object>();
         }
@@ -81,7 +81,7 @@ public class OtherController {
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getTransactionsUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
-        List<Object> data = (List<Object>) exchange.getBody().get("Data");
+        Map<String, Object>  data = exchange.getBody();
         if(data != null) {
             return data;
         } else {
