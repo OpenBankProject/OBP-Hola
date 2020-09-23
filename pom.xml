@@ -8,9 +8,9 @@
         <version>2.3.3.RELEASE</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.example</groupId>
+    <groupId>com.openbankproject.hydra</groupId>
     <artifactId>obp-hydra-auth2</artifactId>
-    <version>0.0.14-SNAPSHOT</version>
+    <version>0.0.15-SNAPSHOT</version>
     <name>obp-hydra-auth</name>
     <description>Demo project for Spring Boot</description>
 

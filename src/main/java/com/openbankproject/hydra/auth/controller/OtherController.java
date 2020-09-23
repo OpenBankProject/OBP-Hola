@@ -1,7 +1,7 @@
-package com.openban.hydra.auth.controller;
+package com.openbankproject.hydra.auth.controller;
 
-import com.openban.hydra.auth.VO.AccountDataValue;
-import com.openban.hydra.auth.VO.SessionData;
+import com.openbankproject.hydra.auth.VO.AccountDataValue;
+import com.openbankproject.hydra.auth.VO.SessionData;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -19,7 +19,6 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController

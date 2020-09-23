@@ -1,6 +1,6 @@
-package com.openban.hydra.auth.controller;
+package com.openbankproject.hydra.auth.controller;
 
-import com.openban.hydra.auth.VO.SessionData;
+import com.openbankproject.hydra.auth.VO.SessionData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

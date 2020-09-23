@@ -1,4 +1,4 @@
-package com.openban.hydra.auth.VO;
+package com.openbankproject.hydra.auth.VO;
 
 import javax.servlet.http.HttpSession;
 

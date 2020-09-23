@@ -1,6 +1,6 @@
-package com.openban.hydra.auth.controller;
+package com.openbankproject.hydra.auth.controller;
 
-import com.openban.hydra.auth.VO.*;
+import com.openbankproject.hydra.auth.VO.*;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -24,15 +24,12 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Controller
 public class IndexController {

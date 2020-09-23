@@ -1,4 +1,4 @@
-package com.openban.hydra.auth;
+package com.openbankproject.hydra.auth;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -10,11 +10,8 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.http.converter.FormHttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 import sh.ory.hydra.ApiClient;
-import sh.ory.hydra.Configuration;
 import sh.ory.hydra.api.AdminApi;
 import sh.ory.hydra.api.PublicApi;
 
