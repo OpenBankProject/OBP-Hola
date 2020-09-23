@@ -25,10 +25,10 @@ public class LogoutController {
         if(SessionData.isAuthenticated(session)){
             String idToken = SessionData.getIdToken(session);
             session.invalidate();
-            String encodeRedirectUri = URLEncoder.encode("http://localhost:8081/index.html", "UTF-8");
+            String encodeRedirectUri = URLEncoder.encode(redirectUri, "UTF-8");
             return "redirect:"+ hydraLogoutUrl + "?post_logout_redirect_uri=" + encodeRedirectUri + "&id_token_hint="+idToken;
         } else {
-            return "/index";
+            return "redirect:" + redirectUri;
         }
     }
 }
