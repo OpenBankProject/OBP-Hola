@@ -8,7 +8,7 @@
 
     <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" th:href="@{/css/custom.css}" />
+    <link rel="stylesheet" type="text/css" th:href="@{/css/custom.css}"/>
 
     <!--[if lt IE 9]>
     <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
@@ -16,36 +16,49 @@
     <![endif]-->
 </head>
 <body>
-<h1>Hello <span th:text="${user.username}"></span></h1>
+<nav class="navbar navbar-light bg-light">
+    <a class="navbar-brand" th:href="@{${obp_url}}">
+        <img th:src="@{/images/logo.png}" height="60" class="d-inline-block align-top" alt="">
+    </a>
+</nav>
 
-current user:
-email: <span th:text="${user.email}"></span> <br>
-useName: <span th:text="${user.username}"></span> <br>
-<a class="btn btn-info" th:href="@{/logout}">Logout</a>
-<br>
-<br>
-<div>
-    <button id="get_accounts">Get accounts</button>
-    <div id="account_list">
 
+<div class="container">
+    <div class="row">
+        <h1>Hello <span th:text="${user.username}"></span></h1>
+
+        current user: <br>
+        email: <span th:text="${user.email}"></span> <br>
+        useName: <span th:text="${user.username}"></span> <br>
+        <a class="btn btn-info" th:href="@{/logout}">Logout</a>
+        <br>
+        <br>
+    </div>
+    <div class="row">
+        <div>
+            <button id="get_accounts">Get accounts</button>
+            <div id="account_list">
+
+            </div>
+        </div>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
 <script lang="javascript">
-$(function(){
-    $.ajaxSetup({
-        "error": function (e) {
-            alert(`error: code=${e.status}, fail msg: ${e.responseText}`);
-            console.log(e);
-        }
-    });
-    $('#get_accounts').click(function(){
-        $.getJSON("/account", function(data) {
-            const container = $('#account_list').empty().append('<h1>Account List:</h1>');
-            $.each(data.Account, function(index, account) {
-                let zson = JSON.stringify(account, null, 2);
-                container.append(`
+    $(function () {
+        $.ajaxSetup({
+            "error": function (e) {
+                alert(`error: code=${e.status}, fail msg: ${e.responseText}`);
+                console.log(e);
+            }
+        });
+        $('#get_accounts').click(function () {
+            $.getJSON("/account", function (data) {
+                const container = $('#account_list').empty().append('<h1>Account List:</h1>');
+                $.each(data.Account, function (index, account) {
+                    let zson = JSON.stringify(account, null, 2);
+                    container.append(`
                     <div>
                         <code>${zson}</code><br>
                         <button class="get_account_detail" account_id="${account.accountId}">Get Account detail</button>
@@ -57,34 +70,36 @@ $(function(){
                         <hr>
                     </div>
                 `);
-            });
-            $('.get_account_detail').click(function(){
-                let accountDetailEle = $(this).siblings('.account_detail').empty().append('<h3>Account Detail:</h3>');;
-                let accountId =  $(this).attr('account_id');
-                $.getJSON('/account/'+ accountId, function(data){
-                    let zson = JSON.stringify(data, null, 2);
-                    accountDetailEle.append(`<code>${zson}<code>`).append('<br>');
                 });
-            });
-            $('.get_balances').click(function(){
-                let balancesEle = $(this).siblings('.balances').empty().append('<h3>Balance List:</h3>');;
-                let accountId =  $(this).attr('account_id');
-                $.getJSON('/balances/account_id/'+ accountId, function(data){
-                    let zson = JSON.stringify(data, null, 2);
-                    balancesEle.append(`<code>${zson}<code>`).append('<br>');
+                $('.get_account_detail').click(function () {
+                    let accountDetailEle = $(this).siblings('.account_detail').empty().append('<h3>Account Detail:</h3>');
+                    ;
+                    let accountId = $(this).attr('account_id');
+                    $.getJSON('/account/' + accountId, function (data) {
+                        let zson = JSON.stringify(data, null, 2);
+                        accountDetailEle.append(`<code>${zson}<code>`).append('<br>');
+                    });
                 });
-            });
-            $('.get_transactions').click(function(){
-                let accountsEle = $(this).siblings('.transactions').empty().append('<h3>Transaction List:</h3>');
-                let accountId =  $(this).attr('account_id');
-                $.getJSON('/transactions/account_id/'+ accountId, function(data){
-                    let zson = JSON.stringify(data, null, 2);
-                    accountsEle.append(`<code>${zson}<code>`).append('<br>');
+                $('.get_balances').click(function () {
+                    let balancesEle = $(this).siblings('.balances').empty().append('<h3>Balance List:</h3>');
+                    ;
+                    let accountId = $(this).attr('account_id');
+                    $.getJSON('/balances/account_id/' + accountId, function (data) {
+                        let zson = JSON.stringify(data, null, 2);
+                        balancesEle.append(`<code>${zson}<code>`).append('<br>');
+                    });
+                });
+                $('.get_transactions').click(function () {
+                    let accountsEle = $(this).siblings('.transactions').empty().append('<h3>Transaction List:</h3>');
+                    let accountId = $(this).attr('account_id');
+                    $.getJSON('/transactions/account_id/' + accountId, function (data) {
+                        let zson = JSON.stringify(data, null, 2);
+                        accountsEle.append(`<code>${zson}<code>`).append('<br>');
+                    });
                 });
             });
         });
-    });
-})
+    })
 </script>
 </body>
 </html>

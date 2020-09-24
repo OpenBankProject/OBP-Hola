@@ -50,6 +50,9 @@ public class IndexController {
     @Value("${oauth2.authenticate_url}")
     private String authenticateUrl;
 
+
+    @Value("${obp.base_url}")
+    private String obpBaseUrl;
     @Value("${obp.base_url}/obp/v4.0.0/users/current")
     private String currentUserUrl;
     @Value("${obp.base_url}/obp/v4.0.0/banks")
@@ -72,6 +75,7 @@ public class IndexController {
 
     @GetMapping({"/", "/index", "index.html"})
     public String index(Model model) throws ApiException {
+        model.addAttribute("obp_url", obpBaseUrl);
         {// initiate consent names
             // exclude "openid" and "offline", they are used by hydra
             String[] consents = allScopes.stream()
@@ -142,6 +146,7 @@ public class IndexController {
     public String callBackMain(@RequestParam("code") String code, @RequestParam("scope") String scope, @RequestParam("state") String state,
                        Model model,
                        HttpSession session) throws ApiException {
+        model.addAttribute("obp_url", obpBaseUrl);
         // when repeat call with same code, just do nothing.
         if(code.equals(SessionData.getCode(session))) {
             return "accounts";
@@ -153,7 +158,7 @@ public class IndexController {
         // get tokens use code
         {
             HttpHeaders headers = new HttpHeaders();
-            MultiValueMap<String, String> body= new LinkedMultiValueMap<>();
+            MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
             body.add("grant_type", "authorization_code");
             body.add("code", code);
             body.add("redirect_uri", redirectUri);
@@ -232,6 +237,7 @@ public class IndexController {
 
     @GetMapping(value={"/main", "main.html"}, params="!code")
     public String main(HttpSession session, Model model) {
+        model.addAttribute("obp_url", obpBaseUrl);
         UserInfo user = SessionData.getUserInfo(session);
         if(user == null) {
             return "redirect:/index.html";

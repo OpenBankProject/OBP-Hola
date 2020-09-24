@@ -30,9 +30,10 @@ public class LogoutController {
     @GetMapping("/logout")
     public String logout(HttpSession session) throws ApiException, UnsupportedEncodingException {
         if(SessionData.isAuthenticated(session)){
+            String accessToken = SessionData.getAccessToken(session);
             String idToken = SessionData.getIdToken(session);
             String encodeRedirectUri = URLEncoder.encode(redirectUri, "UTF-8");
-            hydraPublic.revokeOAuth2Token(SessionData.getAccessToken(session)) ;
+            hydraPublic.revokeOAuth2Token(accessToken) ;
             session.invalidate();
             return "redirect:"+ hydraLogoutUrl + "?post_logout_redirect_uri=" + encodeRedirectUri + "&id_token_hint="+idToken;
         }
