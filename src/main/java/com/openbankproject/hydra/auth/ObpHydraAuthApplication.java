@@ -1,5 +1,7 @@
 package com.openbankproject.hydra.auth;
 
+import okhttp3.Call;
+import okhttp3.Request;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -11,12 +13,19 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.web.client.RestTemplate;
+import sh.ory.hydra.ApiCallback;
 import sh.ory.hydra.ApiClient;
+import sh.ory.hydra.ApiException;
+import sh.ory.hydra.Pair;
 import sh.ory.hydra.api.AdminApi;
 import sh.ory.hydra.api.PublicApi;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @SpringBootApplication
 public class ObpHydraAuthApplication {
@@ -24,6 +33,7 @@ public class ObpHydraAuthApplication {
     private String hydraAdminUrl;
     @Value("${oauth2.public_url}")
     private String hydraPublicUrl;
+
     @Value("${oauth2.client_id}")
     private String hydraClientId;
     @Value("${oauth2.client_secret}")
@@ -42,8 +52,16 @@ public class ObpHydraAuthApplication {
 
     @Bean
     public PublicApi hydraPublic() {
-        ApiClient apiClient = new ApiClient();
-        apiClient.setBasePath(hydraClientSecret);
+        // hydra client have this setting "token_endpoint_auth_method": "client_secret_post"
+        // the formParams must contains client_id and client_secret parameters
+        ApiClient apiClient = new ApiClient(){
+            public Call buildCall(String path, String method, List<Pair> queryParams, List<Pair> collectionQueryParams, Object body, Map<String, String> headerParams, Map<String, String> cookieParams, Map<String, Object> formParams, String[] authNames, ApiCallback callback) throws ApiException {
+                formParams.put("client_id", hydraClientId);
+                formParams.put("client_secret", hydraClientSecret);
+                return super.buildCall( path,  method, queryParams, collectionQueryParams, body, headerParams, cookieParams, formParams, authNames, callback);
+            }
+        };
+        apiClient.setBasePath(hydraPublicUrl);
         return new PublicApi(apiClient);
     }
 

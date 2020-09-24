@@ -22,6 +22,10 @@
                 <h2>Grant Access</h2>
                 <form th:action="@{/reset_access_to_views}" method="post">
                     <label>I grant access to the following accounts</label>
+                    <div class="alert alert-danger hidden" id="error_msg" role="alert">
+                        You have no account in current bank.
+                        <a class="alert-link" th:href="@{/index.html}">Select other Bank</a>
+                    </div>
                     <div class="form-group">
                         <div class="checkbox" th:each="account : ${accounts}">
                             <label>
@@ -29,7 +33,7 @@
                                 <span th:text="${account.label}">Some account</span>
                             </label>
                         </div>
-                        <span id="accounts_error"></span>
+                        <span class="text-danger" id="accounts_error"></span>
                     </div>
                     <button type="submit" class="btn btn-default">Confirm</button>
                 </form>
@@ -50,7 +54,6 @@
                     accounts: "At least select one account",
                 },
                 errorPlacement: function(error, element) {
-                    error.addClass('text-danger');
                     if (element.attr("name") == "accounts") {
                         error.appendTo("#accounts_error");
                     } else {
@@ -58,6 +61,10 @@
                     }
                 }
             });
+            if($('[name=accounts]').length === 0) {
+                $("#error_msg").removeClass("hidden");
+                $(":submit").prop('disabled', 'disabled');
+            }
         });
 
     </script>
