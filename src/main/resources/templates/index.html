@@ -99,7 +99,8 @@
             });
 
             $('#expiration_time').datetimepicker({
-                defaultDate: new Date(new Date().setDate(new Date().getDate() + 7))
+                defaultDate: new Date(new Date().setDate(new Date().getDate() + 7)),
+                minDate: new Date()
             });
         });
 
