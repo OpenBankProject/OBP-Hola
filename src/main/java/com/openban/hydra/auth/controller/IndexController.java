@@ -102,7 +102,7 @@ public class IndexController {
         }
 
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "Authorization: Bearer " + session.getAttribute("idToken"));
+        headers.add("Authorization", "Authorization: Bearer " + session.getAttribute("access_token"));
         headers.add("Content-Type", "application/json");
         HttpEntity<String> entity = new HttpEntity<>(headers);
         ResponseEntity<UserInfo> userInfoResponse = restTemplate.exchange(currentUserUrl, HttpMethod.GET, entity, UserInfo.class);
@@ -120,9 +120,9 @@ public class IndexController {
         model.addAttribute("user", user);
 
         RestTemplate restTemplate = new RestTemplate();
-        String idToken = (String) session.getAttribute("idToken");
+        String accessToken = (String) session.getAttribute("access_token");
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "Authorization: Bearer " + idToken);
+        headers.add("Authorization", "Authorization: Bearer " + accessToken);
         headers.add("Content-Type", "application/json");
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
