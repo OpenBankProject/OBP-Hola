@@ -16,9 +16,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
 import sh.ory.hydra.ApiException;
-import sh.ory.hydra.api.AdminApi;
-import sh.ory.hydra.api.PublicApi;
-import sh.ory.hydra.model.OAuth2TokenIntrospection;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
@@ -67,12 +64,6 @@ public class IndexController {
     @Resource
     private RestTemplate restTemplate;
 
-    @Resource
-    private AdminApi hydraAdmin;
-
-    @Resource
-    private PublicApi hydraPublic;
-
     @GetMapping({"/", "/index", "index.html"})
     public String index(Model model) throws ApiException {
         model.addAttribute("obp_url", obpBaseUrl);
@@ -96,7 +87,8 @@ public class IndexController {
                                   @RequestParam String[] consents,
                                   @RequestParam String transaction_from_time,
                                   @RequestParam String transaction_to_time,
-                                  @RequestParam String expiration_time
+                                  @RequestParam String expiration_time,
+                                  HttpSession session
                                   ) throws UnsupportedEncodingException {
         final String consentId;
         {   // create consents
@@ -138,12 +130,12 @@ public class IndexController {
 
         String queryParamStr = queryParam.entrySet().stream().map(it -> it.getKey() + "=" + it.getValue()).collect(Collectors.joining("&"));
         String redirectUrl = "redirect:" + authenticateUrl + "?" + queryParamStr;
-
+        SessionData.setBankId(session, bankId);
         return redirectUrl;
     }
 
     @GetMapping(value={"/main", "main.html"}, params="code")
-    public String callBackMain(@RequestParam("code") String code, @RequestParam("scope") String scope, @RequestParam("state") String state,
+    public String main(@RequestParam("code") String code, @RequestParam("scope") String scope,
                        Model model,
                        HttpSession session) throws ApiException {
         model.addAttribute("obp_url", obpBaseUrl);
@@ -186,13 +178,7 @@ public class IndexController {
             ResponseEntity<UserInfo> userInfoResponse = restTemplate.exchange(currentUserUrl, HttpMethod.GET, entity, UserInfo.class);
             SessionData.setUserInfo(session, userInfoResponse.getBody());
         }
-        {
-            OAuth2TokenIntrospection oAuth2TokenIntrospection = hydraAdmin.introspectOAuth2Token(SessionData.getAccessToken(session), null);
-            Map<String, String> accessExt = (Map<String, String>) oAuth2TokenIntrospection.getExt();
-            String bankId = accessExt.get("bank_id");
-//            String consentId = accessExt.get("consent_id");
-            SessionData.setBankId(session, bankId);
-        }
+
         {
             String bankId = SessionData.getBankId(session);
             ResponseEntity<Accounts> accounts = restTemplate.exchange(getAccountsUrl.replace("BANK_ID", bankId), HttpMethod.GET, entity, Accounts.class);
