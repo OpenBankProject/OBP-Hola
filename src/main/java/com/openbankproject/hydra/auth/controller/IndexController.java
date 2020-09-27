@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Controller
 public class IndexController {
@@ -44,7 +45,7 @@ public class IndexController {
     private String clientId;
     @Value("${oauth2.client_secret}")
     private String clientSecret;
-    @Value("${oauth2.authenticate_url}")
+    @Value("${oauth2.public_url}/oauth2/auth")
     private String authenticateUrl;
 
 
@@ -82,7 +83,7 @@ public class IndexController {
     }
 
 
-    @PostMapping(value="/request_consents", params = {"bank", "consents", "transaction_from_time", "transaction_to_time"})
+    @PostMapping(value="/request_consents", params = {"bank", "consents", "transaction_from_time", "transaction_to_time", "expiration_time"})
     public String requestConsents(@RequestParam("bank") String bankId,
                                   @RequestParam String[] consents,
                                   @RequestParam String transaction_from_time,
@@ -91,7 +92,7 @@ public class IndexController {
                                   HttpSession session
                                   ) throws UnsupportedEncodingException {
         final String consentId;
-        {   // create consents
+        {   // Create Account Access Consents
             String clientCredentialsToken = getClientCredentialsToken();
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(clientCredentialsToken);
@@ -113,14 +114,14 @@ public class IndexController {
         //{"client_id", "bank_id", "consent_id", "response_type=code", "scope", "redirect_uri", "state"})
         Map<String, String> queryParam = new HashMap<>();
         queryParam.put("client_id", clientId);
-        queryParam.put("bank_id", bankId);
-        queryParam.put("consent_id", consentId);
         queryParam.put("response_type", "code");
-        // keep the selected consents, only if it exists in allScopes, keep "openid" and "offline" if it exists in allScopes
-        String scope =
-                allScopes.stream().filter(it ->
-                    "openid".equals(it) || "offline".equals(it) || ArrayUtils.contains(consents, it)
-                ).collect(Collectors.joining("+"));
+        queryParam.put("consent_id", consentId);
+        // include OBP scopes, add OAuth2 and OIDC related scope: "openid" and "offline"
+        consents = ArrayUtils.addAll(new String[]{"openid", "offline"}, consents);
+        String scope = Stream.of(consents)
+                .distinct()
+                .map(this::encodeQueryParam)
+                .collect(Collectors.joining("+"));
 
         queryParam.put("scope", scope);
         String encodeRedirectUri = URLEncoder.encode(redirectUri, "UTF-8");
@@ -218,7 +219,7 @@ public class IndexController {
             }
         }
 
-        return "redirect:/main.html";
+        return "redirect:/main";
     }
 
     @GetMapping(value={"/main", "main.html"}, params="!code")
@@ -259,5 +260,14 @@ public class IndexController {
      */
     private String convertTimeFormat(String time) {
         return TIME_PATTERN.matcher(time).replaceFirst("$1T$2Z");
+    }
+
+    private String encodeQueryParam(String value) {
+        try {
+            return URLEncoder.encode(value, "UTF-8");
+        } catch (UnsupportedEncodingException impossible) {
+            logger.error("charset name is wrong", impossible);
+            return null;
+        }
     }
 }
