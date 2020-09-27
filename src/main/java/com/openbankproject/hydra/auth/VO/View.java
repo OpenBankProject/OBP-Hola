@@ -1,4 +1,4 @@
-package com.openban.hydra.auth.VO;
+package com.openbankproject.hydra.auth.VO;
 
 public class View {
     private String view_id;

@@ -1,4 +1,4 @@
-package com.openban.hydra.auth;
+package com.openbankproject.hydra.auth;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,9 +1,9 @@
-package com.openban.hydra.auth.controller;
+package com.openbankproject.hydra.auth.controller;
 
-import com.openban.hydra.auth.VO.Account;
-import com.openban.hydra.auth.VO.AccountDataValue;
-import com.openban.hydra.auth.VO.TokenResponse;
-import com.openban.hydra.auth.VO.UserInfo;
+import com.openbankproject.hydra.auth.VO.Account;
+import com.openbankproject.hydra.auth.VO.AccountDataValue;
+import com.openbankproject.hydra.auth.VO.TokenResponse;
+import com.openbankproject.hydra.auth.VO.UserInfo;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Controller;

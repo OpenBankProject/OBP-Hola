@@ -1,4 +1,4 @@
-package com.openban.hydra.auth.VO;
+package com.openbankproject.hydra.auth.VO;
 
 public class TokenRequest {
     private final String grant_type = "authorization_code";
