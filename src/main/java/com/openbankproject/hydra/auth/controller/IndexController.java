@@ -21,10 +21,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -112,10 +109,9 @@ public class IndexController {
             consentId = ((Map<String, String>) response.get("Data")).get("ConsentId");
         }
         //{"client_id", "bank_id", "consent_id", "response_type=code", "scope", "redirect_uri", "state"})
-        Map<String, String> queryParam = new HashMap<>();
+        Map<String, String> queryParam = new LinkedHashMap<>();
         queryParam.put("client_id", clientId);
         queryParam.put("response_type", "code");
-        queryParam.put("consent_id", consentId);
         // include OBP scopes, add OAuth2 and OIDC related scope: "openid" and "offline"
         consents = ArrayUtils.addAll(new String[]{"openid", "offline"}, consents);
         String scope = Stream.of(consents)
@@ -128,6 +124,10 @@ public class IndexController {
         queryParam.put("redirect_uri", encodeRedirectUri);
         String state = UUID.randomUUID().toString();
         queryParam.put("state", state);
+
+        // the parameter consent_id and bank_id are mandatory, these two parameter is not standard parameter of OAuth2 and OIDC
+        queryParam.put("consent_id", consentId);
+        queryParam.put("bank_id", bankId);
 
         String queryParamStr = queryParam.entrySet().stream().map(it -> it.getKey() + "=" + it.getValue()).collect(Collectors.joining("&"));
         String redirectUrl = "redirect:" + authenticateUrl + "?" + queryParamStr;
@@ -170,53 +170,13 @@ public class IndexController {
             logger.debug("accessToken:" + tokenResponse.getAccess_token());
         }
 
-        HttpHeaders headers = new HttpHeaders();
-        String accessToken = SessionData.getAccessToken(session);
-        headers.setBearerAuth(accessToken);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
-
         { // fetch user information
+            HttpHeaders headers = new HttpHeaders();
+            String accessToken = SessionData.getAccessToken(session);
+            headers.setBearerAuth(accessToken);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
             ResponseEntity<UserInfo> userInfoResponse = restTemplate.exchange(currentUserUrl, HttpMethod.GET, entity, UserInfo.class);
             SessionData.setUserInfo(session, userInfoResponse.getBody());
-        }
-
-        {
-            String bankId = SessionData.getBankId(session);
-            ResponseEntity<Accounts> accounts = restTemplate.exchange(getAccountsUrl.replace("BANK_ID", bankId), HttpMethod.GET, entity, Accounts.class);
-            model.addAttribute("accounts", accounts.getBody().getAccounts());
-
-            SessionData.setAllAccountIds(session, accounts.getBody().accountIds());
-        }
-
-        return "accounts";
-    }
-
-    @PostMapping("/reset_access_to_views")
-    public String resetAccessToViews(@RequestParam("accounts") String[] accountIs, HttpSession session) {
-        String bankId = SessionData.getBankId(session);
-        String[] selectConsents = SessionData.getSelectConsents(session);
-
-        HttpHeaders headers = new HttpHeaders();
-        String accessToken = SessionData.getAccessToken(session);
-        headers.setBearerAuth(accessToken);
-
-        { // process selected accounts
-            AccessToViewRequest body = new AccessToViewRequest(selectConsents);
-            HttpEntity<AccessToViewRequest> entity = new HttpEntity<>(body, headers);
-            for (String accountId : accountIs) {
-                String url = resetAccessViewUrl.replace("BANK_ID", bankId).replace("ACCOUNT_ID", accountId);
-                restTemplate.exchange(url, HttpMethod.PUT, entity, HashMap.class);
-            }
-        }
-
-        { // process not selected accounts
-            String[] notSelectAccountIds = ArrayUtils.removeElements(SessionData.getAllAccountIds(session), accountIs);
-            AccessToViewRequest body = new AccessToViewRequest(ArrayUtils.EMPTY_STRING_ARRAY);
-            HttpEntity<AccessToViewRequest> entity = new HttpEntity<>(body, headers);
-            for (String accountId : notSelectAccountIds) {
-                String url = resetAccessViewUrl.replace("BANK_ID", bankId).replace("ACCOUNT_ID", accountId);
-                restTemplate.exchange(url, HttpMethod.PUT, entity, HashMap.class);
-            }
         }
 
         return "redirect:/main";
