@@ -16,8 +16,8 @@ import sh.ory.hydra.ApiCallback;
 import sh.ory.hydra.ApiClient;
 import sh.ory.hydra.ApiException;
 import sh.ory.hydra.Pair;
-import sh.ory.hydra.api.AdminApi;
 import sh.ory.hydra.api.PublicApi;
+import sh.ory.hydra.model.WellKnown;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -26,8 +26,6 @@ import java.util.Map;
 
 @SpringBootApplication
 public class ObpHydraAuthApplication {
-    @Value("${oauth2.admin_url}")
-    private String hydraAdminUrl;
     @Value("${oauth2.public_url}")
     private String hydraPublicUrl;
 
@@ -38,13 +36,6 @@ public class ObpHydraAuthApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(ObpHydraAuthApplication.class, args);
-    }
-
-    @Bean
-    public AdminApi hydraAdmin() {
-        ApiClient apiClient = new ApiClient();
-        apiClient.setBasePath(hydraAdminUrl);
-        return new AdminApi(apiClient);
     }
 
     @Bean
@@ -60,6 +51,11 @@ public class ObpHydraAuthApplication {
         };
         apiClient.setBasePath(hydraPublicUrl);
         return new PublicApi(apiClient);
+    }
+
+    @Bean
+    public WellKnown openIDConfiguration(PublicApi hydraPublic) throws ApiException {
+        return hydraPublic.discoverOpenIDConfiguration();
     }
 
     @Bean

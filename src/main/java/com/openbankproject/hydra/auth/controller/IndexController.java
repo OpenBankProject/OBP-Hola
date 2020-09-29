@@ -16,12 +16,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
 import sh.ory.hydra.ApiException;
+import sh.ory.hydra.model.WellKnown;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -34,17 +38,12 @@ public class IndexController {
     @Value("openid,offline,${oauth2.client_scope}")
     private LinkedHashSet<String> allScopes;
 
-    @Value("${oauth2.public_url}/oauth2/token")
-    private String hydraTokenUrl;
     @Value("${oauth2.redirect_uri}")
     private String redirectUri;
     @Value("${oauth2.client_id}")
     private String clientId;
     @Value("${oauth2.client_secret}")
     private String clientSecret;
-    @Value("${oauth2.public_url}/oauth2/auth")
-    private String authenticateUrl;
-
 
     @Value("${obp.base_url}")
     private String obpBaseUrl;
@@ -54,16 +53,14 @@ public class IndexController {
     private String getBanksUrl;
     @Value("${obp.base_url}/mx-open-finance/v0.0.1/account-access-consents")
     private String createConsentsUrl;
-    @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/accounts-held")
-    private String getAccountsUrl;
-    @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/accounts/ACCOUNT_ID/account-access")
-    private String resetAccessViewUrl;
 
     @Resource
     private RestTemplate restTemplate;
+    @Resource
+    private WellKnown openIDConfiguration;
 
     @GetMapping({"/", "/index", "index.html"})
-    public String index(Model model) throws ApiException {
+    public String index(Model model) {
         model.addAttribute("obp_url", obpBaseUrl);
         {// initiate consent names
             // exclude "openid" and "offline", they are used by hydra
@@ -130,7 +127,8 @@ public class IndexController {
         queryParam.put("bank_id", bankId);
 
         String queryParamStr = queryParam.entrySet().stream().map(it -> it.getKey() + "=" + it.getValue()).collect(Collectors.joining("&"));
-        String redirectUrl = "redirect:" + authenticateUrl + "?" + queryParamStr;
+        String authorizationEndpoint = openIDConfiguration.getAuthorizationEndpoint();
+        String redirectUrl = "redirect:" + authorizationEndpoint + "?" + queryParamStr;
         SessionData.setBankId(session, bankId);
         return redirectUrl;
     }
@@ -159,8 +157,8 @@ public class IndexController {
             body.add("client_secret", clientSecret);
 
             HttpEntity<MultiValueMap> request = new HttpEntity<>(body, headers);
-
-            TokenResponse tokenResponse = restTemplate.postForObject(hydraTokenUrl, request , TokenResponse.class);
+            String tokenEndpoint = openIDConfiguration.getTokenEndpoint();
+            TokenResponse tokenResponse = restTemplate.postForObject(tokenEndpoint, request , TokenResponse.class);
 
             SessionData.setIdToken(session, tokenResponse.getId_token());
             SessionData.setAccessToken(session, tokenResponse.getAccess_token());
@@ -205,8 +203,8 @@ public class IndexController {
         body.add("client_id", clientId);
         body.add("client_secret", clientSecret);
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
-
-        TokenResponse tokenResponse = restTemplate.postForObject(hydraTokenUrl, request, TokenResponse.class);
+        String tokenEndpoint = openIDConfiguration.getTokenEndpoint();
+        TokenResponse tokenResponse = restTemplate.postForObject(tokenEndpoint, request, TokenResponse.class);
         String accessToken = tokenResponse.getAccess_token();
         return accessToken;
     }

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import sh.ory.hydra.ApiException;
 import sh.ory.hydra.api.PublicApi;
+import sh.ory.hydra.model.WellKnown;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
@@ -21,11 +22,10 @@ public class LogoutController {
     @Value("${oauth2.redirect_uri}")
     private String redirectUri;
 
-    @Value("${oauth2.public_url}/oauth2/sessions/logout")
-    private String hydraLogoutUrl;
-
     @Resource
     private PublicApi hydraPublic;
+    @Resource
+    private WellKnown openIDConfiguration;
 
     @GetMapping("/logout")
     public String logout(HttpSession session) throws ApiException, UnsupportedEncodingException {
@@ -35,7 +35,8 @@ public class LogoutController {
             String encodeRedirectUri = URLEncoder.encode(redirectUri, "UTF-8");
             hydraPublic.revokeOAuth2Token(accessToken) ;
             session.invalidate();
-            return "redirect:"+ hydraLogoutUrl + "?post_logout_redirect_uri=" + encodeRedirectUri + "&id_token_hint="+idToken;
+            String endSessionEndpoint = openIDConfiguration.getEndSessionEndpoint();
+            return "redirect:"+ endSessionEndpoint + "?post_logout_redirect_uri=" + encodeRedirectUri + "&id_token_hint="+idToken;
         }
         return "redirect:" + redirectUri;
     }
