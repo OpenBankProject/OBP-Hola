@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.openbankproject.hydra</groupId>
     <artifactId>obp-hydra-auth2</artifactId>
-    <version>0.0.20-SNAPSHOT</version>
+    <version>0.0.21-SNAPSHOT</version>
     <name>obp-hydra-auth</name>
     <description>Demo project for Spring Boot</description>
 
@@ -30,6 +30,10 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
         </dependency>
 
         <dependency>

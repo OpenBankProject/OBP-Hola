@@ -1,17 +1,11 @@
 package com.openbankproject.hydra.auth;
 
 import okhttp3.Call;
+import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpRequest;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.ClientHttpRequestExecution;
-import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.web.client.RestTemplate;
 import sh.ory.hydra.ApiCallback;
 import sh.ory.hydra.ApiClient;
 import sh.ory.hydra.ApiException;
@@ -19,8 +13,8 @@ import sh.ory.hydra.Pair;
 import sh.ory.hydra.api.PublicApi;
 import sh.ory.hydra.model.WellKnown;
 
-import java.io.IOException;
-import java.time.Duration;
+import javax.net.ssl.SSLContext;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 
@@ -39,7 +33,7 @@ public class ObpHydraAuthApplication {
     }
 
     @Bean
-    public PublicApi hydraPublic() {
+    public PublicApi hydraPublic(SSLContext sslContext) {
         // hydra client have this setting "token_endpoint_auth_method": "client_secret_post"
         // the formParams must contains client_id and client_secret parameters
         ApiClient apiClient = new ApiClient(){
@@ -50,29 +44,15 @@ public class ObpHydraAuthApplication {
             }
         };
         apiClient.setBasePath(hydraPublicUrl);
+        // config MTLS for hydra client
+        final OkHttpClient httpClient = apiClient.getHttpClient();
+        final OkHttpClient okHttpClient = httpClient.newBuilder().sslSocketFactory(sslContext.getSocketFactory()).build();
+        apiClient.setHttpClient(okHttpClient);
         return new PublicApi(apiClient);
     }
 
     @Bean
     public WellKnown openIDConfiguration(PublicApi hydraPublic) throws ApiException {
         return hydraPublic.discoverOpenIDConfiguration();
-    }
-
-    @Bean
-    public RestTemplate restTemplate(RestTemplateBuilder builder) {
-
-        return builder
-                .setConnectTimeout(Duration.ofSeconds(60))
-                .setReadTimeout(Duration.ofSeconds(30))
-                .interceptors(this::headerIntercept)
-                .build();
-    }
-
-    private ClientHttpResponse headerIntercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {
-        HttpHeaders headers = request.getHeaders();
-        if(headers.getContentType() == null) {
-            headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-        }
-        return execution.execute(request, body);
     }
 }

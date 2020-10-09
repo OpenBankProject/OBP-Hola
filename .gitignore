@@ -31,4 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
-/src/main/resources/application-remotel.properties
+/src/main/resources/application-local.properties
+/src/main/resources/application-remote.properties
+/src/main/resources/cert/
