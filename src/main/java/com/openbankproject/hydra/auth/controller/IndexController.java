@@ -175,6 +175,7 @@ public class IndexController {
             HttpEntity<String> entity = new HttpEntity<>(headers);
             ResponseEntity<UserInfo> userInfoResponse = restTemplate.exchange(currentUserUrl, HttpMethod.GET, entity, UserInfo.class);
             SessionData.setUserInfo(session, userInfoResponse.getBody());
+            logger.debug("login success user:" + userInfoResponse.getBody().getUsername());
         }
 
         return "redirect:/main";
