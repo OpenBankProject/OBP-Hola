@@ -14,7 +14,8 @@ import sh.ory.hydra.api.PublicApi;
 import sh.ory.hydra.model.WellKnown;
 
 import javax.net.ssl.SSLContext;
-import java.security.NoSuchAlgorithmException;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +34,7 @@ public class ObpHydraAuthApplication {
     }
 
     @Bean
-    public PublicApi hydraPublic(SSLContext sslContext) {
+    public PublicApi hydraPublic(SSLContext sslContext, TrustManager[] trustManagers) {
         // hydra client have this setting "token_endpoint_auth_method": "client_secret_post"
         // the formParams must contains client_id and client_secret parameters
         ApiClient apiClient = new ApiClient(){
@@ -46,7 +47,10 @@ public class ObpHydraAuthApplication {
         apiClient.setBasePath(hydraPublicUrl);
         // config MTLS for hydra client
         final OkHttpClient httpClient = apiClient.getHttpClient();
-        final OkHttpClient okHttpClient = httpClient.newBuilder().sslSocketFactory(sslContext.getSocketFactory()).build();
+        final OkHttpClient okHttpClient = httpClient.newBuilder()
+                .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustManagers[0])
+                .build();
+
         apiClient.setHttpClient(okHttpClient);
         return new PublicApi(apiClient);
     }

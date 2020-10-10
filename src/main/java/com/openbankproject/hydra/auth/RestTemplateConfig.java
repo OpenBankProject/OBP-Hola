@@ -54,10 +54,9 @@ public class RestTemplateConfig {
     }
 
     @Bean
-    public SSLContext sslContext() throws IOException, GeneralSecurityException {
-        final KeyManager[] keyManagers = getKeyManagers();
-        final TrustManager[] trustManagers = getTrustManagers();
-        final SSLContext sslContext = SSLContext.getInstance("SSL");
+    public SSLContext sslContext(TrustManager[] trustManagers) throws IOException, GeneralSecurityException {
+        KeyManager[] keyManagers = getKeyManagers();
+        SSLContext sslContext = SSLContext.getInstance("SSL");
         sslContext.init(keyManagers, trustManagers, new SecureRandom());
         return sslContext;
     }
@@ -72,8 +71,8 @@ public class RestTemplateConfig {
         keyManagerFactory.init(ks, keyStorePassword);
         return keyManagerFactory.getKeyManagers();
     }
-
-    private TrustManager[] getTrustManagers() throws IOException, GeneralSecurityException {
+    @Bean
+    public TrustManager[] trustManagers() throws IOException, GeneralSecurityException {
 
         String alg = TrustManagerFactory.getDefaultAlgorithm();
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(alg);
