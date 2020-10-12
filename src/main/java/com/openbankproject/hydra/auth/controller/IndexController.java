@@ -51,7 +51,7 @@ public class IndexController {
     private String currentUserUrl;
     @Value("${obp.base_url}/obp/v4.0.0/banks")
     private String getBanksUrl;
-    @Value("${obp.base_url}/mx-open-finance/v0.0.1/account-access-consents")
+    @Value("${endpoint.path.prefix}/account-access-consents")
     private String createConsentsUrl;
 
     @Resource

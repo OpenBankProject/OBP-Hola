@@ -23,13 +23,13 @@ import java.util.Map;
 
 @RestController
 public class OtherController {
-    @Value("${obp.base_url}/mx-open-finance/v0.0.1/accounts")
+    @Value("${endpoint.path.prefix}/accounts")
     private String getAccountsUrl;
-    @Value("${obp.base_url}/mx-open-finance/v0.0.1/accounts/ACCOUNT_ID")
+    @Value("${endpoint.path.prefix}/accounts/ACCOUNT_ID")
     private String getAccountUrl;
-    @Value("${obp.base_url}/mx-open-finance/v0.0.1/accounts/ACCOUNT_ID/balances")
+    @Value("${endpoint.path.prefix}/accounts/ACCOUNT_ID/balances")
     private String getBalanceUrl;
-    @Value("${obp.base_url}/mx-open-finance/v0.0.1/accounts/ACCOUNT_ID/transactions")
+    @Value("${endpoint.path.prefix}/accounts/ACCOUNT_ID/transactions")
     private String getTransactionsUrl;
 
     @Resource
