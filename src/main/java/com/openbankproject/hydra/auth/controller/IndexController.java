@@ -125,6 +125,8 @@ public class IndexController {
         // the parameter consent_id and bank_id are mandatory, these two parameter is not standard parameter of OAuth2 and OIDC
         queryParam.put("consent_id", consentId);
         queryParam.put("bank_id", bankId);
+        // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.
+        queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
         String queryParamStr = queryParam.entrySet().stream().map(it -> it.getKey() + "=" + it.getValue()).collect(Collectors.joining("&"));
         String authorizationEndpoint = openIDConfiguration.getAuthorizationEndpoint();
