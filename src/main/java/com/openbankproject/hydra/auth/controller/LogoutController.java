@@ -28,12 +28,17 @@ public class LogoutController {
     private WellKnown openIDConfiguration;
 
     @GetMapping("/logout")
-    public String logout(HttpSession session) throws ApiException, UnsupportedEncodingException {
+    public String logout(HttpSession session) throws UnsupportedEncodingException {
         if(SessionData.isAuthenticated(session)){
             String accessToken = SessionData.getAccessToken(session);
             String idToken = SessionData.getIdToken(session);
             String encodeRedirectUri = URLEncoder.encode(redirectUri, "UTF-8");
-            hydraPublic.revokeOAuth2Token(accessToken) ;
+            try{
+                hydraPublic.revokeOAuth2Token(accessToken) ;
+            } catch (Exception ignore){
+                // do nothing
+            }
+
             session.invalidate();
             String endSessionEndpoint = openIDConfiguration.getEndSessionEndpoint();
             return "redirect:"+ endSessionEndpoint + "?post_logout_redirect_uri=" + encodeRedirectUri + "&id_token_hint="+idToken;
