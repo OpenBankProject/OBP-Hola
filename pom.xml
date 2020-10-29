@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.openbankproject.hydra</groupId>
     <artifactId>obp-hydra-auth2</artifactId>
-    <version>0.0.23-SNAPSHOT</version>
+    <version>0.0.24-SNAPSHOT</version>
     <name>obp-hydra-auth</name>
     <description>Demo project for Spring Boot</description>
 

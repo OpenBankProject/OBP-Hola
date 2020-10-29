@@ -30,6 +30,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.text.ParseException;
 import java.util.*;
@@ -71,11 +72,14 @@ public class IndexController {
 
     private ECDSASigner eCDSASigner;
 
+    private JWK jwk;
+
     @PostConstruct
     private void initiate() throws ParseException, JOSEException {
         if(StringUtils.isNotBlank(jwkPrivateKey)) {
             final ECKey ecKey = (ECKey) JWK.parse(jwkPrivateKey);
             eCDSASigner = new ECDSASigner(ecKey);
+            jwk = JWK.parse(jwkPrivateKey);
         }
     }
 
@@ -139,19 +143,22 @@ public class IndexController {
         queryParam.put("scope", scope);
         String encodeRedirectUri = URLEncoder.encode(redirectUri, "UTF-8");
         queryParam.put("redirect_uri", encodeRedirectUri);
-        String state = UUID.randomUUID().toString();
-        queryParam.put("state", state);
+        queryParam.put("state", UUID.randomUUID().toString());
+        queryParam.put("nonce", UUID.randomUUID().toString());
 
         // the parameter consent_id and bank_id are mandatory, these two parameter is not standard parameter of OAuth2 and OIDC
         queryParam.put("consent_id", consentId);
         queryParam.put("bank_id", bankId);
         // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.
-        queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
+        //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
         String queryParamStr = queryParam.entrySet().stream().map(it -> it.getKey() + "=" + it.getValue()).collect(Collectors.joining("&"));
         String authorizationEndpoint = openIDConfiguration.getAuthorizationEndpoint();
-        String redirectUrl = "redirect:" + authorizationEndpoint + "?" + queryParamStr;
+        String requestObject = buildRequestObject(queryParam);
+        String redirectUrl = "redirect:" + authorizationEndpoint + "?" + queryParamStr + "&request="+requestObject;
         SessionData.setBankId(session, bankId);
+        // add code_challenge temp
+//        redirectUrl+="&code_challenge=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU&code_challenge_method=S256";
         return redirectUrl;
     }
 
@@ -176,6 +183,8 @@ public class IndexController {
             body.add("code", code);
             body.add("redirect_uri", redirectUri);
             body.add("client_id", clientId);
+            // ADD code_verifier temp
+            //body.add("code_verifier", "XzHZOObnUEb2Ai2Rr.3Olu4C-lBlkgxBO-vArbwzMUfg74ajxjbtpvmkjEY54OSRkmBgpGpvVqQpDEzmZWx8f.sHDJKA0OPQRIn2_Qw_43DvPd~aCJNAQNrgohUorYl0");
             if(StringUtils.isBlank(jwkPrivateKey)) {
                 body.add("client_secret", clientSecret);
             } else {
@@ -185,7 +194,7 @@ public class IndexController {
 
             HttpEntity<MultiValueMap> request = new HttpEntity<>(body, headers);
             String tokenEndpoint = openIDConfiguration.getTokenEndpoint();
-            TokenResponse tokenResponse = restTemplate.postForObject(tokenEndpoint, request , TokenResponse.class);
+            TokenResponse tokenResponse = restTemplate.postForObject(tokenEndpoint, request, TokenResponse.class);
 
             SessionData.setIdToken(session, tokenResponse.getId_token());
             SessionData.setAccessToken(session, tokenResponse.getAccess_token());
@@ -268,7 +277,6 @@ public class IndexController {
      * @throws ParseException
      */
     private String buildJwt() throws ParseException, JOSEException {
-        final JWK jwk = JWK.parse(jwkPrivateKey);
         // JWT claims
         //iss: REQUIRED. Issuer. This MUST contain the client_id of the OAuth Client.
         //sub: REQUIRED. Subject. This MUST contain the client_id of the OAuth Client.
@@ -285,7 +293,7 @@ public class IndexController {
                 .issueTime(new Date())
                 .build();
 
-        // Create JWT for ES256K alg
+        // Create JWT for ES256 alg
         SignedJWT jwt = new SignedJWT(
                 new JWSHeader.Builder(JWSAlgorithm.ES256)
                         .keyID(jwk.getKeyID())
@@ -300,6 +308,38 @@ public class IndexController {
         // mZq3ivwoAjqa1uUkSBKFIX7ATndFF5ivnt-m8uApHO4kfIFOrW7w2Ezmlg3Qd
         // maXlS9DhN0nUk_hGI3amEjkKd0BWYCB8vfUbUv0XGjQip78AI4z1PrFRNidm7
         // -jPDm5Iq0SZnjKjCNS5Q15fokXZc8u0A
+        return jwt.serialize();
+    }
+    private String buildRequestObject(Map<String, String> queryParam) throws UnsupportedEncodingException, ParseException, JOSEException {
+        /* example
+        {
+            "redirect_uri":"http://localhost:8081/main.html",
+            "response_type":"code id_token",
+            "client_id":"g4zvglgxz4srknsywzrf1alszrxc3em2ompkz2ap",
+            "scope":"openid offline ReadAccountsBasic",
+            "nonce":"n-0S6_WzA2Mj"
+        }
+        */
+        final String redirect_uri = queryParam.get("redirect_uri");
+        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+                .claim("redirect_uri", URLDecoder.decode(redirect_uri, "UTF-8"))
+                .claim("response_type", queryParam.get("response_type").replace("+", " "))
+                .claim("client_id", queryParam.get("client_id"))
+                .claim("scope", queryParam.get("scope").replace("+", " "))
+                .claim("state", queryParam.get("state"))
+                .claim("nonce", queryParam.get("nonce"))
+                .build();
+
+        // Create JWT for ES256 alg
+        SignedJWT jwt = new SignedJWT(
+                new JWSHeader.Builder(JWSAlgorithm.ES256)
+                        .keyID(jwk.getKeyID())
+                        .build(),
+                claimsSet);
+
+        // Sign with private EC key
+        jwt.sign(eCDSASigner);
+
         return jwt.serialize();
     }
 }
