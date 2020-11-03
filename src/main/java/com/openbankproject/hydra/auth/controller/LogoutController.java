@@ -1,13 +1,10 @@
 package com.openbankproject.hydra.auth.controller;
 
 import com.openbankproject.hydra.auth.VO.SessionData;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import sh.ory.hydra.ApiException;
-import sh.ory.hydra.api.PublicApi;
 import sh.ory.hydra.model.WellKnown;
 
 import javax.annotation.Resource;
@@ -17,32 +14,20 @@ import java.net.URLEncoder;
 
 @Controller
 public class LogoutController {
-    private static Logger logger = LoggerFactory.getLogger(LogoutController.class);
-
     @Value("${oauth2.redirect_uri}")
     private String redirectUri;
-
-    @Resource
-    private PublicApi hydraPublic;
     @Resource
     private WellKnown openIDConfiguration;
 
     @GetMapping("/logout")
     public String logout(HttpSession session) throws UnsupportedEncodingException {
-        if(SessionData.isAuthenticated(session)){
-            String accessToken = SessionData.getAccessToken(session);
-            String idToken = SessionData.getIdToken(session);
-            String encodeRedirectUri = URLEncoder.encode(redirectUri, "UTF-8");
-            try{
-                hydraPublic.revokeOAuth2Token(accessToken) ;
-            } catch (Exception ignore){
-                // do nothing
-            }
-
-            session.invalidate();
-            String endSessionEndpoint = openIDConfiguration.getEndSessionEndpoint();
-            return "redirect:"+ endSessionEndpoint + "?post_logout_redirect_uri=" + encodeRedirectUri + "&id_token_hint="+idToken;
+        String encodeRedirectUri = URLEncoder.encode(redirectUri, "UTF-8");
+        final String idToken = SessionData.getIdToken(session);
+        final String state = SessionData.getState(session);
+        session.invalidate();
+        if(StringUtils.isNoneBlank(idToken, state)){
+            return "redirect:"+ openIDConfiguration.getEndSessionEndpoint() + "?state=" + state + "&post_logout_redirect_uri="+encodeRedirectUri + "&id_token_hint=" + idToken;
         }
-        return "redirect:" + redirectUri;
+        return "redirect:" + redirectUri + "?post_logout_redirect_uri=" + encodeRedirectUri;
     }
 }

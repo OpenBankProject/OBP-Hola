@@ -204,12 +204,12 @@ public class IndexController implements ServletContextAware {
             final JWTClaimsSet idTokenJwtJWTClaims = idTokenJwt.getJWTClaimsSet();
 
             final Object cHash = idTokenJwtJWTClaims.getClaim("c_hash");
-            if(!cHash.equals(buildHash(code, alg))) {
+            if(!buildHash(code, alg).equals(cHash)) {
                 model.addAttribute("errorMsg", "The c_hash is not correct in id_token");
                 return "error";
             }
             final Object sHash = idTokenJwtJWTClaims.getClaim("s_hash");
-            if(!sHash.equals(buildHash(state, alg))) {
+            if(!buildHash(state, alg).equals(sHash)) {
                 model.addAttribute("errorMsg", "The s_hash is not correct in id_token");
                 return "error";
             }
