@@ -14,10 +14,23 @@
     <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
     <![endif]-->
+    <script th:inline="javascript">
+        let userInfo = [[${user}]]
+        let hashParam = location.hash
+        if(!userInfo && hashParam.indexOf("code") !== -1) {
+            // redirect back from hydra with hash param, convert hash param to request param, to exchange code with token
+            let mainCodeLink = '/main.html?' + hashParam.substr(1)
+            window.location.replace(mainCodeLink)
+        } else if(!userInfo) {
+            // current user not authenticated, redirect to index page
+            let indexLink = '/index.html'
+            window.location.replace(indexLink)
+        }
+    </script>
 </head>
 <body>
 <nav class="navbar navbar-light bg-light">
-    <a class="navbar-brand" th:href="@{${obp_url}}">
+    <a class="navbar-brand" th:href="@{${application.obp_url}}">
         <img th:src="@{/images/logo.png}" height="60" class="d-inline-block align-top" alt="">
     </a>
 </nav>
@@ -25,11 +38,11 @@
 
 <div class="container">
     <div class="row">
-        <h1>Hello <span th:text="${user.username}"></span></h1>
+        <h1>Hello <span th:text="${user?.username}"></span></h1>
 
         current user: <br>
-        email: <span th:text="${user.email}"></span> <br>
-        useName: <span th:text="${user.username}"></span> <br>
+        email: <span th:text="${user?.email}"></span> <br>
+        useName: <span th:text="${user?.username}"></span> <br>
         <a class="btn btn-info" th:href="@{/logout}">Logout</a>
         <br>
         <br>

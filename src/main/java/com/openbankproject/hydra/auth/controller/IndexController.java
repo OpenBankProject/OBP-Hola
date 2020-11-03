@@ -6,7 +6,9 @@ import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.JWK;
+import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.JWTParser;
 import com.nimbusds.jwt.SignedJWT;
 import com.openbankproject.hydra.auth.VO.*;
 import org.apache.commons.lang3.ArrayUtils;
@@ -23,15 +25,19 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
-import sh.ory.hydra.ApiException;
+import org.springframework.web.context.ServletContextAware;
 import sh.ory.hydra.model.WellKnown;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -39,7 +45,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Controller
-public class IndexController {
+public class IndexController implements ServletContextAware {
     private static final Logger logger = LoggerFactory.getLogger(IndexController.class);
 
     // if need idToken, add openid; if need refreshToken, add offline
@@ -74,6 +80,16 @@ public class IndexController {
 
     private JWK jwk;
 
+
+    /**
+     * initiate global variable
+     * @param servletContext
+     */
+    @Override
+    public void setServletContext(ServletContext servletContext) {
+        servletContext.setAttribute("obp_url", obpBaseUrl);
+    }
+
     @PostConstruct
     private void initiate() throws ParseException, JOSEException {
         if(StringUtils.isNotBlank(jwkPrivateKey)) {
@@ -85,7 +101,6 @@ public class IndexController {
 
     @GetMapping({"/", "/index", "index.html"})
     public String index(Model model) throws ParseException, JOSEException {
-        model.addAttribute("obp_url", obpBaseUrl);
         {// initiate consent names
             // exclude "openid" and "offline", they are used by hydra
             String[] consents = allScopes.stream()
@@ -132,7 +147,7 @@ public class IndexController {
         //{"client_id", "bank_id", "consent_id", "response_type=code", "scope", "redirect_uri", "state"})
         Map<String, String> queryParam = new LinkedHashMap<>();
         queryParam.put("client_id", clientId);
-        queryParam.put("response_type", "code");
+        queryParam.put("response_type", "code+id_token");
         // include OBP scopes, add OAuth2 and OIDC related scope: "openid" and "offline"
         consents = ArrayUtils.addAll(new String[]{"openid", "offline"}, consents);
         String scope = Stream.of(consents)
@@ -143,8 +158,12 @@ public class IndexController {
         queryParam.put("scope", scope);
         String encodeRedirectUri = URLEncoder.encode(redirectUri, "UTF-8");
         queryParam.put("redirect_uri", encodeRedirectUri);
-        queryParam.put("state", UUID.randomUUID().toString());
-        queryParam.put("nonce", UUID.randomUUID().toString());
+        final String state = UUID.randomUUID().toString();
+        final String nonce = UUID.randomUUID().toString();
+        queryParam.put("state", state);
+        queryParam.put("nonce", nonce);
+        SessionData.setState(session, state);
+        SessionData.setNonce(session, nonce);
 
         // the parameter consent_id and bank_id are mandatory, these two parameter is not standard parameter of OAuth2 and OIDC
         queryParam.put("consent_id", consentId);
@@ -156,24 +175,50 @@ public class IndexController {
         String authorizationEndpoint = openIDConfiguration.getAuthorizationEndpoint();
         String requestObject = buildRequestObject(queryParam);
         String redirectUrl = "redirect:" + authorizationEndpoint + "?" + queryParamStr + "&request="+requestObject;
-        SessionData.setBankId(session, bankId);
+
+        // if current user is authenticated, remove user info from session, to do re-authentication
+        SessionData.remoteUserInfo(session);
         // add code_challenge temp
 //        redirectUrl+="&code_challenge=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU&code_challenge_method=S256";
         return redirectUrl;
     }
 
-    @GetMapping(value={"/main", "main.html"}, params="code")
-    public String main(@RequestParam("code") String code, @RequestParam("scope") String scope,
+    @GetMapping(value={"/main", "main.html"}, params={"code", "id_token", "state"})
+    public String main(@RequestParam("code") String code,
+                       @RequestParam("id_token") String idToken,
+                       @RequestParam(value = "access_token", required = false) String accessToken,
+                       @RequestParam("state") String state,
                        Model model,
-                       HttpSession session) throws ApiException, ParseException, JOSEException {
-        model.addAttribute("obp_url", obpBaseUrl);
+                       HttpSession session) throws ParseException, JOSEException, NoSuchAlgorithmException {
         // when repeat call with same code, just do nothing.
         if(code.equals(SessionData.getCode(session))) {
             return "accounts";
         }
-        String[] consentArray = StringUtils.split(scope, ' ');
-        String[] selectedConsents = ArrayUtils.removeElements(consentArray, "openid", "offline");
-        SessionData.setSelectConsents(session,selectedConsents);
+        if(!state.equals(SessionData.getState(session))) {
+            model.addAttribute("errorMsg", "The request parameter [state] is not correct!");
+            return "error";
+        }
+        { // validate c_hash, at_hash and s_hash
+            final JWT idTokenJwt = JWTParser.parse(idToken);
+            final String alg = idTokenJwt.getHeader().getAlgorithm().getName().replaceFirst(".*?S(\\d+)$", "SHA-$1");
+            final JWTClaimsSet idTokenJwtJWTClaims = idTokenJwt.getJWTClaimsSet();
+
+            final Object cHash = idTokenJwtJWTClaims.getClaim("c_hash");
+            if(!cHash.equals(buildHash(code, alg))) {
+                model.addAttribute("errorMsg", "The c_hash is not correct in id_token");
+                return "error";
+            }
+            final Object sHash = idTokenJwtJWTClaims.getClaim("s_hash");
+            if(!sHash.equals(buildHash(state, alg))) {
+                model.addAttribute("errorMsg", "The s_hash is not correct in id_token");
+                return "error";
+            }
+            final Object atHash = idTokenJwtJWTClaims.getClaim("at_hash");
+            if(accessToken != null && !buildHash(accessToken, alg).equals(atHash)) {
+                model.addAttribute("errorMsg", "The at_hash is not correct in id_token");
+                return "error";
+            }
+        }
         SessionData.setCode(session, code);
         // get tokens use code
         {
@@ -206,8 +251,7 @@ public class IndexController {
 
         { // fetch user information
             HttpHeaders headers = new HttpHeaders();
-            String accessToken = SessionData.getAccessToken(session);
-            headers.setBearerAuth(accessToken);
+            headers.setBearerAuth(SessionData.getAccessToken(session));
             HttpEntity<String> entity = new HttpEntity<>(headers);
             ResponseEntity<UserInfo> userInfoResponse = restTemplate.exchange(currentUserUrl, HttpMethod.GET, entity, UserInfo.class);
             SessionData.setUserInfo(session, userInfoResponse.getBody());
@@ -219,13 +263,8 @@ public class IndexController {
 
     @GetMapping(value={"/main", "main.html"}, params="!code")
     public String main(HttpSession session, Model model) {
-        model.addAttribute("obp_url", obpBaseUrl);
         UserInfo user = SessionData.getUserInfo(session);
-        if(user == null) {
-            return "redirect:/index.html";
-        }
         model.addAttribute("user", user);
-
         return "main";
     }
 
@@ -341,5 +380,23 @@ public class IndexController {
         jwt.sign(eCDSASigner);
 
         return jwt.serialize();
+    }
+
+    /**
+     * calculate the c_hash, at_hash, s_hash, the logic as follow:
+     * 1. Using the hash algorithm specified in the alg claim in the ID Token header
+     * 2. hash the octets of the ASCII representation of the code
+     * 3. Base64url-encode the left-most half of the hash.
+     *
+     * @param str to calculate hash value
+     * @param idTokenAlg the sign algorithm name of sign id token
+     * @return hash value
+     */
+    private String buildHash(String str, String idTokenAlg) throws NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance(idTokenAlg);
+        byte[] asciiValue = str.getBytes(StandardCharsets.US_ASCII);
+        byte[] encodedHash = md.digest(asciiValue);
+        byte[] halfOfEncodedHash = Arrays.copyOf(encodedHash, (encodedHash.length / 2));
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(halfOfEncodedHash);
     }
 }

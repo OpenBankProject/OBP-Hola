@@ -1,0 +1,39 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap.min.css}" />
+    <link rel="stylesheet" type="text/css" th:href="@{/css/custom.css}" />
+
+    <!--[if lt IE 9]>
+    <script type="text/javascript" th:src="@{/js/html5shiv.min.js}"></script>
+    <script type="text/javascript" th:src="@{/js/respond.min.js}" ></script>
+    <![endif]-->
+
+<body>
+<nav class="navbar navbar-light bg-light">
+    <a class="navbar-brand" th:href="@{${application.obp_url}}">
+        <img th:src="@{/images/logo.png}" height="60" class="d-inline-block align-top" alt="">
+    </a>
+</nav>
+<div>
+    <div class="container">
+        <div class="row justify-content-center align-items-center">
+            <div class="alert alert-danger alert-dismissible col-md-12" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <strong>Warning!</strong>
+                <span id="warning_msg" th:utext="${errorMsg}">He show some error message.</span>
+            </div>
+            <a th:href="@{/index.html}" class="button">Go to Grant Permissions page</a>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" th:src="@{/js/jquery-1.12.4.min.js}" ></script>
+<script type="text/javascript" th:src="@{/js/bootstrap.min.js}" ></script>
+</body>
+</html>
