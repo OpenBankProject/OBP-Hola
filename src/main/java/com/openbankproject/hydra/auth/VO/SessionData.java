@@ -13,6 +13,7 @@ public class SessionData {
     private String refreshToken;
     private String state;
     private String nonce;
+    private String codeVerifier;
     private UserInfo userInfo;
 
     private SessionData() {}
@@ -103,5 +104,13 @@ public class SessionData {
             session.setAttribute("session_data", sessionData);
         }
         return sessionData;
+    }
+
+    public static String getCodeVerifier(HttpSession session) {
+        return getOrCreateSessionData(session).codeVerifier;
+    }
+
+    public static void setCodeVerifier(HttpSession session, String codeVerifier) {
+        getOrCreateSessionData(session).codeVerifier = codeVerifier;
     }
 }

@@ -11,6 +11,7 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
 import com.nimbusds.jwt.SignedJWT;
 import com.openbankproject.hydra.auth.VO.*;
+import com.openbankproject.hydra.auth.util.PKCEUtil;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -178,8 +179,11 @@ public class IndexController implements ServletContextAware {
 
         // if current user is authenticated, remove user info from session, to do re-authentication
         SessionData.remoteUserInfo(session);
-        // add code_challenge temp
-//        redirectUrl+="&code_challenge=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU&code_challenge_method=S256";
+        // add code_challenge
+        final String codeVerifier = PKCEUtil.generateCodeVerifier();
+        SessionData.setCodeVerifier(session, codeVerifier);
+        final String codeChallenge = PKCEUtil.generateCodeChallenge(codeVerifier);
+        redirectUrl+="&code_challenge_method=S256&code_challenge=" + codeChallenge;
         return redirectUrl;
     }
 
@@ -228,8 +232,9 @@ public class IndexController implements ServletContextAware {
             body.add("code", code);
             body.add("redirect_uri", redirectUri);
             body.add("client_id", clientId);
-            // ADD code_verifier temp
-            //body.add("code_verifier", "XzHZOObnUEb2Ai2Rr.3Olu4C-lBlkgxBO-vArbwzMUfg74ajxjbtpvmkjEY54OSRkmBgpGpvVqQpDEzmZWx8f.sHDJKA0OPQRIn2_Qw_43DvPd~aCJNAQNrgohUorYl0");
+            // ADD code_verifier
+            final String codeVerifier = SessionData.getCodeVerifier(session);
+            body.add("code_verifier", codeVerifier);
             if(StringUtils.isBlank(jwkPrivateKey)) {
                 body.add("client_secret", clientSecret);
             } else {
