@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.openbankproject.hydra</groupId>
     <artifactId>obp-hydra-auth2</artifactId>
-    <version>0.0.27-SNAPSHOT</version>
+    <version>0.0.28-SNAPSHOT</version>
     <name>obp-hydra-auth</name>
     <description>Demo project for Spring Boot</description>
 
@@ -43,15 +43,21 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>sh.ory.hydra</groupId>
-            <artifactId>hydra-client</artifactId>
-            <version>1.7.0</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.11</version>
         </dependency>
         <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>nimbus-jose-jwt</artifactId>
             <version>7.9</version>
         </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>1.67</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

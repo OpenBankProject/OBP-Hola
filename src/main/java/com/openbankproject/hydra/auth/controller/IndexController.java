@@ -1,19 +1,13 @@
 package com.openbankproject.hydra.auth.controller;
 
 import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.crypto.ECDSASigner;
-import com.nimbusds.jose.jwk.ECKey;
-import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
-import com.nimbusds.jwt.SignedJWT;
+import com.openbankproject.hydra.auth.HydraConfig;
 import com.openbankproject.hydra.auth.VO.*;
 import com.openbankproject.hydra.auth.util.PKCEUtil;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,14 +21,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.ServletContextAware;
-import sh.ory.hydra.model.WellKnown;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -57,7 +48,8 @@ public class IndexController implements ServletContextAware {
     private String redirectUri;
     @Value("${oauth2.client_id}")
     private String clientId;
-    @Value("${oauth2.client_secret}")
+    // default is empty string
+    @Value("${oauth2.client_secret:}")
     private String clientSecret;
 
     @Value("${obp.base_url}")
@@ -69,18 +61,12 @@ public class IndexController implements ServletContextAware {
     @Value("${endpoint.path.prefix}/account-access-consents")
     private String createConsentsUrl;
 
-    @Value("${oauth2.jwk_private_key:}")
-    private String jwkPrivateKey;
-
     @Resource
     private RestTemplate restTemplate;
     @Resource
     private WellKnown openIDConfiguration;
-
-    private ECDSASigner eCDSASigner;
-
-    private JWK jwk;
-
+    @Resource
+    private HydraConfig hydraConfig;
 
     /**
      * initiate global variable
@@ -91,14 +77,6 @@ public class IndexController implements ServletContextAware {
         servletContext.setAttribute("obp_url", obpBaseUrl);
     }
 
-    @PostConstruct
-    private void initiate() throws ParseException, JOSEException {
-        if(StringUtils.isNotBlank(jwkPrivateKey)) {
-            final ECKey ecKey = (ECKey) JWK.parse(jwkPrivateKey);
-            eCDSASigner = new ECDSASigner(ecKey);
-            jwk = JWK.parse(jwkPrivateKey);
-        }
-    }
 
     @GetMapping({"/", "/index", "index.html"})
     public String index(Model model) throws ParseException, JOSEException {
@@ -172,18 +150,26 @@ public class IndexController implements ServletContextAware {
         // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.
         //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
-        String queryParamStr = queryParam.entrySet().stream().map(it -> it.getKey() + "=" + it.getValue()).collect(Collectors.joining("&"));
-        String authorizationEndpoint = openIDConfiguration.getAuthorizationEndpoint();
-        String requestObject = buildRequestObject(queryParam);
-        String redirectUrl = "redirect:" + authorizationEndpoint + "?" + queryParamStr + "&request="+requestObject;
+        // add request object query parameter
+        if(this.hydraConfig.isPublicClient()) {
+            final String requestObject = this.hydraConfig.buildRequestObject(queryParam);
+            queryParam.put("request", requestObject);
+        }
 
-        // if current user is authenticated, remove user info from session, to do re-authentication
-        SessionData.remoteUserInfo(session);
         // add code_challenge
         final String codeVerifier = PKCEUtil.generateCodeVerifier();
         SessionData.setCodeVerifier(session, codeVerifier);
         final String codeChallenge = PKCEUtil.generateCodeChallenge(codeVerifier);
-        redirectUrl+="&code_challenge_method=S256&code_challenge=" + codeChallenge;
+        queryParam.put("code_challenge_method", "S256");
+        queryParam.put("code_challenge", codeChallenge);
+
+        String queryParamStr = queryParam.entrySet().stream().map(it -> it.getKey() + "=" + it.getValue()).collect(Collectors.joining("&"));
+        String authorizationEndpoint = openIDConfiguration.getAuthorizationEndpoint();
+        String redirectUrl = "redirect:" + authorizationEndpoint + "?" + queryParamStr;
+
+        // if current user is authenticated, remove user info from session, to do re-authentication
+        SessionData.remoteUserInfo(session);
+
         return redirectUrl;
     }
 
@@ -235,11 +221,12 @@ public class IndexController implements ServletContextAware {
             // ADD code_verifier
             final String codeVerifier = SessionData.getCodeVerifier(session);
             body.add("code_verifier", codeVerifier);
-            if(StringUtils.isBlank(jwkPrivateKey)) {
-                body.add("client_secret", clientSecret);
-            } else {
+
+            if(this.hydraConfig.isPublicClient()) {
                 body.add("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
-                body.add("client_assertion", this.buildJwt());
+                body.add("client_assertion", this.hydraConfig.buildClientAssertion());
+            } else {
+                body.add("client_secret", clientSecret);
             }
 
             HttpEntity<MultiValueMap> request = new HttpEntity<>(body, headers);
@@ -282,11 +269,12 @@ public class IndexController implements ServletContextAware {
 
         body.add("grant_type", "client_credentials");
         body.add("client_id", clientId);
-        if(StringUtils.isBlank(jwkPrivateKey)) {
-            body.add("client_secret", clientSecret);
-        } else {
+
+        if(this.hydraConfig.isPublicClient()) {
             body.add("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
-            body.add("client_assertion", this.buildJwt());
+            body.add("client_assertion", this.hydraConfig.buildClientAssertion());
+        } else {
+            body.add("client_secret", clientSecret);
         }
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
         String tokenEndpoint = openIDConfiguration.getTokenEndpoint();
@@ -313,78 +301,6 @@ public class IndexController implements ServletContextAware {
             logger.error("charset name is wrong", impossible);
             return null;
         }
-    }
-
-    /**
-     * create client_assertion
-     * @return
-     * @throws ParseException
-     */
-    private String buildJwt() throws ParseException, JOSEException {
-        // JWT claims
-        //iss: REQUIRED. Issuer. This MUST contain the client_id of the OAuth Client.
-        //sub: REQUIRED. Subject. This MUST contain the client_id of the OAuth Client.
-        //aud: REQUIRED. Audience. The aud (audience) Claim. Value that identifies the Authorization Server (ORY Hydra) as an intended audience. The Authorization Server MUST verify that it is an intended audience for the token. The Audience SHOULD be the URL of the Authorization Server's Token Endpoint.
-        //jti: REQUIRED. JWT ID. A unique identifier for the token, which can be used to prevent reuse of the token. These tokens MUST only be used once, unless conditions for reuse were negotiated between the parties; any such negotiation is beyond the scope of this specification.
-        //exp: REQUIRED. Expiration time on or after which the ID Token MUST NOT be accepted for processing.
-        //iat: OPTIONAL. Time at which the JWT was issued.
-        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-                .issuer(clientId)
-                .subject(clientId)
-                .audience(openIDConfiguration.getTokenEndpoint())
-                .jwtID(UUID.randomUUID().toString())
-                .expirationTime(new Date(new Date().getTime() + 60 * 1000))
-                .issueTime(new Date())
-                .build();
-
-        // Create JWT for ES256 alg
-        SignedJWT jwt = new SignedJWT(
-                new JWSHeader.Builder(JWSAlgorithm.ES256)
-                        .keyID(jwk.getKeyID())
-                        .build(),
-                claimsSet);
-
-        // Sign with private EC key
-        jwt.sign(eCDSASigner);
-
-        // To serialize to compact form, produces something like
-        // eyJhbGciOiJSUzI1NiJ9.SW4gUlNBIHdlIHRydXN0IQ.IRMQENi4nJyp4er2L
-        // mZq3ivwoAjqa1uUkSBKFIX7ATndFF5ivnt-m8uApHO4kfIFOrW7w2Ezmlg3Qd
-        // maXlS9DhN0nUk_hGI3amEjkKd0BWYCB8vfUbUv0XGjQip78AI4z1PrFRNidm7
-        // -jPDm5Iq0SZnjKjCNS5Q15fokXZc8u0A
-        return jwt.serialize();
-    }
-    private String buildRequestObject(Map<String, String> queryParam) throws UnsupportedEncodingException, ParseException, JOSEException {
-        /* example
-        {
-            "redirect_uri":"http://localhost:8081/main.html",
-            "response_type":"code id_token",
-            "client_id":"g4zvglgxz4srknsywzrf1alszrxc3em2ompkz2ap",
-            "scope":"openid offline ReadAccountsBasic",
-            "nonce":"n-0S6_WzA2Mj"
-        }
-        */
-        final String redirect_uri = queryParam.get("redirect_uri");
-        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-                .claim("redirect_uri", URLDecoder.decode(redirect_uri, "UTF-8"))
-                .claim("response_type", queryParam.get("response_type").replace("+", " "))
-                .claim("client_id", queryParam.get("client_id"))
-                .claim("scope", queryParam.get("scope").replace("+", " "))
-                .claim("state", queryParam.get("state"))
-                .claim("nonce", queryParam.get("nonce"))
-                .build();
-
-        // Create JWT for ES256 alg
-        SignedJWT jwt = new SignedJWT(
-                new JWSHeader.Builder(JWSAlgorithm.ES256)
-                        .keyID(jwk.getKeyID())
-                        .build(),
-                claimsSet);
-
-        // Sign with private EC key
-        jwt.sign(eCDSASigner);
-
-        return jwt.serialize();
     }
 
     /**
