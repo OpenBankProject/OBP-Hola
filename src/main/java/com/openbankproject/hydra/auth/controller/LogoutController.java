@@ -45,16 +45,18 @@ public class LogoutController {
         String encodeRedirectUri = URLEncoder.encode(redirectUri, "UTF-8");
         final String idToken = SessionData.getIdToken(session);
         final String state = SessionData.getState(session);
-        final String accessToken = SessionData.getAccessToken(session);
+        final String refreshToken = SessionData.getRefreshToken(session);
         session.invalidate();
-        if (StringUtils.isNotBlank(accessToken)) {
+        if (StringUtils.isNotBlank(refreshToken)) {
             final String revocationEndpoint = openIDConfiguration.getRevocationEndpoint();
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
             headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
             MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-            body.add("token", accessToken);
+            // Revoking a refresh token also invalidates the access token that was created with it
+            // Reference: https://www.ory.sh/hydra/docs/reference/api#revoke-oauth2-tokens
+            body.add("token", refreshToken);
             if (hydraConfig.isPublicClient()) {
                 body.add("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
                 body.add("client_assertion", this.hydraConfig.buildClientAssertion());
