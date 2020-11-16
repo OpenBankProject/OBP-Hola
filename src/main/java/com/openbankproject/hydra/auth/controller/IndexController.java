@@ -111,14 +111,14 @@ public class IndexController implements ServletContextAware {
 
             // TODO it should have relation with rememberMe time
             String expirationDateTime = convertTimeFormat(expiration_time);
-            ConsentPostBodyMXOFV001 body = new ConsentPostBodyMXOFV001(
+            ConsentPostBodyV310 body = new ConsentPostBodyV310(
                     bankId,
                     consents,
                     convertTimeFormat(transaction_from_time),
                     convertTimeFormat(transaction_to_time),
                     expirationDateTime);
 
-            HttpEntity<ConsentPostBodyMXOFV001> request = new HttpEntity<>(body, headers);
+            HttpEntity<ConsentPostBodyV310> request = new HttpEntity<>(body, headers);
 
             Map response = restTemplate.postForObject(createConsentsUrl, request, Map.class);
             consentId = ((Map<String, String>) response.get("Data")).get("ConsentId");
@@ -237,8 +237,8 @@ public class IndexController implements ServletContextAware {
             SessionData.setAccessToken(session, tokenResponse.getAccess_token());
             SessionData.setRefreshToken(session, tokenResponse.getRefresh_token());
 
-            logger.debug("idToken:" + tokenResponse.getId_token());
-            logger.debug("accessToken:" + tokenResponse.getAccess_token());
+            logger.debug("idToken:\n" + tokenResponse.getId_token());
+            logger.debug("accessToken:\n" + tokenResponse.getAccess_token());
         }
 
         { // fetch user information
