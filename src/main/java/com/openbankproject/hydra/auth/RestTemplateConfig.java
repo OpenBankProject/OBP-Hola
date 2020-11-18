@@ -33,13 +33,7 @@ public class RestTemplateConfig {
     private Resource trustStoreResource;
     @Value("${mtls.trustStore.password}")
     private char[] trustStorePassword;
-//    static
-//    {
-//        System.setProperty("javax.net.ssl.trustStore","/Users/apple/Desktop/cert/ofpilot.jks");
-//        System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
-//        System.setProperty("javax.net.ssl.keyStore", "/Users/apple/Desktop/cert/user.jks");
-//        System.setProperty("javax.net.ssl.keyStorePassword", "waiJaeP7sake");
-//    }
+
     @Bean
     public RestTemplate restTemplate(SSLContext sslContext) {
         SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext);

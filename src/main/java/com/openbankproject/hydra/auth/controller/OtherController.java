@@ -17,9 +17,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 public class OtherController {
@@ -53,8 +51,7 @@ public class OtherController {
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getAccountUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
-        Map<String, Object> accountDetail = (Map<String, Object>) exchange.getBody();
-        return accountDetail;
+        return  exchange.getBody();
     }
 
     @GetMapping("/balances/account_id/{accountId}")
@@ -65,12 +62,7 @@ public class OtherController {
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getBalanceUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
-        Map<String, Object> balances = (Map<String, Object>) exchange.getBody();
-        if(balances != null) {
-            return balances;
-        } else {
-            return new HashMap<String, Object>();
-        }
+        return exchange.getBody();
     }
     @GetMapping("/transactions/account_id/{accountId}")
     public Object getTransactions(@PathVariable String accountId, HttpSession session) {
@@ -80,13 +72,7 @@ public class OtherController {
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getTransactionsUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
-        Map<String, Object>  data = exchange.getBody();
-        if(data != null) {
-            return data;
-        } else {
-            return new ArrayList<>();
-        }
-
+        return exchange.getBody();
     }
 
     @ExceptionHandler
