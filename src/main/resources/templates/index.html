@@ -31,7 +31,8 @@
                         <label for="bank">Select your Bank</label>
                         <select class="form-control" name="bank" id="bank">
                             <option value="">--select one bank--</option>
-                            <option th:each="bank : ${banks}" th:value="${bank.id}" th:text="${bank.full_name}" >
+                            <option th:each="bank : ${banks}" 
+                                    th:value="${bank.id}" th:text="${bank.full_name} + ' (' + ${bank.id} + ')'">
                             </option>
                         </select>
                     </div>
