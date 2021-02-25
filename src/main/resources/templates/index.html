@@ -79,12 +79,14 @@
                     consents: "required",
                     transaction_from_time: "required",
                     transaction_to_time: "required",
+                    expiration_time: "required",
                 },
                 messages: {
                     bank: "Bank should not be empty",
                     consents: "At least select one consent",
-                    transaction_from_time: "TransactionToDateTime should not be empty",
+                    transaction_from_time: "TransactionFromDateTime should not be empty",
                     transaction_to_time: "TransactionToDateTime should not be empty",
+                    expiration_time: "ExpirationDateTime should not be empty"
                 },
                 errorPlacement: function(error, element) {
                     error.addClass('text-danger');

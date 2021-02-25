@@ -8,6 +8,7 @@ import com.openbankproject.hydra.auth.HydraConfig;
 import com.openbankproject.hydra.auth.VO.*;
 import com.openbankproject.hydra.auth.util.PKCEUtil;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -97,12 +98,19 @@ public class IndexController implements ServletContextAware {
 
     @PostMapping(value="/request_consents", params = {"bank", "consents", "transaction_from_time", "transaction_to_time", "expiration_time"})
     public String requestConsents(@RequestParam("bank") String bankId,
-                                  @RequestParam String[] consents,
-                                  @RequestParam String transaction_from_time,
-                                  @RequestParam String transaction_to_time,
-                                  @RequestParam String expiration_time,
+                                  @RequestParam("consents") String[] consents,
+                                  @RequestParam("transaction_from_time") String transaction_from_time,
+                                  @RequestParam("transaction_to_time") String transaction_to_time,
+                                  @RequestParam("expiration_time") String expiration_time,
                                   HttpSession session
                                   ) throws UnsupportedEncodingException, ParseException, JOSEException {
+        {// do validation
+            Validate.notBlank(bankId, "Bank should not be empty");
+            Validate.notEmpty(consents, "At least select one consent");
+            Validate.notBlank(transaction_from_time, "TransactionFromDateTime should not be empty");
+            Validate.notBlank(transaction_to_time, "TransactionToDateTime should not be empty");
+            Validate.notBlank(expiration_time, "ExpirationDateTime should not be empty");
+        }
         final String consentId;
         {   // Create Account Access Consents
             String clientCredentialsToken = getClientCredentialsToken();
@@ -180,6 +188,12 @@ public class IndexController implements ServletContextAware {
                        @RequestParam("state") String state,
                        Model model,
                        HttpSession session) throws ParseException, JOSEException, NoSuchAlgorithmException {
+        {// do validation
+            Validate.notBlank(code, "code value must be not-blank String!");
+            Validate.notBlank(idToken, "idToken value must be not-blank String!");
+            Validate.notBlank(state, "state value must be not-blank String!");
+
+        }
         // when repeat call with same code, just do nothing.
         if(code.equals(SessionData.getCode(session))) {
             return "accounts";

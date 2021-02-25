@@ -44,7 +44,7 @@ public class OtherController {
         return exchange.getBody().getData();
     }
     @GetMapping("/account/{accountId}")
-    public Object getAccount(@PathVariable String accountId, HttpSession session) {
+    public Object getAccount(@PathVariable("accountId") String accountId, HttpSession session) {
         String accessToken = SessionData.getAccessToken(session);
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
@@ -55,7 +55,7 @@ public class OtherController {
     }
 
     @GetMapping("/balances/account_id/{accountId}")
-    public Object getBalances(@PathVariable String accountId, HttpSession session) {
+    public Object getBalances(@PathVariable("accountId") String accountId, HttpSession session) {
         String accessToken = SessionData.getAccessToken(session);
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
@@ -65,7 +65,7 @@ public class OtherController {
         return exchange.getBody();
     }
     @GetMapping("/transactions/account_id/{accountId}")
-    public Object getTransactions(@PathVariable String accountId, HttpSession session) {
+    public Object getTransactions(@PathVariable("accountId") String accountId, HttpSession session) {
         String accessToken = SessionData.getAccessToken(session);
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
