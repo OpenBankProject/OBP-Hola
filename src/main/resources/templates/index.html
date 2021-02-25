@@ -60,7 +60,7 @@
                         <label for="transaction_to_time">Expiration Date Time</label>
                         <input type="text" name="expiration_time" id="expiration_time" class="form-control" data-date-format="YYYY-MM-DDTHH:mm:ss">
                     </div>
-                    <button type="submit" class="btn btn-default">Give Consent</button>
+                    <button type="submit" class="btn btn-default" disabled="disabled">Give Consent</button>
                 </form>
             </div>
         </div>
@@ -110,6 +110,7 @@
                 defaultDate: new Date(new Date().setDate(new Date().getDate() + 7)),
                 minDate: new Date()
             });
+            $('form button').prop('disabled', false);
         });
 
     </script>
