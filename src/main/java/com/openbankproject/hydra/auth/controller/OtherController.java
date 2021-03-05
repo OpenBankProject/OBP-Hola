@@ -21,14 +21,31 @@ import java.util.HashMap;
 
 @RestController
 public class OtherController {
+    // UK Open Banking
     @Value("${endpoint.path.prefix}/accounts")
     private String getAccountsUrl;
+    
     @Value("${endpoint.path.prefix}/accounts/ACCOUNT_ID")
     private String getAccountUrl;
+    
     @Value("${endpoint.path.prefix}/accounts/ACCOUNT_ID/balances")
     private String getBalanceUrl;
+    
     @Value("${endpoint.path.prefix}/accounts/ACCOUNT_ID/transactions")
     private String getTransactionsUrl;
+
+    // Berlin Group
+    @Value("${obp.base_url}/berlin-group/v1.3/accounts")
+    private String getBerlinGroupAccountsUrl;
+
+    @Value("${obp.base_url}/berlin-group/v1.3/accounts/ACCOUNT_ID")
+    private String getBerlinGroupAccountUrl;
+
+    @Value("${obp.base_url}/berlin-group/v1.3/accounts/ACCOUNT_ID/balances")
+    private String getBerlinGroupBalanceUrl;
+
+    @Value("${obp.base_url}/berlin-group/v1.3/accounts/ACCOUNT_ID/transactions")
+    private String getBerlinGroupTransactionsUrl;
 
     @Resource
     private RestTemplate restTemplate;
@@ -72,6 +89,49 @@ public class OtherController {
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getTransactionsUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
+        return exchange.getBody();
+    }
+    
+    
+    // Berlin Group
+    @GetMapping("/account_bg")
+    public Object getAccountsBerlinGroup(HttpSession session) {
+        String consentId = SessionData.getConsentId(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Consent-ID", consentId);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupAccountsUrl, HttpMethod.GET, entity, HashMap.class);
+        return exchange.getBody();
+    }
+    @GetMapping("/account_bg/{accountId}")
+    public Object getAccountBerlinGroup(@PathVariable String accountId, HttpSession session) {
+        String consentId = SessionData.getConsentId(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Consent-ID", consentId);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupAccountUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+        return  exchange.getBody();
+    }
+    @GetMapping("/balances_bg/account_id/{accountId}")
+    public Object getBalanceBerlinGroups(@PathVariable String accountId, HttpSession session) {
+        String consentId = SessionData.getConsentId(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Consent-ID", consentId);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupBalanceUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+        return exchange.getBody();
+    }
+    @GetMapping("/transactions_bg/account_id/{accountId}")
+    public Object getTransactionsBerlinGroup(@PathVariable String accountId, HttpSession session) {
+        String consentId = SessionData.getConsentId(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Consent-ID", consentId);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupTransactionsUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
         return exchange.getBody();
     }
 

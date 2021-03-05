@@ -49,8 +49,16 @@
     </div>
     <div class="row">
         <div>
-            <button id="get_accounts">Get accounts</button>
+            <button class="btn btn-primary" id="get_accounts">Get accounts via UK Open Banking</button>
             <div id="account_list">
+
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div>
+            <button class="btn btn-warning"  id="get_accounts_bg">Get accounts via Berlin Group APIs</button>
+            <div id="account_list_bg">
 
             </div>
         </div>
@@ -58,6 +66,62 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
+<script lang="javascript">
+    $(function () {
+        $.ajaxSetup({
+            "error": function (e) {
+                alert(`error: code=${e.status}, fail msg: ${e.responseText}`);
+                console.log(e);
+            }
+        });
+        $('#get_accounts_bg').click(function () {
+            $.getJSON("/account_bg", function (data) {
+                const container = $('#account_list_bg').empty().append('<h1>Account List:</h1>');
+                $.each(data.accounts, function (index, account) {
+                    let zson = JSON.stringify(account, null, 2);
+                    container.append(`
+                    <div>
+                        <code>${zson}</code><br>
+                        <button class="get_account_detail_bg" account_id="${account['resourceId']}">Get Account detail</button>
+                        <button class="get_balances_bg" account_id="${account['resourceId']}">Get Balances</button>
+                        <button class="get_transactions_bg" account_id="${account['resourceId']}">Get Transactions</button>
+                        <div class="account_detail_bg"></div>
+                        <div class="balances_bg"></div>
+                        <div class="transactions_bg"></div>
+                        <hr>
+                    </div>
+                `);
+                });
+                $('.get_account_detail_bg').click(function () {
+                    let accountDetailEle = $(this).siblings('.account_detail_bg').empty().append('<h3>Account Detail:</h3>');
+                    ;
+                    let accountId = $(this).attr('account_id');
+                    $.getJSON('/account_bg/' + accountId, function (data) {
+                        let zson = JSON.stringify(data, null, 2);
+                        accountDetailEle.append(`<code>${zson}<code>`).append('<br>');
+                    });
+                });
+                $('.get_balances_bg').click(function () {
+                    let balancesEle = $(this).siblings('.balances_bg').empty().append('<h3>Balance List:</h3>');
+                    ;
+                    let accountId = $(this).attr('account_id');
+                    $.getJSON('/balances_bg/account_id/' + accountId, function (data) {
+                        let zson = JSON.stringify(data, null, 2);
+                        balancesEle.append(`<code>${zson}<code>`).append('<br>');
+                    });
+                });
+                $('.get_transactions_bg').click(function () {
+                    let accountsEle = $(this).siblings('.transactions_bg').empty().append('<h3>Transaction List:</h3>');
+                    let accountId = $(this).attr('account_id');
+                    $.getJSON('/transactions_bg/account_id/' + accountId, function (data) {
+                        let zson = JSON.stringify(data, null, 2);
+                        accountsEle.append(`<code>${zson}<code>`).append('<br>');
+                    });
+                });
+            });
+        });
+    })
+</script>
 <script lang="javascript">
     $(function () {
         $.ajaxSetup({

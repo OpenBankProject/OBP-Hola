@@ -14,7 +14,61 @@ public class SessionData {
     private String state;
     private String nonce;
     private String codeVerifier;
+    private String recurringIndicator;
+    private String frequencyPerDay;
+    private String expirationTime;
+    private String bankId;
+    private String apiStandard;
+    private String consentId;
     private UserInfo userInfo;
+
+    public static String getConsentId(HttpSession session) {
+        return getOrCreateSessionData(session).consentId;
+    }
+
+    public static void setConsentId(HttpSession session, String consentId) {
+        getOrCreateSessionData(session).consentId = consentId;
+    }
+
+    public static String getApiStandard(HttpSession session) {
+        return getOrCreateSessionData(session).apiStandard;
+    }
+
+    public static void setApiStandard(HttpSession session, String apiStandard) {
+        getOrCreateSessionData(session).apiStandard = apiStandard;
+    }
+
+    public static String getBankId(HttpSession session) {
+        return getOrCreateSessionData(session).bankId;
+    }
+
+    public static void setBankId(HttpSession session, String bankId) {
+        getOrCreateSessionData(session).bankId = bankId;
+    }
+
+    public static String getRecurringIndicator(HttpSession session) {
+        return getOrCreateSessionData(session).recurringIndicator;
+    }
+
+    public static void setRecurringIndicator(HttpSession session, String recurringIndicator) {
+        getOrCreateSessionData(session).recurringIndicator = recurringIndicator;
+    }
+
+    public static String getExpirationTime(HttpSession session) {
+        return getOrCreateSessionData(session).expirationTime;
+    }
+
+    public static void setExpirationTime(HttpSession session, String expirationTime) {
+        getOrCreateSessionData(session).expirationTime = expirationTime;
+    }
+
+    public static String getFrequencyPerDay(HttpSession session) {
+        return getOrCreateSessionData(session).frequencyPerDay;
+    }
+
+    public static void setFrequencyPerDay(HttpSession session, String frequencyPerDay) {
+        getOrCreateSessionData(session).frequencyPerDay = frequencyPerDay;
+    }
 
     private SessionData() {}
 

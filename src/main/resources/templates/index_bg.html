@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>OBP Hola App - Grant Permissions</title>
+    <title>OBP Hola App - Grant Berlin Group Permissions</title>
 
     <!-- Bootstrap -->
     <link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap.min.css}" />
@@ -26,7 +26,7 @@
         <div class="row">
             <div class="col-sm-6 col-lg-offset-3">
                 <h2>Give Consent</h2>
-                <form th:action="@{/request_consents}" method="post">
+                <form th:action="@{/request_consents_bg}" method="post">
                     <div class="form-group">
                         <label for="bank">Select your Bank</label>
                         <select class="form-control" name="bank" id="bank">
@@ -47,18 +47,19 @@
                         </div>
                         <span id="consents_error"></span>
                     </div>
-
+                    
                     <div class="form-group">
-                        <label for="transaction_from_time">Transaction From Date Time</label>
-                        <input type="text" name="transaction_from_time" id="transaction_from_time" class="form-control" data-date-format="YYYY-MM-DDTHH:mm:ss">
+                        <label for="frequency_per_day">Frequency per day</label>
+                        <input type="number" min="1" value="1" name="frequency_per_day" id="frequency_per_day" class="form-control">
                     </div>
                     <div class="form-group">
-                        <label for="transaction_to_time">Transaction To Date Time</label>
-                        <input type="text" name="transaction_to_time" id="transaction_to_time" class="form-control" data-date-format="YYYY-MM-DDTHH:mm:ss">
-                    </div>
-                    <div class="form-group">
-                        <label for="transaction_to_time">Expiration Date Time</label>
+                        <label for="expiration_time">Expiration Date Time</label>
                         <input type="text" name="expiration_time" id="expiration_time" class="form-control" data-date-format="YYYY-MM-DDTHH:mm:ss">
+                    </div>
+                    <div class="form-group">
+                        <input type="checkbox" id="recurring_indicator" name="recurring_indicator" value="true"
+                               checked>
+                        <label for="recurring_indicator">Recurring indicator</label>
                     </div>
                     <button type="submit" class="btn btn-success">Give Consent</button>
                 </form>
@@ -77,14 +78,12 @@
                 rules: {
                     bank: "required",
                     consents: "required",
-                    transaction_from_time: "required",
-                    transaction_to_time: "required",
+                    recurring_indicator: "required",
+                    frequency_per_day: "required",
                 },
                 messages: {
                     bank: "Bank should not be empty",
                     consents: "At least select one consent",
-                    transaction_from_time: "TransactionToDateTime should not be empty",
-                    transaction_to_time: "TransactionToDateTime should not be empty",
                 },
                 errorPlacement: function(error, element) {
                     error.addClass('text-danger');
@@ -95,19 +94,12 @@
                     }
                 }
             });
-
-            $('#transaction_from_time').datetimepicker({
-                defaultDate: new Date(new Date().setFullYear(new Date().getFullYear() - 1))
-            });
-
-            $('#transaction_to_time').datetimepicker({
-                defaultDate: new Date()
-            });
-
+            
             $('#expiration_time').datetimepicker({
                 defaultDate: new Date(new Date().setDate(new Date().getDate() + 7)),
                 minDate: new Date()
             });
+
         });
 
     </script>
