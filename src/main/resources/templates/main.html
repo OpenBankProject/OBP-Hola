@@ -42,24 +42,26 @@
 
         current user: <br>
         email: <span th:text="${user?.email}"></span> <br>
-        useName: <span th:text="${user?.username}"></span> <br>
+        username: <span th:text="${user?.username}"></span> <br>
         <a class="btn btn-info" th:href="@{/logout}">Logout</a>
         <br>
         <br>
     </div>
-    <div class="row">
-        <div>
-            <button class="btn btn-primary" id="get_accounts">Get accounts via UK Open Banking</button>
-            <div id="account_list">
-
+    <div th:switch="${apiStandard}">
+        <div th:case="'UKOpenBanking'" class="row">
+            <div>
+                <button class="btn btn-primary" id="get_accounts">Get accounts via UK Open Banking</button>
+                <div id="account_list">
+    
+                </div>
             </div>
         </div>
-    </div>
-    <div class="row">
-        <div>
-            <button class="btn btn-warning"  id="get_accounts_bg">Get accounts via Berlin Group APIs</button>
-            <div id="account_list_bg">
-
+        <div th:case="'BerlinGroup'" class="row">
+            <div>
+                <button class="btn btn-primary"  id="get_accounts_bg">Get accounts via Berlin Group APIs</button>
+                <div id="account_list_bg">
+    
+                </div>
             </div>
         </div>
     </div>

@@ -145,7 +145,6 @@ public class IndexController implements ServletContextAware {
 
             Map response = restTemplate.postForObject(createConsentsUrl, request, Map.class);
             consentId = ((Map<String, String>) response.get("Data")).get("ConsentId");
-            SessionData.setApiStandard(session, "UKOpenBanking");
         }
         //{"client_id", "bank_id", "consent_id", "response_type=code", "scope", "redirect_uri", "state"})
         Map<String, String> queryParam = new LinkedHashMap<>();
@@ -172,6 +171,7 @@ public class IndexController implements ServletContextAware {
         queryParam.put("consent_id", consentId);
         queryParam.put("bank_id", bankId);
         queryParam.put("api_standard", "UKOpenBanking");
+        SessionData.setApiStandard(session, "UKOpenBanking");
         // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.
         //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
@@ -283,6 +283,8 @@ public class IndexController implements ServletContextAware {
 
     @GetMapping(value={"/main", "main.html"}, params="!code")
     public String main(HttpSession session, Model model) {
+        String apiStandard = SessionData.getApiStandard(session);
+        model.addAttribute("apiStandard", apiStandard);
         UserInfo user = SessionData.getUserInfo(session);
         model.addAttribute("user", user);
         return "main";
@@ -328,6 +330,7 @@ public class IndexController implements ServletContextAware {
         String expirationDateTime = convertTimeFormat(expiration_time);
         queryParam.put("expiration_time", expirationDateTime);
         queryParam.put("api_standard", "BerlinGroup");
+        SessionData.setApiStandard(session, "BerlinGroup");
         // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.
         //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
