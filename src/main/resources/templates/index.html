@@ -4,112 +4,36 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>OBP Hola App - Grant Permissions</title>
+    <title>Login</title>
 
     <!-- Bootstrap -->
     <link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap.min.css}" />
-    <link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap-datetimepicker.min.css}" />
     <link rel="stylesheet" type="text/css" th:href="@{/css/custom.css}" />
 
     <!--[if lt IE 9]>
     <script type="text/javascript" th:src="@{/js/html5shiv.min.js}"></script>
     <script type="text/javascript" th:src="@{/js/respond.min.js}" ></script>
     <![endif]-->
-</head>
+
 <body>
 <nav class="navbar navbar-light bg-light">
     <a class="navbar-brand" th:href="@{${application.obp_url}}">
         <img th:src="@{/images/logo.png}" height="60" class="d-inline-block align-top" alt="">
     </a>
 </nav>
-    <div class="container">
-        <div class="row">
-            <div class="col-sm-6 col-lg-offset-3">
-                <h2>Give Consent</h2>
-                <form th:action="@{/request_consents}" method="post">
-                    <div class="form-group">
-                        <label for="bank">Select your Bank</label>
-                        <select class="form-control" name="bank" id="bank">
-                            <option value="">--select one bank--</option>
-                            <option th:each="bank : ${banks}" 
-                                    th:value="${bank.id}" th:text="${bank.full_name} + ' (' + ${bank.id} + ')'">
-                            </option>
-                        </select>
-                    </div>
-
-                    <label>Select one or more Permissions</label>
-                    <div class="form-group">
-                        <div class="checkbox" th:each="consent : ${consents}">
-                            <label>
-                                <input type="checkbox" name="consents" th:value="${consent}">
-                                <span th:text="${consent}">ReadAccountsBasic</span>
-                            </label>
-                        </div>
-                        <span id="consents_error"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="transaction_from_time">Transaction From Date Time</label>
-                        <input type="text" name="transaction_from_time" id="transaction_from_time" class="form-control" data-date-format="YYYY-MM-DDTHH:mm:ss">
-                    </div>
-                    <div class="form-group">
-                        <label for="transaction_to_time">Transaction To Date Time</label>
-                        <input type="text" name="transaction_to_time" id="transaction_to_time" class="form-control" data-date-format="YYYY-MM-DDTHH:mm:ss">
-                    </div>
-                    <div class="form-group">
-                        <label for="transaction_to_time">Expiration Date Time</label>
-                        <input type="text" name="expiration_time" id="expiration_time" class="form-control" data-date-format="YYYY-MM-DDTHH:mm:ss">
-                    </div>
-                    <button type="submit" class="btn btn-success">Give Consent</button>
-                </form>
+<div class="jumbotron text-center">
+    <h3>API STANDARD</h3>
+    <div>
+        <div class="container">
+            <div class="row">
+                <a th:href="@{/index_uk.html}" class="btn btn-primary btn-lg">Go to UK Open Banking page</a>
+                <a th:href="@{/index_bg.html}" class="btn btn-warning btn-lg">Go to Berlin Group page</a>
             </div>
         </div>
     </div>
+</div>
 
-    <script type="text/javascript" th:src="@{/js/jquery-1.12.4.min.js}" ></script>
-    <script type="text/javascript" th:src="@{/js/jquery-validate-1.19.2.min.js}" ></script>
-    <script type="text/javascript" th:src="@{/js/bootstrap.min.js}" ></script>
-    <script type="text/javascript" th:src="@{/js/moment-with-locales.min.js}" ></script>
-    <script type="text/javascript" th:src="@{/js/bootstrap-datetimepicker.min.js}" ></script>
-    <script type="text/javascript">
-        $(function(){
-            $("form").validate({
-                rules: {
-                    bank: "required",
-                    consents: "required",
-                    transaction_from_time: "required",
-                    transaction_to_time: "required",
-                },
-                messages: {
-                    bank: "Bank should not be empty",
-                    consents: "At least select one consent",
-                    transaction_from_time: "TransactionToDateTime should not be empty",
-                    transaction_to_time: "TransactionToDateTime should not be empty",
-                },
-                errorPlacement: function(error, element) {
-                    error.addClass('text-danger');
-                    if (element.attr("name") == "consents") {
-                        error.appendTo("#consents_error");
-                    } else {
-                        error.insertAfter(element);
-                    }
-                }
-            });
-
-            $('#transaction_from_time').datetimepicker({
-                defaultDate: new Date(new Date().setFullYear(new Date().getFullYear() - 1))
-            });
-
-            $('#transaction_to_time').datetimepicker({
-                defaultDate: new Date()
-            });
-
-            $('#expiration_time').datetimepicker({
-                defaultDate: new Date(new Date().setDate(new Date().getDate() + 7)),
-                minDate: new Date()
-            });
-        });
-
-    </script>
+<script type="text/javascript" th:src="@{/js/jquery-1.12.4.min.js}" ></script>
+<script type="text/javascript" th:src="@{/js/bootstrap.min.js}" ></script>
 </body>
 </html>

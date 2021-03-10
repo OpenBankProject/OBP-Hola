@@ -83,8 +83,13 @@ public class IndexController implements ServletContextAware {
     }
 
 
-    @GetMapping({"/", "/index", "index.html"})
-    public String index(Model model) throws ParseException, JOSEException {
+    @GetMapping({ "/", "/index", "index.html"})
+    public String index(Model model) {
+        return "index";
+    }
+    
+    @GetMapping({ "/index_uk", "index_uk.html"})
+    public String index_uk(Model model) throws ParseException, JOSEException {
         {// initiate consent names
             // exclude "openid" and "offline", they are used by hydra
             String[] consents = allScopes.stream()
@@ -97,7 +102,7 @@ public class IndexController implements ServletContextAware {
             Banks banks = restTemplate.getForObject(getBanksUrl, Banks.class);
             model.addAttribute("banks", banks.getBanks());
         }
-        return "index";
+        return "index_uk";
     }
 
     @GetMapping({"/index_bg", "index_bg.html"})
