@@ -26,8 +26,13 @@
     <div>
         <div class="container">
             <div class="row">
-                <a th:href="@{/index_uk.html}" class="btn btn-primary btn-lg">Go to UK Open Banking page</a>
-                <a th:href="@{/index_bg.html}" class="btn btn-warning btn-lg">Go to Berlin Group page</a>
+                <tr th:each="standard : ${displayStandards}">
+                    <td th:switch="${standard}">
+                        <a th:case="'UKOpenBanking'" th:href="@{/index_uk.html}" class="btn btn-primary btn-lg">Go to UK Open Banking page</a>
+                        <a th:case="'BerlinGroup'" th:href="@{/index_bg.html}" class="btn btn-warning btn-lg">Go to Berlin Group page</a>
+                        <a th:case="*" th:href="@{/index.html}" class="btn btn-danger btn-lg"><th:block th:text="${standard}"></th:block></a>
+                    </td>
+                </tr>
             </div>
         </div>
     </div>

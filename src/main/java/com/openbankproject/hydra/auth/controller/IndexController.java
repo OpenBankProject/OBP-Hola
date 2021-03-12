@@ -66,6 +66,9 @@ public class IndexController implements ServletContextAware {
     @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/consents/CONSENT_ID")
     private String updateConsentStatusUrl;
 
+    @Value("${display_standards}")
+    private String displayStandards;
+
     @Resource
     private RestTemplate restTemplate;
     @Resource
@@ -85,6 +88,12 @@ public class IndexController implements ServletContextAware {
 
     @GetMapping({ "/", "/index", "index.html"})
     public String index(Model model) {
+        String[] apiStandards = displayStandards.split(",");
+        String[] displayStandards = apiStandards;
+        if(apiStandards.length == 1 && apiStandards[0].trim().isEmpty()) {
+            displayStandards = new String[] {"display_standards=UKOpenBanking,BerlinGroup"};
+        }
+        model.addAttribute("displayStandards", displayStandards);
         return "index";
     }
     
