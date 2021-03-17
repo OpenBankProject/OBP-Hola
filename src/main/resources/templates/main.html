@@ -79,6 +79,10 @@
         $('#get_accounts_bg').click(function () {
             $.getJSON("/account_bg", function (data) {
                 const container = $('#account_list_bg').empty().append('<h1>Account List:</h1>');
+                if (data.code > 399 ) {
+                  let zson = JSON.stringify(data, null, 2);
+                  container.append(`<code>${zson}<code>`).append('<br>');
+                }
                 $.each(data.accounts, function (index, account) {
                     let zson = JSON.stringify(account, null, 2);
                     container.append(`
