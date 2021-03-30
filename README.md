@@ -42,7 +42,4 @@ mtls.trustStore.path=file:///Users/<some path>/cert/ofpilot.jks
 mtls.trustStore.password=<truststore password>
 ```
 
-A full documentation:
-https://gitlab-external.tesobe.com/tesobe/boards/tech-internal/-/issues/43
-
 Copyright TESOBE GmbH 2020
