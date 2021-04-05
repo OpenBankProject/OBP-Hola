@@ -45,11 +45,6 @@ public class RestTemplateConfig {
     @Value("${mtls.trustStore.password}")
     private char[] trustStorePassword;
 
-    @javax.annotation.Resource
-    private ClientConfig clientConfig;
-    @javax.annotation.Resource
-    private HydraConfig hydraConfig;
-
     @Bean
     public RestTemplate restTemplate(SSLContext sslContext) {
         SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext);
