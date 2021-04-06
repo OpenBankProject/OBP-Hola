@@ -32,6 +32,7 @@ import java.security.cert.CertificateException;
 import java.security.interfaces.RSAPublicKey;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Configuration
 public class RestTemplateConfig {
@@ -44,6 +45,8 @@ public class RestTemplateConfig {
     private Resource trustStoreResource;
     @Value("${mtls.trustStore.password}")
     private char[] trustStorePassword;
+    @Value("${force_jws}")
+    private String forceJws;
 
     @Bean
     public RestTemplate restTemplate(SSLContext sslContext) {
@@ -95,23 +98,44 @@ public class RestTemplateConfig {
         if(ArrayUtils.isEmpty(headers)) {
             request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
         }
-        String url = request.getRequestLine().getUri();
-        String httpMethod = request.getRequestLine().getMethod().toLowerCase();
-        String httpBody = getHttpBody(request).toString();
-        InetAddress ip = getInetAddress();
-        JwsUtil jwsUtil = new JwsUtil();
-        Map<String, String> requestHeaders = new HashMap<>();
-        requestHeaders.put("host", request.getFirstHeader("host").getValue());
-        requestHeaders.put("content-type", request.getFirstHeader("content-type").getValue());
-        requestHeaders.put("psu-ip-address", ip.getHostAddress());
-        request.setHeader("psu-ip-address", ip.getHostAddress());
-        requestHeaders.put("psu-geo-location", "GEO:52.506931,13.144558");
-        request.setHeader("psu-geo-location", "GEO:52.506931,13.144558");
-        String digest = jwsUtil.createDigestHeaderValue(httpBody.toString());
-        String xJwsSignature = null;
-        request.setHeader("digest", digest);
-        xJwsSignature = JwsUtil.createJwsSignature(getRsaKey(), httpMethod, url, requestHeaders, httpBody.toString());
-        request.setHeader("x-jws-signature", xJwsSignature);
+        if(forceJws()) {
+            String url = request.getRequestLine().getUri();
+            String httpMethod = request.getRequestLine().getMethod().toLowerCase();
+            String httpBody = getHttpBody(request).toString();
+            InetAddress ip = getInetAddress();
+            JwsUtil jwsUtil = new JwsUtil();
+            Map<String, String> requestHeaders = new HashMap<>();
+            requestHeaders.put("host", request.getFirstHeader("host").getValue());
+            requestHeaders.put("content-type", request.getFirstHeader("content-type").getValue());
+            requestHeaders.put("psu-ip-address", ip.getHostAddress());
+            requestHeaders.put("psu-geo-location", "GEO:52.506931,13.144558");
+            String digest = jwsUtil.createDigestHeaderValue(httpBody);
+            String xJwsSignature = jwsUtil.createJwsSignature(getRsaKey(), httpMethod, url, requestHeaders, httpBody);
+            // Set request's mandatory headers
+            request.setHeader("Digest", digest);
+            request.setHeader("x-jws-signature", xJwsSignature);
+            request.setHeader("PSU-IP-Address", ip.getHostAddress());
+            request.setHeader("PSU-GEO-Location", "GEO:52.506931,13.144558");
+            request.setHeader("X-Request-ID", UUID.randomUUID().toString());
+        }
+    }
+
+    private boolean forceJws() {
+        String[] standards  = forceJws.split(",");
+        HashMap<String, String> pathOfStandard = new HashMap<String, String>();
+        pathOfStandard.put("BGv1.3", "berlin-group/v1.3");
+        pathOfStandard.put("OBPv4.0.0", "obp/v4.0.0");
+        pathOfStandard.put("OBPv3.1.0", "obp/v3.1.0");
+        pathOfStandard.put("UKv1.3", "open-banking/v3.1");
+        boolean force = false;
+        for (String i : pathOfStandard.keySet()) {
+            for (String standard : standards) {
+                if(standard.equalsIgnoreCase(i)) {
+                    force = true;
+                }
+            }
+        }
+        return force;
     }
 
     private InetAddress getInetAddress() {
