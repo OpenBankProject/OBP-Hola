@@ -2,6 +2,7 @@ package com.openbankproject.hydra.auth;
 
 import com.nimbusds.jose.jwk.RSAKey;
 import com.openbankproject.JwsUtil;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -28,7 +29,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.HashMap;
 import java.util.Map;
@@ -98,8 +101,8 @@ public class RestTemplateConfig {
         if(ArrayUtils.isEmpty(headers)) {
             request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
         }
-        if(forceJws()) {
-            String url = request.getRequestLine().getUri();
+        String url = request.getRequestLine().getUri();
+        if(forceJws(url)) {
             String httpMethod = request.getRequestLine().getMethod().toLowerCase();
             String httpBody = getHttpBody(request).toString();
             InetAddress ip = getInetAddress();
@@ -110,7 +113,7 @@ public class RestTemplateConfig {
             requestHeaders.put("psu-ip-address", ip.getHostAddress());
             requestHeaders.put("psu-geo-location", "GEO:52.506931,13.144558");
             String digest = jwsUtil.createDigestHeaderValue(httpBody);
-            String xJwsSignature = jwsUtil.createJwsSignature(getRsaKey(), httpMethod, url, requestHeaders, httpBody);
+            String xJwsSignature = jwsUtil.createJwsSignature((RSAKey)getRsaKey().get("jwk"), (String)getRsaKey().get("x5c"), httpMethod, url, requestHeaders, httpBody);
             // Set request's mandatory headers
             request.setHeader("Digest", digest);
             request.setHeader("x-jws-signature", xJwsSignature);
@@ -120,7 +123,7 @@ public class RestTemplateConfig {
         }
     }
 
-    private boolean forceJws() {
+    private boolean forceJws(String url) {
         String[] standards  = forceJws.split(",");
         HashMap<String, String> pathOfStandard = new HashMap<String, String>();
         pathOfStandard.put("BGv1.3", "berlin-group/v1.3");
@@ -128,10 +131,10 @@ public class RestTemplateConfig {
         pathOfStandard.put("OBPv3.1.0", "obp/v3.1.0");
         pathOfStandard.put("UKv1.3", "open-banking/v3.1");
         boolean force = false;
-        for (String i : pathOfStandard.keySet()) {
+        for (Map.Entry<String,String> path : pathOfStandard.entrySet()) {
             for (String standard : standards) {
-                if(standard.equalsIgnoreCase(i)) {
-                    force = true;
+                if(standard.equalsIgnoreCase(path.getKey())) {
+                    if(url.contains(path.getValue())) force = true;
                 }
             }
         }
@@ -170,7 +173,7 @@ public class RestTemplateConfig {
         return httpBody;
     }
 
-    private RSAKey getRsaKey() {
+    private HashMap<String, Object> getRsaKey() {
         KeyStore ks = null;
         String alias = "1";
         Key key = null;
@@ -184,11 +187,12 @@ public class RestTemplateConfig {
         }
         KeyPair keyPair = null;
         RSAKey jwk = null;
+        String x5cValue = "";
         if (key instanceof PrivateKey) {
             // Get certificate of public key
-            Certificate cert = null;
+            X509Certificate cert = null;
             try {
-                cert = ks.getCertificate(alias);
+                cert = (X509Certificate)ks.getCertificate(alias);
             } catch (KeyStoreException e) {
                 e.printStackTrace();
             }
@@ -203,7 +207,16 @@ public class RestTemplateConfig {
                     (RSAPublicKey) keyPair.getPublic())
                     .privateKey(keyPair.getPrivate())
                     .build();
+            try {
+                Base64 encoder = new Base64(64);
+                x5cValue = new String(encoder.encode(cert.getEncoded()));
+            } catch (CertificateEncodingException e) {
+                e.printStackTrace();
+            }
         }
-        return jwk;
+        HashMap<String, Object> result = new HashMap<>();
+        result.put("jwk", jwk);
+        result.put("x5c", x5cValue);
+        return result;
     }
 }

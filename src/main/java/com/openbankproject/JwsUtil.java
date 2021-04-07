@@ -10,15 +10,12 @@ import java.text.ParseException;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Base64;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 
 public class JwsUtil {
 
-    public static String createJwsSignature(RSAKey privateKey, String verb, String url, Map<String, String> requestHeaders, String httpBody) {
+    public static String createJwsSignature(RSAKey privateKey, String x5c, String verb, String url, Map<String, String> requestHeaders, String httpBody) {
 
         String sigD = "{\n" +
                 "\"pars\": [\n" +
@@ -51,11 +48,14 @@ public class JwsUtil {
         JWSObject jwsObject = null;
         try {
             signer = new RSASSASigner(privateKey);
-            
+
             criticalParams.addAll(getDeferredCriticalHeaders());
+            List<com.nimbusds.jose.util.Base64> x5cList = new ArrayList<>();
+            x5cList.add(new com.nimbusds.jose.util.Base64(x5c));
             jwsProtectedHeader = new JWSHeader.Builder(JWSAlgorithm.RS256)
                     .base64URLEncodePayload(false)
-                    .x509CertSHA256Thumbprint(privateKey.computeThumbprint())
+                    //.x509CertSHA256Thumbprint(privateKey.computeThumbprint())
+                    .x509CertChain(x5cList)
                     .criticalParams(criticalParams)
                     .customParam("sigT", sigT)
                     .customParam("sigD", JSONObjectUtils.parse(sigD))
