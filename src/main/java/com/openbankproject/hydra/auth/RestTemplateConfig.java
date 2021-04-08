@@ -28,7 +28,6 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -44,6 +43,8 @@ public class RestTemplateConfig {
     private Resource keyStoreResource;
     @Value("${mtls.keyStore.password}")
     private char[] keyStorePassword;
+    @Value("${mtls.keyStore.alias}")
+    private String keyStoreAlias;
     @Value("${mtls.trustStore.path}")
     private Resource trustStoreResource;
     @Value("${mtls.trustStore.password}")
@@ -175,7 +176,7 @@ public class RestTemplateConfig {
 
     private HashMap<String, Object> getRsaKey() {
         KeyStore ks = null;
-        String alias = "1";
+        String alias = keyStoreAlias;
         Key key = null;
         try {
             ks = KeyStore.getInstance("jks");
