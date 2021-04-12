@@ -15,6 +15,10 @@
     <script type="text/javascript" th:src="@{/js/html5shiv.min.js}"></script>
     <script type="text/javascript" th:src="@{/js/respond.min.js}" ></script>
     <![endif]-->
+
+    <style th:if="${buttonBackgroundColor  != null}" th:text="'.btn-danger {background-color: ' + ${buttonBackgroundColor} + ';} .btn-danger:hover {background-color: ' + ${buttonHoverBackgroundColor} + ';}'"></style>
+    <style th:unless="${displayStandards == 'BerlinGroup'}"></style>
+    
 </head>
 <body>
 <nav class="navbar navbar-light bg-light">
@@ -66,7 +70,7 @@
                                checked>
                         <label for="recurring_indicator">Recurring indicator</label>
                     </div>
-                    <button type="submit" class="btn btn-success">Give Consent</button>
+                    <button type="submit" class="btn btn-danger">Give Consent</button>
                 </form>
             </div>
         </div>

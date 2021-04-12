@@ -71,6 +71,10 @@ public class IndexController implements ServletContextAware {
 
     @Value("${display_standards}")
     private String displayStandards;
+    @Value("${button.background_color:#c9302c}")
+    private String buttonBackgroundColor;
+    @Value("${button.hover.background_color:#b92c28}")
+    private String buttonHoverBackgroundColor;
 
     @Resource
     private RestTemplate restTemplate;
@@ -97,6 +101,8 @@ public class IndexController implements ServletContextAware {
             displayStandards = new String[] {"display_standards=UKOpenBanking,BerlinGroup"};
         }
         model.addAttribute("displayStandards", displayStandards);
+        model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
+        model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
         return "index";
     }
     
@@ -130,6 +136,8 @@ public class IndexController implements ServletContextAware {
         { // initiate all bank names and bank ids
             Banks banks = restTemplate.getForObject(getBanksUrl, Banks.class);
             model.addAttribute("banks", banks.getBanks());
+            model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
+            model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
         }
         return "index_bg";
     }
