@@ -7,6 +7,7 @@ import com.nimbusds.jwt.JWTParser;
 import com.openbankproject.hydra.auth.HydraConfig;
 import com.openbankproject.hydra.auth.VO.*;
 import com.openbankproject.hydra.auth.util.PKCEUtil;
+import com.openbankproject.model.PostConsentJson;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.ServletContextAware;
 
@@ -115,7 +118,7 @@ public class IndexController implements ServletContextAware {
     }
 
     @GetMapping({"/index_bg", "index_bg.html"})
-    public String index_bg(Model model) throws ParseException, JOSEException {
+    public String index_bg(Model model, HttpSession session) throws ParseException, JOSEException {
         {// initiate consent names
             // exclude "openid" and "offline", they are used by hydra
             String[] consents = allScopes.stream()
@@ -305,15 +308,47 @@ public class IndexController implements ServletContextAware {
     }
 
 
-    @PostMapping(value="/request_consents_bg", params = {"bank", "consents", "recurring_indicator", "frequency_per_day"})
+    @PostMapping(value="/request_consents_bg", params = {"bank", "iban","consents", "recurring_indicator", "frequency_per_day"})
     public String requestConsentsBerlinGroup(@RequestParam("bank") String bankId,
+                                             @RequestParam("iban") String iban,
                                              @RequestParam String[] consents,
                                              @RequestParam String recurring_indicator,
                                              @RequestParam String frequency_per_day,
                                              @RequestParam String expiration_time,
-                                             HttpSession session
-    ) throws UnsupportedEncodingException, ParseException, JOSEException {
-        final String consentId = "None";
+                                             HttpSession session, Model model
+    ) throws UnsupportedEncodingException, ParseException, JOSEException, RestClientException {
+        // Create Berlin Group Consent
+        String clientCredentialsToken = getClientCredentialsToken();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(clientCredentialsToken);
+        String recurringIndicator = recurring_indicator;
+        String expirationDateTime = convertTimeFormat(expiration_time);
+        String frequencyPerDay = frequency_per_day;
+        String[] ibans = iban.split(",");
+        for(int i=0; i< ibans.length; i++){
+            ibans[i] = ibans[i].trim().replace(" ", "");
+        }
+        PostConsentJson body = new PostConsentJson(
+                consents,
+                ibans,
+                recurringIndicator.equalsIgnoreCase("true"),
+                expirationDateTime,
+                Integer.parseInt(frequencyPerDay),
+                false
+        );
+        String consentId = "";
+        try {
+            HttpEntity<PostConsentJson> request = new HttpEntity<>(body, headers);
+            Map response = restTemplate.postForObject(createBerlinGroupConsentsUrl, request, Map.class);
+            consentId = ((Map<String, String>) response).get("consentId");
+            session.setAttribute("consent_id", consentId);
+        } catch (HttpClientErrorException e) {
+            String error = "Sorry! Cannot create the consent.";
+            logger.error(error, e);
+            model.addAttribute("errorMsg", e.getResponseBodyAsString());
+            return "error";
+        }
+        
 
         //{"client_id", "bank_id", "consent_id", "response_type=code", "scope", "redirect_uri", "state"})
         Map<String, String> queryParam = new LinkedHashMap<>();
@@ -339,9 +374,12 @@ public class IndexController implements ServletContextAware {
         // the parameter consent_id and bank_id are mandatory, these two parameter is not standard parameter of OAuth2 and OIDC
         queryParam.put("consent_id", consentId);
         queryParam.put("bank_id", bankId);
+        String ibansTrimmed = Arrays.asList(ibans).stream()
+                .map(n -> String.valueOf(n))
+                .collect(Collectors.joining(","));
+        queryParam.put("iban", ibansTrimmed);
         queryParam.put("recurring_indicator", recurring_indicator);
         queryParam.put("frequency_per_day", frequency_per_day);
-        String expirationDateTime = convertTimeFormat(expiration_time);
         queryParam.put("expiration_time", expirationDateTime);
         queryParam.put("api_standard", "BerlinGroup");
         SessionData.setApiStandard(session, "BerlinGroup");
