@@ -227,7 +227,7 @@ public class IndexController implements ServletContextAware {
             return redirectUrl;
         } catch (Exception unhandledException) {
             logger.error("Error: ", unhandledException);
-            if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException.getMessage());
+            if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException);
             else model.addAttribute("errorMsg", "Internal Server Error");
             return "error";
         }
@@ -428,7 +428,7 @@ public class IndexController implements ServletContextAware {
             return redirectUrl;
         } catch (Exception unhandledException) {
             logger.error("Error: ", unhandledException);
-            if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException.getMessage());
+            if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException);
             else model.addAttribute("errorMsg", "Internal Server Error");
             return "error";
         }
