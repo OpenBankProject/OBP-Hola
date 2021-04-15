@@ -2,4 +2,11 @@
 
 This "Hola" App is a Spring Boot application to showcase Berlin Group / UK Open Banking style OAuth2 consent creation and use flows with OBP API and Ory Hydra.
 
-Copyright TESOBE GmbH 2020
+
+Copyright 2020 TESOBE GmbH 
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
