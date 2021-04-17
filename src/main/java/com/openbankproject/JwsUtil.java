@@ -4,7 +4,10 @@ import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.util.JSONObjectUtils;
+import com.openbankproject.hydra.auth.RestTemplateConfig;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
 import java.time.ZoneOffset;
@@ -14,6 +17,7 @@ import java.util.*;
 
 
 public class JwsUtil {
+    private static final Logger logger = LoggerFactory.getLogger(JwsUtil.class);
 
     public static String createJwsSignature(RSAKey privateKey, String x5c, String verb, String url, Map<String, String> requestHeaders, String httpBody) {
 
@@ -38,6 +42,9 @@ public class JwsUtil {
                         "psu-geo-location: " + requestHeaders.get("psu-geo-location") + "\n" +
                         "digest: SHA-256=" + digest + "\n"
         );
+        logger.debug("<--------------------- Detached Payload --------------------->\n");
+        logger.debug("\n" + detachedPayload.toString());
+        logger.debug("<--------------------- Detached Payload --------------------->\n");
 
         // We create the time in next format: '2011-12-03T10:15:30Z' 
         String sigT = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_ZONED_DATE_TIME);
@@ -60,6 +67,7 @@ public class JwsUtil {
                     .customParam("sigT", sigT)
                     .customParam("sigD", JSONObjectUtils.parse(sigD))
                     .build();
+            logger.debug("JWS Protected Header: \n" + jwsProtectedHeader.toString());
 
             // Compute the RSA signature
             jwsObject = new JWSObject(jwsProtectedHeader, detachedPayload);

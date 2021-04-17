@@ -2,6 +2,7 @@ package com.openbankproject.hydra.auth;
 
 import com.nimbusds.jose.jwk.RSAKey;
 import com.openbankproject.JwsUtil;
+import com.openbankproject.hydra.auth.controller.IndexController;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.Header;
@@ -12,6 +13,8 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.HttpContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,6 +41,7 @@ import java.util.UUID;
 
 @Configuration
 public class RestTemplateConfig {
+    private static final Logger logger = LoggerFactory.getLogger(RestTemplateConfig.class);
 
     @Value("${mtls.keyStore.path}")
     private Resource keyStoreResource;
@@ -121,6 +125,8 @@ public class RestTemplateConfig {
             request.setHeader("PSU-IP-Address", ip.getHostAddress());
             request.setHeader("PSU-GEO-Location", "GEO:52.506931,13.144558");
             request.setHeader("X-Request-ID", UUID.randomUUID().toString());
+            logger.debug("Digest: " + digest);
+            logger.debug("X-JWS-Signature: " + xJwsSignature);
         }
     }
 
