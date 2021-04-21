@@ -364,7 +364,7 @@ public class IndexController implements ServletContextAware {
             } catch (HttpClientErrorException e) {
                 String error = "Sorry! Cannot create the consent.";
                 logger.error(error, e);
-                model.addAttribute("errorMsg", e.getResponseBodyAsString());
+                model.addAttribute("errorMsg", e.getStatusText());
                 return "error";
             }
 

@@ -1,14 +1,17 @@
 package com.openbankproject;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.util.JSONObjectUtils;
-import com.openbankproject.hydra.auth.RestTemplateConfig;
+import com.nimbusds.jose.util.X509CertUtils;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -18,6 +21,44 @@ import java.util.*;
 
 public class JwsUtil {
     private static final Logger logger = LoggerFactory.getLogger(JwsUtil.class);
+
+    public static boolean verifyJwsSignature(String sigT, 
+                                             String httpBody,
+                                             String xJwsSignature,
+                                             String digest,
+                                             String pem,
+                                             String rebuiltDetachedPayload) {
+        
+        // Check Signing Time
+        ZonedDateTime signingTime = ZonedDateTime.parse(sigT, DateTimeFormatter.ISO_ZONED_DATE_TIME);
+        ZonedDateTime verifyingTime = ZonedDateTime.now(ZoneOffset.UTC);
+        boolean criteriaOneFailed = signingTime.isAfter(verifyingTime.plusSeconds(2));
+        boolean criteriaTwoFailed = signingTime.plusSeconds(60).isBefore(verifyingTime);
+        boolean isSigningTimeOk = !criteriaOneFailed && !criteriaTwoFailed;
+                
+        // Check HTTP Body
+        String computedDigest = "SHA-256=" + computeDigest(httpBody);
+        boolean isDigestOk = computedDigest.equals(digest);
+                
+        boolean isVerifiedJws = false;
+        try {
+            // Parse JWS with detached payload
+            JWSObject parsedJWSObject = JWSObject.parse(xJwsSignature, new Payload(rebuiltDetachedPayload));
+            // Parse X.509 certificate
+            X509Certificate cert = X509CertUtils.parse(pem);
+            // Retrieve public key as RSA JWK
+            RSAKey jwkPublic = null;
+            jwkPublic = RSAKey.parse(cert);
+            // Verify the RSA
+            RSASSAVerifier verifier = new RSASSAVerifier(jwkPublic.toRSAKey().toRSAPublicKey(), getDeferredCriticalHeaders());
+            isVerifiedJws = parsedJWSObject.verify(verifier);
+        } catch (JOSEException e) {
+            e.printStackTrace();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return isVerifiedJws && isDigestOk && isSigningTimeOk;
+    }
 
     public static String createJwsSignature(RSAKey privateKey, String x5c, String verb, String url, Map<String, String> requestHeaders, String httpBody) {
 
