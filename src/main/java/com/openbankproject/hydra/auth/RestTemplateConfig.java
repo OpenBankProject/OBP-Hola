@@ -117,39 +117,39 @@ public class RestTemplateConfig {
     private void responseIntercept(org.apache.http.HttpResponse response, HttpContext httpContext) {
         HttpRequest req = (HttpRequest)httpContext.getAttribute("http.request");
         String uri = req.getRequestLine().getUri();
-        String verb = req.getRequestLine().getMethod().toLowerCase();
         if(forceJws(uri)) {
+            // Transform non-repeatable entity => repeatable entity.
+            makeInputStreamOfEntityRepeatable(response);
+            
             String xJwsSignature = getOrEmptyValue("x-jws-signature", response);
             String digest = getOrEmptyValue("digest", response);
-            final HttpEntity entity = response.getEntity();
-            if (entity != null) {
-                try {
-                    response.setEntity(new BufferedHttpEntity(entity));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+            String verb = req.getRequestLine().getMethod().toLowerCase();
+            
+            // Get HTTP body from the response
             String httpBody = "";
             try {
                 httpBody = getHttpResponseBody(response.getEntity().getContent()).toString();
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            
             String jwsProtectedHeaderAsString = "";
             String rebuiltDetachedPayload = "";
             String x5c = "";
             String sigT = "";
             try {
+                // Extract JOSE Protected Header and certain values of it
                 jwsProtectedHeaderAsString = JWSObject.parse(xJwsSignature).getHeader().toString();
                 JsonNode jphNode = new ObjectMapper().readTree(jwsProtectedHeaderAsString);
                 x5c = jphNode.get("x5c").toString().replace("[", "")
                         .replace("]", "").replace("\"", "");
                 sigT = jphNode.get("sigT").toString().replace("[", "")
                         .replace("]", "").replace("\"", "");
+
+                // Recreate detached payload
                 String parsString = (String)jphNode.get("sigD").get("pars").toString();
                 String[] pars = parsString.replace("[", "")
                         .replace("]", "").split(",");
-                
                 String name = "";
                 for (String nameWithQuotes : Arrays.asList(pars)) {
                     name = nameWithQuotes.replace("\"", "");
@@ -163,10 +163,28 @@ public class RestTemplateConfig {
                 e.printStackTrace();
             }
             String pem = X509Factory.BEGIN_CERT + x5c + X509Factory.END_CERT;
+            // Verify JWS
             boolean isVerifiedJws = JwsUtil.verifyJwsSignature(sigT, httpBody, xJwsSignature, digest, pem, rebuiltDetachedPayload);
             if(!isVerifiedJws) {
                 ProtocolVersion version = response.getStatusLine().getProtocolVersion();
                 response.setStatusLine(version, 400, "The signed response cannot be verified.");
+            }
+        }
+    }
+
+    /**
+     * Transform non-repeatable entity => repeatable entity.
+     * Repeatable entity is the entity capable of producing its data more than once.
+     * A repeatable entity's getContent() and writeTo(OutputStream) methods
+     * can be called more than once whereas a non-repeatable entity's can not.
+     */
+    private void makeInputStreamOfEntityRepeatable(HttpResponse response) {
+        final HttpEntity entity = response.getEntity();
+        if (entity != null) {
+            try {
+                response.setEntity(new BufferedHttpEntity(entity));
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
