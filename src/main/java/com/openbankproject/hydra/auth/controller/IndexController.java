@@ -322,6 +322,8 @@ public class IndexController implements ServletContextAware {
         model.addAttribute("apiStandard", apiStandard);
         UserInfo user = SessionData.getUserInfo(session);
         model.addAttribute("user", user);
+        String consentId = SessionData.getConsentId(session);
+        model.addAttribute("consentId", consentId);
         return "main";
     }
 

@@ -37,18 +37,18 @@
 
 
 <div class="container">
-    <div class="row">
-        <h1>Hello <span th:text="${user?.username}"></span></h1>
-
-        current user: <br>
-        email: <span th:text="${user?.email}"></span> <br>
-        username: <span th:text="${user?.username}"></span> <br>
-        <a class="btn btn-info" th:href="@{/logout}">Logout</a>
-        <br>
-        <br>
-    </div>
     <div th:switch="${apiStandard}">
         <div th:case="'UKOpenBanking'" class="row">
+            <div class="row">
+                <h1>Hello <span th:text="${user?.username}"></span></h1>
+
+                current user: <br>
+                email: <span th:text="${user?.email}"></span> <br>
+                username: <span th:text="${user?.username}"></span> <br>
+                <a class="btn btn-info" th:href="@{/logout}">Logout</a>
+                <br>
+                <br>
+            </div>
             <div>
                 <button class="btn btn-primary" id="get_accounts">Get accounts via UK Open Banking</button>
                 <div id="account_list">
@@ -57,8 +57,15 @@
             </div>
         </div>
         <div th:case="'BerlinGroup'" class="row">
+            <div class="row">
+                <h1>Hello</h1>
+                Consent-ID: <span th:text="${consentId}"></span> <br>
+                <a class="btn btn-info" th:href="@{/logout}">Start a new flow</a>
+                <br>
+                <br>
+            </div>
             <div>
-                <button class="btn btn-primary"  id="get_accounts_bg">Get accounts via Berlin Group APIs</button>
+                <button class="btn btn-primary"  id="get_accounts_bg">Get accounts via Berlin Group APIs using Consent-ID</button>
                 <div id="account_list_bg">
     
                 </div>
