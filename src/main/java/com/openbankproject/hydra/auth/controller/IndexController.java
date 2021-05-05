@@ -269,7 +269,7 @@ public class IndexController implements ServletContextAware {
                 return "error";
             }
             String consentId = (String) idTokenJwtJWTClaims.getClaim("consent_id");
-            logger.debug("consumerId: " + consentId);
+            logger.debug("consentId: " + consentId);
             SessionData.setConsentId(session, consentId);
         }
         SessionData.setCode(session, code);

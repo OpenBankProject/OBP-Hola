@@ -2,6 +2,8 @@ package com.openbankproject.hydra.auth.controller;
 
 import com.openbankproject.hydra.auth.VO.AccountDataValue;
 import com.openbankproject.hydra.auth.VO.SessionData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -21,6 +23,8 @@ import java.util.HashMap;
 
 @RestController
 public class OtherController {
+    private static final Logger logger = LoggerFactory.getLogger(OtherController.class);
+    
     // UK Open Banking
     @Value("${endpoint.path.prefix}/accounts")
     private String getAccountsUrl;
@@ -100,6 +104,7 @@ public class OtherController {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Consent-ID", consentId);
         HttpEntity<String> entity = new HttpEntity<>(headers);
+        logger.debug("Consent-ID: " + consentId);
 
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupAccountsUrl, HttpMethod.GET, entity, HashMap.class);
         return exchange.getBody();
