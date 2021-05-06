@@ -65,6 +65,8 @@ public class IndexController implements ServletContextAware {
     private String createConsentsUrl;
     @Value("${obp.base_url}/berlin-group/v1.3/consents")
     private String createBerlinGroupConsentsUrl;
+    @Value("${obp.base_url}/berlin-group/v1.3/consents/CONSENT_ID")
+    private String getConsentInformationBerlinGroup;
 
     @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/consents/CONSENT_ID")
     private String updateConsentStatusUrl;
@@ -312,6 +314,21 @@ public class IndexController implements ServletContextAware {
             SessionData.setUserInfo(session, userInfoResponse.getBody());
             logger.debug("login success user:" + userInfoResponse.getBody().getUsername());
         }
+        { // fetch Consent information
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(SessionData.getAccessToken(session));
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            String consentId = SessionData.getConsentId(session);
+            ResponseEntity<Map> response = restTemplate.exchange(getConsentInformationBerlinGroup.replace("CONSENT_ID", consentId), HttpMethod.GET, entity, Map.class);
+            int frequencyPerDay = (int)response.getBody().get("frequencyPerDay");
+            String consentStatus = (String)response.getBody().get("consentStatus");
+            String validUntil = (String)response.getBody().get("validUntil");
+            boolean recurringIndicator = (boolean)response.getBody().get("recurringIndicator");
+            session.setAttribute("frequencyPerDay", String.valueOf(frequencyPerDay));
+            session.setAttribute("consentStatus", consentStatus);
+            session.setAttribute("validUntil", validUntil);
+            session.setAttribute("recurringIndicator", String.valueOf(recurringIndicator));
+        }
 
         return "redirect:/main";
     }
@@ -324,6 +341,14 @@ public class IndexController implements ServletContextAware {
         model.addAttribute("user", user);
         String consentId = SessionData.getConsentId(session);
         model.addAttribute("consentId", consentId);
+        String consentStatus = (String)session.getAttribute("consentStatus");
+        model.addAttribute("consentStatus", consentStatus);
+        String frequencyPerDay = (String)session.getAttribute("frequencyPerDay");
+        model.addAttribute("frequencyPerDay", frequencyPerDay);
+        String validUntil = (String)session.getAttribute("validUntil");
+        model.addAttribute("validUntil", validUntil);
+        String recurringIndicator = (String)session.getAttribute("recurringIndicator");
+        model.addAttribute("recurringIndicator", recurringIndicator);
         return "main";
     }
 

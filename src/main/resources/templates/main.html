@@ -58,9 +58,13 @@
         </div>
         <div th:case="'BerlinGroup'" class="row">
             <div class="row">
-                <h1>Hello</h1>
+                <h1>Hello</h1> <br>
                 Consent-ID: <span th:text="${consentId}"></span> <br>
-                <a class="btn btn-info" th:href="@{/logout}">Start a new flow</a>
+                Status: <span th:text="${consentStatus}"></span> <br>
+                Frequency per day: <span th:text="${frequencyPerDay}"></span> <br>
+                Recurring indicator: <span th:text="${recurringIndicator}"></span> <br>
+                Valid until: <span th:text="${validUntil}"></span> <br>
+                <a class="btn btn-info" th:href="@{/logout}">Create a new consent</a>
                 <br>
                 <br>
             </div>
