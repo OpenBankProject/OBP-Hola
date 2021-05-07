@@ -146,6 +146,16 @@ public class IndexController implements ServletContextAware {
         }
         return "index_bg";
     }
+    @GetMapping({"/consents", "consents.html"})
+    public String consents(Model model, HttpSession session) throws ParseException, JOSEException {
+        { // initiate all bank names and bank ids
+            Banks banks = restTemplate.getForObject(getBanksUrl, Banks.class);
+            model.addAttribute("banks", banks.getBanks());
+            model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
+            model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
+        }
+        return "consents";
+    }
     
 
     @PostMapping(value="/request_consents", params = {"bank", "consents", "transaction_from_time", "transaction_to_time", "expiration_time"})
@@ -431,6 +441,71 @@ public class IndexController implements ServletContextAware {
             SessionData.setApiStandard(session, "BerlinGroup");
             // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.
             //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
+
+            // add request object query parameter
+            if(this.hydraConfig.isPublicClient()) {
+                final String requestObject = this.hydraConfig.buildRequestObject(queryParam);
+                queryParam.put("request", requestObject);
+            }
+
+            // add code_challenge
+            final String codeVerifier = PKCEUtil.generateCodeVerifier();
+            SessionData.setCodeVerifier(session, codeVerifier);
+            final String codeChallenge = PKCEUtil.generateCodeChallenge(codeVerifier);
+            queryParam.put("code_challenge_method", "S256");
+            queryParam.put("code_challenge", codeChallenge);
+
+            String queryParamStr = queryParam.entrySet().stream().map(it -> it.getKey() + "=" + it.getValue()).collect(Collectors.joining("&"));
+            String authorizationEndpoint = openIDConfiguration.getAuthorizationEndpoint();
+            String redirectUrl = "redirect:" + authorizationEndpoint + "?" + queryParamStr;
+
+            // if current user is authenticated, remove user info from session, to do re-authentication
+            SessionData.remoteUserInfo(session);
+
+            return redirectUrl;
+        } catch (Exception unhandledException) {
+            logger.error("Error: ", unhandledException);
+            if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException);
+            else model.addAttribute("errorMsg", "Internal Server Error");
+            return "error";
+        }
+    }
+    @PostMapping(value="/administrate_consents", params = {})
+    public String administrateConsents(@RequestParam("bank") String bankId, HttpSession session, Model model
+    ) throws UnsupportedEncodingException, ParseException, JOSEException, RestClientException {
+        try {
+            String clientCredentialsToken = getClientCredentialsToken();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(clientCredentialsToken);
+            
+
+            //{"client_id", "bank_id", "consent_id", "response_type=code", "scope", "redirect_uri", "state"})
+            Map<String, String> queryParam = new LinkedHashMap<>();
+            queryParam.put("client_id", clientId);
+            queryParam.put("response_type", "code+id_token");
+            // include OBP scopes, add OAuth2 and OIDC related scope: "openid" and "offline"
+            String scope = Stream.of(ArrayUtils.addAll(new String[]{"openid", "offline"}))
+                    .distinct()
+                    .map(this::encodeQueryParam)
+                    .collect(Collectors.joining("+"));
+
+            queryParam.put("scope", scope);
+            
+            
+            String encodeRedirectUri = URLEncoder.encode(redirectUri, "UTF-8");
+            queryParam.put("redirect_uri", encodeRedirectUri);
+            final String state = UUID.randomUUID().toString();
+            final String nonce = UUID.randomUUID().toString();
+            queryParam.put("state", state);
+            queryParam.put("nonce", nonce);
+            SessionData.setState(session, state);
+            SessionData.setNonce(session, nonce);
+
+            // the parameter consent_id and bank_id are mandatory, these two parameter is not standard parameter of OAuth2 and OIDC
+            queryParam.put("bank_id", bankId);
+            queryParam.put("consent_id", "Utility-List-Consents");
+            queryParam.put("api_standard", "BerlinGroup");
+            SessionData.setApiStandard(session, "BerlinGroup");
 
             // add request object query parameter
             if(this.hydraConfig.isPublicClient()) {

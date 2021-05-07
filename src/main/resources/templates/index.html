@@ -24,15 +24,23 @@
     </a>
 </nav>
 <div class="jumbotron text-center">
-    <h3>Choose API standard</h3>
     <div>
         <div class="container">
+            <h3>Choose API standard</h3>
             <div class="row">
                 <tr th:each="standard : ${displayStandards}">
                     <td th:switch="${standard}">
                         <a th:case="'UKOpenBanking'" th:href="@{/index_uk.html}" class="btn btn-primary btn-lg">UK Open Banking</a>
                         <a th:case="'BerlinGroup'" th:href="@{/index_bg.html}" class="btn btn-danger btn-lg">Berlin Group</a>
                         <a th:case="*" th:href="@{/index.html}" class="btn btn-danger btn-lg"><th:block th:text="${standard}"></th:block></a>
+                    </td>
+                </tr>
+            </div>
+            <h3>Utility</h3>
+            <div class="row">
+                <tr>
+                    <td>
+                        <a th:href="@{/consents.html}" class="btn btn-info btn-lg">List Consents</a>
                     </td>
                 </tr>
             </div>
