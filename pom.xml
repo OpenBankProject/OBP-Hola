@@ -8,11 +8,11 @@
         <version>2.3.3.RELEASE</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.openbankproject.hydra</groupId>
-    <artifactId>obp-hydra-auth2</artifactId>
+    <groupId>com.openbankproject.hola</groupId>
+    <artifactId>obp-hola-app</artifactId>
     <version>0.0.29-SNAPSHOT</version>
-    <name>obp-hydra-auth</name>
-    <description>Demo project for Spring Boot</description>
+    <name>obp-hola</name>
+    <description>Demo project for using OBP APIs</description>
 
     <properties>
         <java.version>1.8</java.version>
