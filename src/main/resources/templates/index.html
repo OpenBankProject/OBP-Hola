@@ -20,7 +20,8 @@
 <body>
 <nav class="navbar navbar-light bg-light">
     <a class="navbar-brand" th:href="@{${application.obp_url}}">
-        <img th:src="@{/images/bank-logo.png}" height="55" class="d-inline-block align-top" alt="">
+        <img th:if="${showBankLogo == 'true'}" th:src="@{/images/bank-logo.png}" height="55" class="d-inline-block align-top" alt=""></img>
+        <img th:unless="${showBankLogo == 'true'}" th:src="@{/images/logo.png}" height="55" class="d-inline-block align-top" alt=""></img>
     </a>
 </nav>
 <div class="jumbotron text-center">

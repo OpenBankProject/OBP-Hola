@@ -77,6 +77,8 @@ public class IndexController implements ServletContextAware {
     private String buttonBackgroundColor;
     @Value("${button.hover.background_color:#b92c28}")
     private String buttonHoverBackgroundColor;
+    @Value("${logo.bank.enabled:false}")
+    private String showBankLogo;
 
     @Value("${show_unhandled_errors:false}")
     private boolean showUnhandledErrors;
@@ -108,6 +110,7 @@ public class IndexController implements ServletContextAware {
         model.addAttribute("displayStandards", displayStandards);
         model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
         model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
+        model.addAttribute("showBankLogo", showBankLogo);
         return "index";
     }
     
@@ -143,6 +146,7 @@ public class IndexController implements ServletContextAware {
             model.addAttribute("banks", banks.getBanks());
             model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
             model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
+            model.addAttribute("showBankLogo", showBankLogo);
         }
         return "index_bg";
     }
@@ -153,6 +157,7 @@ public class IndexController implements ServletContextAware {
             model.addAttribute("banks", banks.getBanks());
             model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
             model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
+            model.addAttribute("showBankLogo", showBankLogo);
         }
         return "consents";
     }
@@ -359,6 +364,7 @@ public class IndexController implements ServletContextAware {
         model.addAttribute("validUntil", validUntil);
         String recurringIndicator = (String)session.getAttribute("recurringIndicator");
         model.addAttribute("recurringIndicator", recurringIndicator);
+        model.addAttribute("showBankLogo", showBankLogo);
         return "main";
     }
 
