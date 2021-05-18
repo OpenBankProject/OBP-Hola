@@ -329,7 +329,8 @@ public class IndexController implements ServletContextAware {
             SessionData.setUserInfo(session, userInfoResponse.getBody());
             logger.debug("login success user:" + userInfoResponse.getBody().getUsername());
         }
-        { // fetch Consent information
+        String apiStandard = SessionData.getApiStandard(session);
+        if(apiStandard.equalsIgnoreCase("BerlinGroup")){ // fetch Consent information
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(SessionData.getAccessToken(session));
             HttpEntity<String> entity = new HttpEntity<>(headers);
