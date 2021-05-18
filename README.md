@@ -42,4 +42,15 @@ mtls.trustStore.path=file:///Users/<some path>/cert/ofpilot.jks
 mtls.trustStore.password=<truststore password>
 ```
 
+## Screenshots of the app
+
+### Landing page
+![alt text](https://github.com/OpenBankProject/OBP-Hola/blob/a124b6ace05e35e763e292144c507f2caa675159/src/main/resources/static.screenshots/index.png?raw=true)
+### Berlin Group Flow
+![alt text](https://github.com/OpenBankProject/OBP-Hola/blob/a124b6ace05e35e763e292144c507f2caa675159/src/main/resources/static.screenshots/index_bg.png?raw=true)
+### Consents
+![alt text](https://github.com/OpenBankProject/OBP-Hola/blob/a124b6ace05e35e763e292144c507f2caa675159/src/main/resources/static.screenshots/consent.png?raw=true)
+### Get Accounts, Balances and Transactions
+![alt text](https://github.com/OpenBankProject/OBP-Hola/blob/a124b6ace05e35e763e292144c507f2caa675159/src/main/resources/static.screenshots/accounts.png?raw=true)
+
 Copyright TESOBE GmbH 2020
