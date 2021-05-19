@@ -55,7 +55,7 @@ public class IndexController implements ServletContextAware {
     @Value("${oauth2.client_secret:}")
     private String clientSecret;
 
-    @Value("${obp.base_url}")
+    @Value("${obp.base_url:#}")
     private String obpBaseUrl;
     @Value("${obp.base_url}/obp/v4.0.0/users/current")
     private String currentUserUrl;
@@ -111,6 +111,7 @@ public class IndexController implements ServletContextAware {
         model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
         model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
         model.addAttribute("showBankLogo", showBankLogo);
+        model.addAttribute("obpBaseUrl", obpBaseUrl);
         return "index";
     }
     
@@ -127,6 +128,10 @@ public class IndexController implements ServletContextAware {
         { // initiate all bank names and bank ids
             Banks banks = restTemplate.getForObject(getBanksUrl, Banks.class);
             model.addAttribute("banks", banks.getBanks());
+            model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
+            model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
+            model.addAttribute("showBankLogo", showBankLogo);
+            model.addAttribute("obpBaseUrl", obpBaseUrl);
         }
         return "index_uk";
     }
@@ -147,6 +152,7 @@ public class IndexController implements ServletContextAware {
             model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
             model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
             model.addAttribute("showBankLogo", showBankLogo);
+            model.addAttribute("obpBaseUrl", obpBaseUrl);
         }
         return "index_bg";
     }
@@ -158,6 +164,7 @@ public class IndexController implements ServletContextAware {
             model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
             model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
             model.addAttribute("showBankLogo", showBankLogo);
+            model.addAttribute("obpBaseUrl", obpBaseUrl);
         }
         return "consents";
     }
@@ -366,6 +373,7 @@ public class IndexController implements ServletContextAware {
         String recurringIndicator = (String)session.getAttribute("recurringIndicator");
         model.addAttribute("recurringIndicator", recurringIndicator);
         model.addAttribute("showBankLogo", showBankLogo);
+        model.addAttribute("obpBaseUrl", obpBaseUrl);
         return "main";
     }
 
