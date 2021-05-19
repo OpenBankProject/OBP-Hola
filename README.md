@@ -1,6 +1,6 @@
-# OBP-Hydra-OAuth2
+# OBP-Hola
 
-Spring Boot application to showcase OAuth2 flow with OBP API using Ory Hydra.
+OBP-Hola is a Spring Boot application showcasing OAuth2 flow and Consent creation with OBP API and Ory Hydra.
 
 ## prepare truststore
 Suppose the OBP-API server domain is: `api-mtls.ofpilot.com`
