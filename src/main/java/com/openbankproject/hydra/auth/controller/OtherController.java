@@ -137,6 +137,8 @@ public class OtherController {
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupTransactionsUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
+        logger.debug("getTransactionsBerlinGroup status:" + exchange.getStatusCode().toString());
+        logger.debug("getTransactionsBerlinGroup body:" + exchange.getBody().toString());
         return exchange.getBody();
     }
 
