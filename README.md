@@ -4,6 +4,9 @@ The Open Bank Project *Hola Application* can be used to demonstrate and test the
 
 Works in conjunction with the [OBP Hydra Identity Provider](https://github.com/OpenBankProject/OBP-Hydra-Identity-Provider)
 
+Can be driven automatically (for test purposes) using [OBP Selenium](https://github.com/OpenBankProject/OBP-Selenium)
+
+
 ## prepare truststore
 Suppose the OBP-API server domain is: `api-mtls.ofpilot.com`
 
