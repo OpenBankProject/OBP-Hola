@@ -1,6 +1,6 @@
 # OBP-Hola
 
-The Open Bank Project *Hola Application* can be used to demonstrate and test the Open Banking OAuth2 and Consent creation and usage flows via OBP API and Ory Hydra. It supports both UK and Berlin Group styles. Hola uses Spring Boot and Java.
+The Open Bank Project *Hola Application* can be used to demonstrate and test the Open Banking OAuth2 and consent creation and usage via OBP API and Ory Hydra. It supports both UK and Berlin Group styles. Hola is written in Java / Spring Boot.
 
 ## prepare truststore
 Suppose the OBP-API server domain is: `api-mtls.ofpilot.com`
