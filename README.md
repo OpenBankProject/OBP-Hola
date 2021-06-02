@@ -1,6 +1,6 @@
 # OBP-Hola
 
-OBP-Hola is a Spring Boot application showcasing OAuth2 flow and Consent creation with OBP API and Ory Hydra.
+The Open Bank Project *Hola Application* can be used to demonstrate and test the Open Banking OAuth2 and Consent creation and usage flows via OBP API and Ory Hydra. It supports both UK and Berlin Group styles. Hola uses Spring Boot and Java.
 
 ## prepare truststore
 Suppose the OBP-API server domain is: `api-mtls.ofpilot.com`
