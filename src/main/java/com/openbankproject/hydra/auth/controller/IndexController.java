@@ -79,6 +79,8 @@ public class IndexController implements ServletContextAware {
     private String buttonHoverBackgroundColor;
     @Value("${logo.bank.enabled:false}")
     private String showBankLogo;
+    @Value("${logo.bank.url:#}")
+    private String bankLogoUrl;
 
     @Value("${show_unhandled_errors:false}")
     private boolean showUnhandledErrors;
@@ -112,6 +114,7 @@ public class IndexController implements ServletContextAware {
         model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
         model.addAttribute("showBankLogo", showBankLogo);
         model.addAttribute("obpBaseUrl", obpBaseUrl);
+        model.addAttribute("bankLogoUrl", bankLogoUrl);
         return "index";
     }
     
@@ -132,6 +135,7 @@ public class IndexController implements ServletContextAware {
             model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
             model.addAttribute("showBankLogo", showBankLogo);
             model.addAttribute("obpBaseUrl", obpBaseUrl);
+            model.addAttribute("bankLogoUrl", bankLogoUrl);
         }
         return "index_uk";
     }
@@ -153,6 +157,7 @@ public class IndexController implements ServletContextAware {
             model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
             model.addAttribute("showBankLogo", showBankLogo);
             model.addAttribute("obpBaseUrl", obpBaseUrl);
+            model.addAttribute("bankLogoUrl", bankLogoUrl);
         }
         return "index_bg";
     }
@@ -165,6 +170,7 @@ public class IndexController implements ServletContextAware {
             model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
             model.addAttribute("showBankLogo", showBankLogo);
             model.addAttribute("obpBaseUrl", obpBaseUrl);
+            model.addAttribute("bankLogoUrl", bankLogoUrl);
         }
         return "consents";
     }
@@ -374,6 +380,7 @@ public class IndexController implements ServletContextAware {
         model.addAttribute("recurringIndicator", recurringIndicator);
         model.addAttribute("showBankLogo", showBankLogo);
         model.addAttribute("obpBaseUrl", obpBaseUrl);
+        model.addAttribute("bankLogoUrl", bankLogoUrl);
         return "main";
     }
 
