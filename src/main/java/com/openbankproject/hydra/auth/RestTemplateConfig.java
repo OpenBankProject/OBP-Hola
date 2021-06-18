@@ -8,6 +8,7 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.openbankproject.JwsUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.HttpClient;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -114,24 +115,31 @@ public class RestTemplateConfig {
         }
     }
 
-    private void responseIntercept(org.apache.http.HttpResponse response, HttpContext httpContext) {
+    private void traceResponse(HttpResponse response, String body) throws IOException {
+        logger.info("=========================== response begin ================================================");
+        logger.info("=== Status Line : {}", response.getStatusLine());
+        logger.info("=== Headers : {}", StringUtils.join(response.getAllHeaders(), "; "));
+        logger.info("=== Response body: {}", body);
+        logger.info("========================== response end ================================================");
+    }
+
+    private void responseIntercept(org.apache.http.HttpResponse response, HttpContext httpContext) throws IOException {
         HttpRequest req = (HttpRequest)httpContext.getAttribute("http.request");
         String uri = req.getRequestLine().getUri();
+        // Transform non-repeatable entity => repeatable entity.
+        makeInputStreamOfEntityRepeatable(response);
+        // Get HTTP body from the response
+        String httpBody = "";
+        try {
+            httpBody = getHttpResponseBody(response.getEntity().getContent()).toString();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         if(forceJws(uri)) {
-            // Transform non-repeatable entity => repeatable entity.
-            makeInputStreamOfEntityRepeatable(response);
             
             String xJwsSignature = getOrEmptyValue("x-jws-signature", response);
             String digest = getOrEmptyValue("digest", response);
             String verb = req.getRequestLine().getMethod().toLowerCase();
-            
-            // Get HTTP body from the response
-            String httpBody = "";
-            try {
-                httpBody = getHttpResponseBody(response.getEntity().getContent()).toString();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
             
             String jwsProtectedHeaderAsString = "";
             String rebuiltDetachedPayload = "";
@@ -170,6 +178,7 @@ public class RestTemplateConfig {
                 response.setStatusLine(version, 400, "The signed response cannot be verified.");
             }
         }
+        traceResponse(response, httpBody);
     }
 
     /**
@@ -189,15 +198,23 @@ public class RestTemplateConfig {
         }
     }
 
-    private void requestIntercept(org.apache.http.HttpRequest request, HttpContext httpContext) {
+    private void traceRequest(HttpRequest request, String body) throws IOException {
+        logger.info("=========================== request begin ================================================");
+        logger.info("=== Request Line : {}", request.getRequestLine());
+        logger.info("=== Headers : {}", StringUtils.join(request.getAllHeaders(), "; "));
+        logger.info("=== Request body: {}", body);
+        logger.info("============================= request end ================================================");
+    }
+
+    private void requestIntercept(org.apache.http.HttpRequest request, HttpContext httpContext) throws IOException {
         Header[] headers = request.getHeaders(HttpHeaders.CONTENT_TYPE);
         if(ArrayUtils.isEmpty(headers)) {
             request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
         }
         String url = request.getRequestLine().getUri();
+        String httpBody = getHttpBody(request).toString();
         if(forceJws(url)) {
             String httpMethod = request.getRequestLine().getMethod().toLowerCase();
-            String httpBody = getHttpBody(request).toString();
             InetAddress ip = getInetAddress();
             JwsUtil jwsUtil = new JwsUtil();
             Map<String, String> requestHeaders = new HashMap<>();
@@ -216,6 +233,7 @@ public class RestTemplateConfig {
             logger.debug("Digest: " + digest);
             logger.debug("X-JWS-Signature: " + xJwsSignature);
         }
+        traceRequest(request, httpBody);
     }
 
     private boolean forceJws(String url) {
@@ -268,7 +286,7 @@ public class RestTemplateConfig {
         return httpBody;
     }
 
-    private StringBuilder getHttpResponseBody(InputStream inputStream) {
+    public StringBuilder getHttpResponseBody(InputStream inputStream) {
         StringBuilder httpBody = new StringBuilder();
         try {
             try (Reader reader = new BufferedReader(new InputStreamReader
