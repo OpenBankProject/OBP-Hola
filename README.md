@@ -28,7 +28,7 @@ Suppose the Hydra server domain is: `oauth2.api-mtls.ofpilot.com`
     `keytool -import -alias hydra -keystore ofpilot.jks -file hydra.cer`
     
 ## prepare keystore
-- convert user.key and user.pem file to file cert.p12.
+- Generate user.key and user.pem files and convert them to cert.p12.
   
     `openssl pkcs12 -export -in user.pem -inkey user.key -certfile user.pem -out user.p12`
 - convert cert.p12 to file user.jks
