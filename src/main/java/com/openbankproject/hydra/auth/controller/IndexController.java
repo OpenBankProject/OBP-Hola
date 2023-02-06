@@ -335,12 +335,19 @@ public class IndexController implements ServletContextAware {
         }
 
         { // fetch user information
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(SessionData.getAccessToken(session));
-            HttpEntity<String> entity = new HttpEntity<>(headers);
-            ResponseEntity<UserInfo> userInfoResponse = restTemplate.exchange(currentUserUrl, HttpMethod.GET, entity, UserInfo.class);
-            SessionData.setUserInfo(session, userInfoResponse.getBody());
-            logger.debug("login success user:" + userInfoResponse.getBody().getUsername());
+            try {
+                HttpHeaders headers = new HttpHeaders();
+                headers.setBearerAuth(SessionData.getAccessToken(session));
+                HttpEntity<String> entity = new HttpEntity<>(headers);
+                ResponseEntity<UserInfo> userInfoResponse = restTemplate.exchange(currentUserUrl, HttpMethod.GET, entity, UserInfo.class);
+                SessionData.setUserInfo(session, userInfoResponse.getBody());
+                logger.debug("login success user:" + userInfoResponse.getBody().getUsername());
+            } catch (HttpClientErrorException e) {
+                String error = "Sorry! Cannot create the consent.";
+                logger.error(error, e);
+                model.addAttribute("errorMsg", e.getMessage());
+                return "error";
+            }
         }
         String apiStandard = SessionData.getApiStandard(session);
         if(apiStandard.equalsIgnoreCase("BerlinGroup")){ // fetch Consent information
