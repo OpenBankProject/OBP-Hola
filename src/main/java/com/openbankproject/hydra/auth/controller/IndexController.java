@@ -19,6 +19,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
@@ -29,6 +30,9 @@ import javax.annotation.Resource;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -103,11 +107,15 @@ public class IndexController implements ServletContextAware {
 
 
     @GetMapping({ "/", "/index", "index.html"})
-    public String index(Model model) {
+    public String index(@RequestHeader(required = false, name = "Referer") String referer, Model model) {
+        if (!returnErrorIfAny(referer).isEmpty()) {
+            model.addAttribute("errorMsg",  returnErrorIfAny(referer));
+            return "error";
+        }
         String[] apiStandards = displayStandards.split(",");
         String[] displayStandards = apiStandards;
         if(apiStandards.length == 1 && apiStandards[0].trim().isEmpty()) {
-            displayStandards = new String[] {"display_standards=UKOpenBanking,BerlinGroup"};
+            displayStandards = new String[] {"display_standards=UKOpenBanking,BerlinGroup,OBP-API"};
         }
         model.addAttribute("displayStandards", displayStandards);
         model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
@@ -116,6 +124,24 @@ public class IndexController implements ServletContextAware {
         model.addAttribute("obpBaseUrl", obpBaseUrl);
         model.addAttribute("bankLogoUrl", bankLogoUrl);
         return "index";
+    }
+
+    private String returnErrorIfAny(@RequestHeader(required = false) String Referer) {
+        try {
+            URL url = new URL(Referer);
+            if(url.getQuery() != null && url.getQuery().contains("error=")) {
+                String query = url.getQuery();
+                String decodedQuery = Arrays.stream(query.split("&"))
+                        .filter(param -> param.split("=")[0].startsWith("error"))
+                        .map(param -> param.split("=")[0] + "=" + URLDecoder.decode(param.split("=")[1]))
+                        .collect(Collectors.joining("<br>"));
+                String error = "<br>" + decodedQuery;
+                return error;
+            }
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
     
     @GetMapping({ "/index_uk", "index_uk.html"})
