@@ -20,7 +20,16 @@ public class SessionData {
     private String bankId;
     private String apiStandard;
     private String consentId;
+    private String consentRequestId;
     private UserInfo userInfo;
+
+    public static String getConsentRequestId(HttpSession session) {
+        return getOrCreateSessionData(session).consentRequestId;
+    }
+
+    public static void setConsentRequestId(HttpSession session, String consentRequestId) {
+        getOrCreateSessionData(session).consentRequestId = consentRequestId;
+    }
 
     public static String getConsentId(HttpSession session) {
         return getOrCreateSessionData(session).consentId;

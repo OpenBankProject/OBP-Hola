@@ -50,6 +50,19 @@ public class OtherController {
 
     @Value("${obp.base_url}/berlin-group/v1.3/accounts/ACCOUNT_ID/transactions")
     private String getBerlinGroupTransactionsUrl;
+    
+    // OBP
+    @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/private")
+    private String getObpAccountsUrl;
+
+    @Value("${obp.base_url}/obp/v5.1.0/my/banks/BANK_ID/accounts/ACCOUNT_ID/account")
+    private String getCoreAccountById;
+    
+    @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/balances")
+    private String getBankAccountBalances;
+    
+    @Value("${obp.base_url}/obp/v5.1.0/my/banks/BANK_ID/accounts/ACCOUNT_ID/transactions")
+    private String getCoreTransactionsForBankAccount;
 
     @Resource
     private RestTemplate restTemplate;
@@ -139,6 +152,57 @@ public class OtherController {
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupTransactionsUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
         logger.debug("getTransactionsBerlinGroup status:" + exchange.getStatusCode().toString());
         logger.debug("getTransactionsBerlinGroup body:" + exchange.getBody().toString());
+        return exchange.getBody();
+    }
+
+
+    // Open Bank Project
+    @GetMapping("/account_obp")
+    public Object getAccountsObp(HttpSession session) {
+        String consentId = SessionData.getConsentId(session);
+        String bankId = SessionData.getBankId(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Consent-Id", consentId);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        logger.debug("Consent-Id: " + consentId);
+
+        ResponseEntity<HashMap> exchange = restTemplate
+                .exchange(getObpAccountsUrl.replace("BANK_ID", bankId), HttpMethod.GET, entity, HashMap.class);
+        return exchange.getBody();
+    }
+    @GetMapping("/account_obp/{bankId}/{accountId}")
+    public Object getAccountObp(@PathVariable String bankId, @PathVariable String accountId, HttpSession session) {
+        String consentId = SessionData.getConsentId(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Consent-Id", consentId);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<HashMap> exchange = restTemplate
+                .exchange(getCoreAccountById.replace("ACCOUNT_ID", accountId).replace("BANK_ID", bankId).replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+        return  exchange.getBody();
+    }
+    @GetMapping("/balances_obp/bank_id/{bankId}/account_id/{accountId}")
+    public Object getBalanceObp(@PathVariable String bankId, @PathVariable String accountId, HttpSession session) {
+        String consentId = SessionData.getConsentId(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Consent-Id", consentId);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<HashMap> exchange = restTemplate
+                .exchange(getBankAccountBalances.replace("ACCOUNT_ID", accountId)
+                        .replace("BANK_ID", bankId), HttpMethod.GET, entity, HashMap.class);
+        return exchange.getBody();
+    }
+    @GetMapping("/transactions_obp/bank_id/{bankId}/account_id/{accountId}")
+    public Object getTransactionsObp(@PathVariable String bankId, @PathVariable String accountId, HttpSession session) {
+        String consentId = SessionData.getConsentId(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Consent-Id", consentId);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<HashMap> exchange = restTemplate
+                .exchange(getCoreTransactionsForBankAccount.replace("ACCOUNT_ID", accountId)
+                        .replace("BANK_ID", bankId), HttpMethod.GET, entity,  HashMap.class);
         return exchange.getBody();
     }
 
