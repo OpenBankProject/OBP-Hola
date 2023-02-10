@@ -168,19 +168,19 @@
                 const container = $('#account_list_obp').empty().append('<h1>Account List:</h1>');
                 if (data.code > 399 ) {
                   let zson = JSON.stringify(data, null, 2);
-                  container.append(`<code>${zson}<code>`).append('<br>');
+                  container.append(`<pre>${zson}</pre>`).append('<br>');
                 }
                 $.each(data.accounts, function (index, account) {
                     let zson = JSON.stringify(account, null, 2);
                     container.append(`
                     <div>
-                        <code>${zson}</code><br>
+                        <pre>${zson}</pre><br>
                         <button class="get_account_detail_obp" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Account detail</button>
                         <button class="get_balances_obp" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Balances</button>
                         <button class="get_transactions_obp" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Transactions</button>
-                        <div class="account_detail_obp"></div>
-                        <div class="balances_obp"></div>
-                        <div class="transactions_obp"></div>
+                        <div class="account_detail_obp" style="margin-left: 50px;"></div>
+                        <div class="balances_obp" style="margin-left: 50px;"></div>
+                        <div class="transactions_obp" style="margin-left: 50px;"></div>
                         <hr>
                     </div>
                 `);
@@ -192,7 +192,7 @@
                     let bankId = $(this).attr('bank_id');
                     $.getJSON('/account_obp/' + bankId + '/' + accountId, function (data) {
                         let zson = JSON.stringify(data, null, 2);
-                        accountDetailEle.append(`<code>${zson}<code>`).append('<br>');
+                        accountDetailEle.append(`<pre>${zson}</pre>`).append('<br>');
                     });
                 });
                 $('.get_balances_obp').click(function () {
@@ -201,7 +201,7 @@
                     let accountId = $(this).attr('account_id');
                     $.getJSON('/balances_obp/bank_id/' + bankId + '/account_id/' + accountId, function (data) {
                         let zson = JSON.stringify(data, null, 2);
-                        balancesEle.append(`<code>${zson}<code>`).append('<br>');
+                        balancesEle.append(`<pre>${zson}</pre>`).append('<br>');
                     });
                 });
                 $('.get_transactions_obp').click(function () {
@@ -210,7 +210,7 @@
                     let accountId = $(this).attr('account_id');
                     $.getJSON('/transactions_obp/bank_id/' + bankId + '/account_id/' + accountId, function (data) {
                         let zson = JSON.stringify(data, null, 2);
-                        accountsEle.append(`<code>${zson}<code>`).append('<br>');
+                        accountsEle.append(`<pre>${zson}</pre>`).append('<br>');
                     });
                 });
             });
