@@ -185,9 +185,9 @@
                     container.append(`
                     <div>
                         <pre>${zson}</pre><br>
-                        <button class="get_account_detail_obp" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Account detail</button>
-                        <button class="get_balances_obp" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Balances</button>
-                        <button class="get_transactions_obp" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Transactions</button>
+                        <button id="get_account_detail_obp" class="btn btn-success" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Account detail</button>
+                        <button id="get_balances_obp" class="btn btn-warning" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Balances</button>
+                        <button id="get_transactions_obp" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Transactions</button>
                         <div class="account_detail_obp" style="margin-left: 50px;"></div>
                         <div class="balances_obp" style="margin-left: 50px;"></div>
                         <div class="transactions_obp" style="margin-left: 50px;"></div>
@@ -195,7 +195,7 @@
                     </div>
                 `);
                 });
-                $('.get_account_detail_obp').click(function () {
+                $('#get_account_detail_obp').click(function () {
                     let accountDetailEle = $(this).siblings('.account_detail_obp').empty().append('<h3>Account Detail:</h3>');
                     ;
                     let accountId = $(this).attr('account_id');
@@ -205,7 +205,7 @@
                         accountDetailEle.append(`<pre>${zson}</pre>`).append('<br>');
                     });
                 });
-                $('.get_balances_obp').click(function () {
+                $('#get_balances_obp').click(function () {
                     let balancesEle = $(this).siblings('.balances_obp').empty().append('<h3>Balance List:</h3>');
                     let bankId = $(this).attr('bank_id');
                     let accountId = $(this).attr('account_id');
@@ -214,7 +214,7 @@
                         balancesEle.append(`<pre>${zson}</pre>`).append('<br>');
                     });
                 });
-                $('.get_transactions_obp').click(function () {
+                $('#get_transactions_obp').click(function () {
                     let accountsEle = $(this).siblings('.transactions_obp').empty().append('<h3>Transaction List:</h3>');
                     let bankId = $(this).attr('bank_id');
                     let accountId = $(this).attr('account_id');
