@@ -33,6 +33,7 @@
     <a class="navbar-brand" th:href="@{${obpBaseUrl}}">
         <img th:if="${showBankLogo == 'true'}" th:src="@{${bankLogoUrl}}" height="55" class="d-inline-block align-top" alt=""></img>
         <img th:unless="${showBankLogo == 'true'}" th:src="@{/images/logo.png}" height="55" class="d-inline-block align-top" alt=""></img>
+        <span class="badge badge-primary">AISP</span>
     </a>
 </nav>
 
@@ -81,9 +82,11 @@
                 <h1>Hello</h1> <br>
                 Consent-Id: <span th:text="${consentId}"></span> <br>
                 <a class="btn btn-info" th:href="@{/logout}">Create a new consent</a>
+                <a class="btn btn-danger" id="revoke_consent_obp">Revoke the consent</a>
                 <br>
                 <br>
             </div>
+            <div id="revoke_consent_obp_div"></div>
             <div>
                 <button class="btn btn-primary"  id="get_accounts_obp">Get accounts via OBP APIs using Consent-ID</button>
                 <div id="account_list_obp">
@@ -162,6 +165,13 @@
                 alert(`error: code=${e.status}, fail msg: ${e.responseText}`);
                 console.log(e);
             }
+        });
+        $('#revoke_consent_obp').click(function () {   
+            $.getJSON('/revoke_consent_obp/', function (data) {
+                const container = $('#revoke_consent_obp_div')
+                let zson = JSON.stringify(data, null, 2);
+                container.append(`<pre>${zson}</pre>`).append('<br>');
+            });
         });
         $('#get_accounts_obp').click(function () {
             $.getJSON("/account_obp", function (data) {

@@ -64,6 +64,13 @@ public class OtherController {
     @Value("${obp.base_url}/obp/v5.1.0/my/banks/BANK_ID/accounts/ACCOUNT_ID/transactions")
     private String getCoreTransactionsForBankAccount;
 
+
+    @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/consents/CONSENT_ID/revoke")
+    private String revokeConsentUrl;
+    
+    @Value("${obp.base_url}/obp/v5.1.0/my/consent/revoke")
+    private String selfRevokeConsentUrl;
+
     @Resource
     private RestTemplate restTemplate;
 
@@ -205,6 +212,20 @@ public class OtherController {
                         .replace("BANK_ID", bankId), HttpMethod.GET, entity,  HashMap.class);
         return exchange.getBody();
     }
+    @GetMapping("/revoke_consent_obp")
+    public Object revokeConsentObp(HttpSession session) {
+        String consentId = SessionData.getConsentId(session);
+        String bankId = SessionData.getBankId(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Consent-Id", consentId);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        logger.debug("Consent-Id: " + consentId);
+
+        ResponseEntity<HashMap> exchange = restTemplate
+                .exchange(selfRevokeConsentUrl, HttpMethod.DELETE, entity, HashMap.class);
+        return exchange.getBody();
+    }
+    
 
     @ExceptionHandler
     void handleIllegalArgumentException(Exception e, HttpServletResponse response) throws IOException {
