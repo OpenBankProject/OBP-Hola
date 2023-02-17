@@ -83,10 +83,12 @@
                 Consent-Id: <span th:text="${consentId}"></span> <br>
                 <a class="btn btn-info" th:href="@{/logout}">Create a new consent</a>
                 <a class="btn btn-danger" id="revoke_consent_obp">Revoke the consent</a>
+                <a class="btn btn-info" id="mtls_client_cert_info_obp">MTLS Certificate Info</a>
                 <br>
                 <br>
             </div>
             <div id="revoke_consent_obp_div"></div>
+            <div id="mtls_client_cert_info_obp_div"></div>
             <div>
                 <button class="btn btn-primary"  id="get_accounts_obp">Get accounts via OBP APIs using Consent-ID</button>
                 <div id="account_list_obp">
@@ -171,6 +173,13 @@
                 const container = $('#revoke_consent_obp_div')
                 let zson = JSON.stringify(data, null, 2);
                 container.append(`<pre>${zson}</pre>`).append('<br>');
+            });
+        });
+        $('#mtls_client_cert_info_obp').click(function () {   
+            $.getJSON('/mtls_client_cert_info', function (data) {
+                const container = $('#mtls_client_cert_info_obp_div')
+                let zson = JSON.stringify(data, null, 2);
+                container.empty().append(`<pre>${zson}</pre>`).append('<br>');
             });
         });
         $('#get_accounts_obp').click(function () {

@@ -70,6 +70,9 @@ public class OtherController {
     
     @Value("${obp.base_url}/obp/v5.1.0/my/consent/revoke")
     private String selfRevokeConsentUrl;
+    
+    @Value("${obp.base_url}/obp/v5.1.0/my/mtls/certificate/info")
+    private String mtlsClientCertificateInfo;
 
     @Resource
     private RestTemplate restTemplate;
@@ -223,6 +226,18 @@ public class OtherController {
 
         ResponseEntity<HashMap> exchange = restTemplate
                 .exchange(selfRevokeConsentUrl, HttpMethod.DELETE, entity, HashMap.class);
+        return exchange.getBody();
+    }
+    @GetMapping("/mtls_client_cert_info")
+    public Object mtlsClientCertificateInfo(HttpSession session) {
+        String consentId = SessionData.getConsentId(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Consent-Id", consentId);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        logger.debug("Consent-Id: " + consentId);
+
+        ResponseEntity<HashMap> exchange = restTemplate
+                .exchange(mtlsClientCertificateInfo, HttpMethod.GET, entity, HashMap.class);
         return exchange.getBody();
     }
     
