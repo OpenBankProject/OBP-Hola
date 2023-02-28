@@ -63,15 +63,11 @@ public class OtherController {
     
     @Value("${obp.base_url}/obp/v5.1.0/my/banks/BANK_ID/accounts/ACCOUNT_ID/transactions")
     private String getCoreTransactionsForBankAccount;
-
-
-    @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/consents/CONSENT_ID/revoke")
-    private String revokeConsentUrl;
     
-    @Value("${obp.base_url}/obp/v5.1.0/my/consent/revoke")
+    @Value("${obp.base_url}/obp/v5.1.0/my/consent/current")
     private String selfRevokeConsentUrl;
     
-    @Value("${obp.base_url}/obp/v5.1.0/my/mtls/certificate/info")
+    @Value("${obp.base_url}/obp/v5.1.0/my/mtls/certificate/current")
     private String mtlsClientCertificateInfo;
 
     @Resource
