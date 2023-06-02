@@ -1,6 +1,11 @@
 # OBP-Hola
 
-OBP-Hola is a Spring Boot application showcasing OAuth2 flow and Consent creation with OBP API and Ory Hydra.
+The Open Bank Project *Hola Application* can be used to demonstrate and test the Open Banking OAuth2 and consent creation and usage via OBP API and Ory Hydra. It supports both UK and Berlin Group styles. Hola is written in Java / Spring Boot. 
+
+Works in conjunction with the [OBP Hydra Identity Provider](https://github.com/OpenBankProject/OBP-Hydra-Identity-Provider) You might find additional install instructions [here](https://github.com/OpenBankProject/OBP-Hydra-Identity-Provider/tree/master#readme)
+
+Can be driven automatically (for test purposes) using [OBP Selenium](https://github.com/OpenBankProject/OBP-Selenium)
+
 
 ## prepare truststore
 Suppose the OBP-API server domain is: `api-mtls.ofpilot.com`
@@ -23,7 +28,7 @@ Suppose the Hydra server domain is: `oauth2.api-mtls.ofpilot.com`
     `keytool -import -alias hydra -keystore ofpilot.jks -file hydra.cer`
     
 ## prepare keystore
-- convert user.key and user.pem file to file cert.p12, The user.pem come from [certificates](https://gitlab-external.tesobe.com/tesobe/boards/tech-internal/-/issues/44)
+- Generate user.key and user.pem files and convert them to cert.p12.
   
     `openssl pkcs12 -export -in user.pem -inkey user.key -certfile user.pem -out user.p12`
 - convert cert.p12 to file user.jks
