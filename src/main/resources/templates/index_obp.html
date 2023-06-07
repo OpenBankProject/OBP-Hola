@@ -90,12 +90,15 @@
             $("form").validate({
                 rules: {
                     bank: "required",
-                    consents: "required",
+                    email: "required",
                     time_to_live_in_seconds: "required",
+                    valid_from: "required",
                 },
                 messages: {
                     bank: "Bank should not be empty",
-                    consents: "At least select one consent",
+                    email: "Email should not be empty",
+                    time_to_live_in_seconds: "Time to live should not be empty",
+                    valid_from: "Valid from should not be empty",
                 },
                 errorPlacement: function(error, element) {
                     error.addClass('text-danger');
