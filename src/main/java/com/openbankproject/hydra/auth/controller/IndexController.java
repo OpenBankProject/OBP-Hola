@@ -560,11 +560,10 @@ public class IndexController implements ServletContextAware {
             return "error";
         }
     }
-    @PostMapping(value="/request_consents_obp", params = {"bank", "time_to_live_in_seconds", "valid_from", "email"})
+    @PostMapping(value="/request_consents_obp", params = {"bank", "time_to_live_in_seconds", "valid_from"})
     public String requestConsentsOpenBankProject(@RequestParam("bank") String bankId,
                                                  @RequestParam("time_to_live_in_seconds") String timeToLiveInSeconds,
                                                  @RequestParam("valid_from") String validFrom,
-                                                 @RequestParam("email") String email,
                                                  HttpSession session, Model model
     ) throws UnsupportedEncodingException, ParseException, JOSEException, RestClientException {
         try {
@@ -576,7 +575,7 @@ public class IndexController implements ServletContextAware {
             
             PostConsentRequestJson body = new PostConsentRequestJson(
                     true,
-                    email,
+                    "",
                     Integer.parseInt(timeToLiveInSeconds),
                     validFromTime
             );

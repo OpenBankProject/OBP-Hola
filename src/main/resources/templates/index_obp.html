@@ -42,11 +42,6 @@
                             </option>
                         </select>
                     </div>
-
-                    <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="text" name="email" id="email" class="form-control" >
-                    </div>
 <!--
                     <label>Select one or more Permissions</label>
                     <div class="form-group">
@@ -90,13 +85,11 @@
             $("form").validate({
                 rules: {
                     bank: "required",
-                    email: "required",
                     time_to_live_in_seconds: "required",
                     valid_from: "required",
                 },
                 messages: {
                     bank: "Bank should not be empty",
-                    email: "Email should not be empty",
                     time_to_live_in_seconds: "Time to live should not be empty",
                     valid_from: "Valid from should not be empty",
                 },
