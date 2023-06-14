@@ -575,7 +575,7 @@ public class IndexController implements ServletContextAware {
             
             PostConsentRequestJson body = new PostConsentRequestJson(
                     true,
-                    "",
+                    bankId,
                     Integer.parseInt(timeToLiveInSeconds),
                     validFromTime
             );

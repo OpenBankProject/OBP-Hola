@@ -71,21 +71,22 @@ public class PostConsentRequestJson{
     List<AccountAccess> accountAccesses;
     @JsonProperty("entitlements")
     List<Entitlement> entitlements;
-    String email;
+    @JsonProperty("bank_id")
+    String bankId;
     @JsonProperty("time_to_live")
     int timeToLiveInSeconds;
     @JsonProperty("valid_from")
     String validFrom;
 
-    public String getEmail() {
-        return email;
+    public String getBankId() {
+        return bankId;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setBankId(String bankId) {
+        this.bankId = bankId;
     }
 
-    public PostConsentRequestJson(boolean everything, String email, int ttl, String validFrom) {
+    public PostConsentRequestJson(boolean everything, String bankId, int ttl, String validFrom) {
         this.everything = everything;
         
         List<Entitlement> entitlements = new ArrayList<>();
@@ -94,7 +95,7 @@ public class PostConsentRequestJson{
         List<AccountAccess> accountAccesses = new ArrayList<>();
         this.accountAccesses = accountAccesses;
         
-        this.email = email;
+        this.bankId = bankId;
         
         this.timeToLiveInSeconds = ttl;
         
