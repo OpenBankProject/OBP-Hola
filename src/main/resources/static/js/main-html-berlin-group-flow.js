@@ -1,3 +1,13 @@
+function makePaymentBG(button) {
+    let creditorName = document.getElementById("creditor_name").value;
+    let creditorIban = document.getElementById("creditor_iban").value;
+    let debtorIban = document.getElementById("debtor_iban").value;
+    let amount = document.getElementById("amount_of_money").value;
+    $.getJSON('/transactions_bg/account_id/' + creditorIban + "/" + creditorName + "/" + debtorIban + "/" + amount, function (data) {
+        let json = JSON.stringify(data, null, 2);
+        console.log("Response: " + json)
+    });
+};
 function getAccountDetailsBG(button) {
     let resultBox = $(button).siblings('.account_detail_bg').empty().append('<h3>Account Detail:</h3>');
     let accountId = $(button).attr('account_id');

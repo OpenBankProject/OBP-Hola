@@ -153,7 +153,7 @@ public class OtherController {
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupBalanceUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
         return exchange.getBody();
     }
-    @GetMapping("/transactions_bg/account_id/{creditor-iban}/{creditor-name}/{debtor-iban}/{amount}")
+    @GetMapping("/transactions_bg/account_id/{creditorIban}/{creditorName}/{debtorIban}/{amount}")
     public Object initiatePaymentBerlinGroupUrl(@PathVariable String creditorIban,
                                                 @PathVariable String creditorName,
                                                 @PathVariable String debtorIban,
