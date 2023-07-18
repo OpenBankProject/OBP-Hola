@@ -29,6 +29,23 @@
             window.location.replace(indexLink)
         }
     </script>
+
+    <style>
+        .container { margin-top: 50px; }
+        #alertWindow .modal-header { height: 52px; min-height: 52px; border: 0px; }
+        #alertWindow .modal-body { padding: 0 40px; }
+        #alertWindow .modal-body  p {
+            margin: 0;
+            font-size: 16px;
+            font-weight: normal;
+            font-stretch: normal;
+            font-style: normal;
+            line-height: 1.56;
+            letter-spacing: normal;
+        }
+        #alertWindow .modal-footer { border: 0px; }
+    }
+    </style>
 </head>
 <body>
 <nav class="navbar navbar-light bg-light">
@@ -76,25 +93,26 @@
             <div id="mtls_client_cert_info_bg_div"></div>
             <br>
             <div id="make_payment_bg_div">
-                <form>
-                    <div class="form-group">
-                        <label for="creditor_name">Creditor name</label>
-                        <input type="text" name="creditor_name" id="creditor_name" class="form-control" >
-                    </div>
-                    <div class="form-group">
-                        <label for="creditor_iban">Creditor IBAN</label>
-                        <input type="text" name="creditor_iban" id="creditor_iban" class="form-control" >
-                    </div>
-                    <div class="form-group">
-                        <label for="debtor_iban">Debtor IBAN</label>
-                        <input type="text" name="debtor_iban" id="debtor_iban" class="form-control" >
-                    </div>
-                    <div class="form-group">
-                        <label for="amount_of_money">Amount of money</label>
-                        <input type="number" min="0" name="amount_of_money" id="amount_of_money" class="form-control">
-                    </div>
-                    <button class="btn btn-primary"  onclick="makePaymentBG(this)" id="make_payment_bg_button">Make payment</button>
-                </form>
+                <div class="form-group">
+                    <label for="creditor_name">Creditor name</label>
+                    <input type="text" name="creditor_name" id="creditor_name" class="form-control" >
+                </div>
+                <div class="form-group">
+                    <label for="creditor_iban">Creditor IBAN</label>
+                    <input type="text" name="creditor_iban" id="creditor_iban" class="form-control" >
+                </div>
+                <div class="form-group">
+                    <label for="debtor_iban">Debtor IBAN</label>
+                    <input type="text" name="debtor_iban" id="debtor_iban" class="form-control" >
+                </div>
+                <div class="form-group">
+                    <label for="amount_of_money">Amount of money</label>
+                    <input type="number" min="0" value="0" name="amount_of_money" id="amount_of_money" class="form-control">
+                </div>
+                <button class="btn btn-primary"  onclick="makePaymentBG(this)" id="make_payment_bg_button">Make payment</button>
+                <button class="btn btn-info"  onclick="clearMakePaymentBG(this)" id="clear_make_payment_bg_button">Clear result box</button>
+                <br>
+                <div id="payment_details_bg_div"></div>
             </div>
             <br>
             <div>
@@ -139,12 +157,6 @@
 <!-- UK Consent Flow GUI -->
 <script lang="javascript">
     $(function () {
-        $.ajaxSetup({
-            "error": function (e) {
-                alert(`error: code=${e.status}, fail msg: ${e.responseText}`);
-                console.log(e);
-            }
-        });
         $('#get_accounts').click(function () {
             $.getJSON("/account", function (data) {
                 const container = $('#account_list').empty().append('<h1>Account List:</h1>');
@@ -195,27 +207,13 @@
 </script>
 <script type="text/javascript">
         $(function(){
-            $("form").validate({
-                rules: {
-                    creditor_name: "required",
-                    creditor_iban: "required",
-                    debtor_iban: "required",
-                    amount_of_money: "required",
-                },
-                messages: {
-                    creditor_name: "Name should not be empty",
-                    creditor_iban: "IBAN should not be empty",
-                    debtor_iban: "IBAN should not be empty",
-                    amount_of_money: "Amount should not be empty",
-                },
-                errorPlacement: function(error, element) {
-                    error.addClass('text-danger');
-                    error.insertAfter(element);
-                }
-            });
-
+          $.ajaxSetup({
+            "error": function (e) {
+                alert(`${e.responseText}`);
+                console.log(e);
+            }
+           });
         });
-
     </script>
 </body>
 </html>

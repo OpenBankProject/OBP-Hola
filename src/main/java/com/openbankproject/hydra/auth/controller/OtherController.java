@@ -2,6 +2,7 @@ package com.openbankproject.hydra.auth.controller;
 
 import com.openbankproject.hydra.auth.VO.AccountDataValue;
 import com.openbankproject.hydra.auth.VO.SessionData;
+import com.openbankproject.hydra.auth.VO.UserInfo;
 import com.openbankproject.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
@@ -153,7 +155,7 @@ public class OtherController {
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupBalanceUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
         return exchange.getBody();
     }
-    @GetMapping("/transactions_bg/account_id/{creditorIban}/{creditorName}/{debtorIban}/{amount}")
+    @GetMapping("/initiate_payment_bg/{creditorIban}/{creditorName}/{debtorIban}/{amount}")
     public Object initiatePaymentBerlinGroupUrl(@PathVariable String creditorIban,
                                                 @PathVariable String creditorName,
                                                 @PathVariable String debtorIban,
@@ -162,7 +164,7 @@ public class OtherController {
         String consentId = SessionData.getConsentId(session);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Consent-ID", consentId);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        // HttpEntity<String> entity = new HttpEntity<>(headers);
         
         SepaCreditTransfersBerlinGroupV13 body = 
                 new SepaCreditTransfersBerlinGroupV13(
@@ -172,10 +174,14 @@ public class OtherController {
                         creditorName
                         );
         HttpEntity<SepaCreditTransfersBerlinGroupV13> request = new HttpEntity<>(body, headers);
-        Map response = restTemplate.postForObject(initiatePaymentBerlinGroupUrl, request, Map.class);
-        String transactionStatus = ((Map<String, String>) response).get("transactionStatus");
-        logger.debug("initiatePaymentBerlinGroupUrl status:" + transactionStatus);
-        return transactionStatus;
+        try {
+            ResponseEntity<HashMap> response = restTemplate.exchange(initiatePaymentBerlinGroupUrl, HttpMethod.POST, request,  HashMap.class);
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            String error = "Sorry! Cannot initiate the payment.";
+            logger.error(error, e);
+            return error + System.lineSeparator() + e.getResponseBodyAsString();
+        }
     }
     @GetMapping("/transactions_bg/account_id/{accountId}")
     public Object getTransactionsBerlinGroup(@PathVariable String accountId, HttpSession session) {

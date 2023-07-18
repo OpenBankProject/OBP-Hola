@@ -1,12 +1,31 @@
 function makePaymentBG(button) {
+    let resultBox = $('#payment_details_bg_div');
     let creditorName = document.getElementById("creditor_name").value;
     let creditorIban = document.getElementById("creditor_iban").value;
     let debtorIban = document.getElementById("debtor_iban").value;
     let amount = document.getElementById("amount_of_money").value;
-    $.getJSON('/transactions_bg/account_id/' + creditorIban + "/" + creditorName + "/" + debtorIban + "/" + amount, function (data) {
-        let json = JSON.stringify(data, null, 2);
+    const currentDate = new Date();
+    const timestamp = currentDate.getTime();
+    if (!creditorName) { // String value is false -> Empty string value including "", '' and ``.
+        creditorName = "Empty"
+    }
+    if (!creditorIban) { // String value is false -> Empty string value including "", '' and ``.
+        creditorIban = "Empty"
+    }
+    if (!debtorIban) { // String value is false -> Empty string value including "", '' and ``.
+        debtorIban = "Empty"
+    }
+    $.getJSON('/initiate_payment_bg/' + creditorIban + "/" + creditorName + "/" + debtorIban + "/" + amount, function (data) {
+        let zson = JSON.stringify(data, null, 2);
+        let iconId = "result_copy_icon_" + creditorIban + button.id + timestamp;
+        let resultBoxId = "result_box_" + creditorIban + button.id + timestamp;
+        resultBox.append(`<div id=${iconId} style="cursor:pointer;" onclick="copyJsonResultToClipboard(this)" class="fa-solid fa-copy"></div><pre><div id=${resultBoxId}>${zson}</div></pre>`).append('<br>');
         console.log("Response: " + json)
     });
+};
+function clearMakePaymentBG(button) {
+    let resultBox = $('#payment_details_bg_div');
+    resultBox.empty();
 };
 function getAccountDetailsBG(button) {
     let resultBox = $(button).siblings('.account_detail_bg').empty().append('<h3>Account Detail:</h3>');
@@ -39,12 +58,6 @@ function getTransactionsBG(button) {
     });
 };
 $(function () {
-    $.ajaxSetup({
-        "error": function (e) {
-            alert(`error: code=${e.status}, fail msg: ${e.responseText}`);
-            console.log(e);
-        }
-    });
     $('#mtls_client_cert_info_bg').click(function () {   
         $.getJSON('/mtls_client_cert_info', function (data) {
             const container = $('#mtls_client_cert_info_bg_div')

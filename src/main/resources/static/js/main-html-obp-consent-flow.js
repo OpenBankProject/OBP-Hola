@@ -32,12 +32,6 @@ function getTransactions(button) {
     });
 };
 $(function () {
-    $.ajaxSetup({
-        "error": function (e) {
-            alert(`error: code=${e.status}, fail msg: ${e.responseText}`);
-            console.log(e);
-        }
-    });
     $('#revoke_consent_obp').click(function () {   
         $.getJSON('/revoke_consent_obp/', function (data) {
             const container = $('#revoke_consent_obp_div')
