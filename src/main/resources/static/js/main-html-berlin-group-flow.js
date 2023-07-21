@@ -4,6 +4,7 @@ function makePaymentBG(button) {
     let creditorIban = document.getElementById("creditor_iban").value;
     let debtorIban = document.getElementById("debtor_iban").value;
     let amount = document.getElementById("amount_of_money").value;
+    let currency = document.getElementById("currency").value;
     const currentDate = new Date();
     const timestamp = currentDate.getTime();
     if (!creditorName) { // String value is false -> Empty string value including "", '' and ``.
@@ -15,7 +16,10 @@ function makePaymentBG(button) {
     if (!debtorIban) { // String value is false -> Empty string value including "", '' and ``.
         debtorIban = "Empty"
     }
-    $.getJSON('/initiate_payment_bg/' + creditorIban + "/" + creditorName + "/" + debtorIban + "/" + amount, function (data) {
+    if (!currency) { // String value is false -> Empty string value including "", '' and ``.
+        currency = "EUR"
+    }
+    $.getJSON('/initiate_payment_bg/' + creditorIban + "/" + creditorName + "/" + debtorIban + "/" + amount + "/" + currency, function (data) {
         let zson = JSON.stringify(data, null, 2);
         let iconId = "result_copy_icon_" + creditorIban + button.id + timestamp;
         let resultBoxId = "result_box_" + creditorIban + button.id + timestamp;

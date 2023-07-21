@@ -155,21 +155,21 @@ public class OtherController {
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupBalanceUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
         return exchange.getBody();
     }
-    @GetMapping("/initiate_payment_bg/{creditorIban}/{creditorName}/{debtorIban}/{amount}")
+    @GetMapping("/initiate_payment_bg/{creditorIban}/{creditorName}/{debtorIban}/{amount}/{currency}")
     public Object initiatePaymentBerlinGroupUrl(@PathVariable String creditorIban,
                                                 @PathVariable String creditorName,
                                                 @PathVariable String debtorIban,
                                                 @PathVariable String amount,
+                                                @PathVariable String currency,
                                                 HttpSession session) {
         String consentId = SessionData.getConsentId(session);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Consent-ID", consentId);
-        // HttpEntity<String> entity = new HttpEntity<>(headers);
         
         SepaCreditTransfersBerlinGroupV13 body = 
                 new SepaCreditTransfersBerlinGroupV13(
                         new DebtorAccount(debtorIban),
-                        new InstructedAmount("EUR", amount),
+                        new InstructedAmount(currency, amount),
                         new CreditorAccount(creditorIban),
                         creditorName
                         );
