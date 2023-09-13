@@ -12,8 +12,9 @@ Build with `mvn clean package`
 
 Hola JAR file will be in `target` folder
 
-## prepare truststore
+## Prepare truststore
 Assuming OBP-API server URL is: `apisandbox.openbankproject.com`
+
 Assuming Hydra server URL is: `oauth2.openbankproject.com`
 
 - retrieve OBP API and Hydra server certificates:
@@ -22,21 +23,21 @@ Assuming Hydra server URL is: `oauth2.openbankproject.com`
 
     `openssl s_client -servername oauth2.openbankproject.com -connect oauth2.openbankproject.com:443 </dev/null 2>/dev/null | openssl x509 -inform PEM -outform DER -out hydra.cer`
 
-- import both certificates to the truststore file truststore.jks, and put it in resources/cert folder
+- import both certificates to truststore.jks:
 
     `keytool -import -alias api -keystore truststore.jks -file obp-api.cer`
     
     `keytool -import -alias hydra -keystore truststore.jks -file hydra.cer`
     
-## prepare keystore
+## Prepare keystore
 
 If mTLS is enabled on the OBP API instance, the client key needs to be signed by OBP API client CA. Else, any self-signed certificate will do. Continuing assuming you have `client.key` and `client.crt`:
 
-- Convert client key and cert to client-cert.p12
+- convert client key and cert to client-cert.p12:
   
     `openssl pkcs12 -export -in client.crt -inkey client.key -certfile user.crt -out client-cert.p12`
 
-- Convert client-cert.p12 to file keystore.jks
+- import client-cert.p12 to keystore.jks:
 
     `keytool -importkeystore -srckeystore client-cert.p12 -srcstoretype pkcs12 -destkeystore keystore.jks`
 
