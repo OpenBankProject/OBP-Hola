@@ -8,9 +8,9 @@ A working Hola App setup can be used to drive automatic tests using [OBP Seleniu
 
 ## Build with maven
 
-Build with `mvn clean package`
+Check out the code from this repository and build it by running `mvn clean package` inside the main folder.
 
-Hola JAR file will be in `target` folder
+The resulting JAR file of Hola App will be in the `target` folder.
 
 ## Prepare truststore
 Assuming OBP-API server URL is: `apisandbox.openbankproject.com`
@@ -43,7 +43,18 @@ If mTLS is enabled on the OBP API instance, the client key needs to be signed by
 
 ## Adjust application.properties file
 
-Create `application.properties` according to `application.properties.example`.
+Create `application.properties` according to `application.properties.example`:
+
+* `oauth2.public_url` is the URL of the OAuth2 server of the OBP instance.
+* `obp.base_url` is the main URL of the OBP instance.
+* Fill in the locations and passphrases of the previously created keystore and truststore into `mtls.keyStore` and `mtls.trustStore` props
+* Register a new API key on the OBP instance, e.g. https://apisandbox.openbankproject.com/consumer-registration and copy and paste all props below "OAuth2:" into  `application.properties`:
+  * `oauth2.client_id`
+  * `oauth2.redirect_uri`
+  * `oauth2.client_scope`
+  * `oauth2.jws_alg`
+  * `oauth2.jwk_private_key`
+* All other props can be left at default values.
 
 ## Run
 
