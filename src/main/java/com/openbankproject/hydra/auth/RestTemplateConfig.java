@@ -58,7 +58,7 @@ public class RestTemplateConfig {
     private Resource trustStoreResource;
     @Value("${mtls.trustStore.password}")
     private char[] trustStorePassword;
-    @Value("${force_jws}")
+    @Value("${force_jws:}")
     private String forceJws;
 
     @Bean
