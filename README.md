@@ -1,51 +1,64 @@
 # OBP-Hola
 
-The Open Bank Project *Hola Application* can be used to demonstrate and test the Open Banking OAuth2 and consent creation and usage via OBP API and Ory Hydra. It supports both UK and Berlin Group styles. Hola is written in Java / Spring Boot. 
+The Open Bank Project *Hola App* is a reference implementation of the OAuth2 authentication and consent flow. It demonstrates and tests OBP authentication, consent creation and data access via OBP API. It supports UK, Berlin Group, and OBP styles. Hola is written in Java / Spring Boot.
 
-Works in conjunction with the [OBP Hydra Identity Provider](https://github.com/OpenBankProject/OBP-Hydra-Identity-Provider) You might find additional install instructions [here](https://github.com/OpenBankProject/OBP-Hydra-Identity-Provider/tree/master#readme)
+Besides OBP API, Hola App depends on [Ory Hydra](https://www.ory.sh/hydra) and [OBP Hydra Identity Provider](https://github.com/OpenBankProject/OBP-Hydra-Identity-Provider).
 
-Can be driven automatically (for test purposes) using [OBP Selenium](https://github.com/OpenBankProject/OBP-Selenium)
+A working Hola App setup can be used to drive automatic tests using [OBP Selenium](https://github.com/OpenBankProject/OBP-Selenium).
 
+## Build with maven
 
-## prepare truststore
-Suppose the OBP-API server domain is: `api-mtls.ofpilot.com`
+Check out the code from this repository and build it by running `mvn clean package` inside the main folder.
 
-Suppose the Hydra server domain is: `oauth2.api-mtls.ofpilot.com`
-- check server side certificate 
+The resulting JAR file of Hola App will be in the `target` folder.
 
-    `openssl s_client -showcerts -connect api-mtls.ofpilot.com:443`
+## Prepare truststore
+Assuming OBP-API server URL is: `apisandbox.openbankproject.com`
+
+Assuming Hydra server URL is: `oauth2.openbankproject.com`
+
+- retrieve OBP API and Hydra server certificates:
+
+    `openssl s_client -servername apisandbox.openbankproject.com -connect apisandbox.openbankproject.com:443 </dev/null 2>/dev/null | openssl x509 -inform PEM -outform DER -out obp-api.cer`
+
+    `openssl s_client -servername oauth2.openbankproject.com -connect oauth2.openbankproject.com:443 </dev/null 2>/dev/null | openssl x509 -inform PEM -outform DER -out hydra.cer`
+
+- import both certificates to truststore.jks:
+
+    `keytool -import -alias api -keystore truststore.jks -file obp-api.cer`
     
-    `openssl s_client -showcerts -connect oauth2.api-mtls.ofpilot.com:443`
-- save the OBP-API server certificate to file ofpilot.cer, save Hydra server certificate to file hydra.cer
-
-    `openssl s_client -servername api-mtls.ofpilot.com -connect api-mtls.ofpilot.com:443 </dev/null 2>/dev/null | openssl x509 -inform PEM -outform DER -out ofpilot.cer`    
-
-    `openssl s_client -servername oauth2.api-mtls.ofpilot.com -connect oauth2.api-mtls.ofpilot.com:443 </dev/null 2>/dev/null | openssl x509 -inform PEM -outform DER -out hydra.cer`
-- import ofpilot.cer and hydra.cer to truststore file ofpilot.jks, and put it in resources/cert folder
-
-    `keytool -import -alias ofpilot -keystore ofpilot.jks -file ofpilot.cer`
+    `keytool -import -alias hydra -keystore truststore.jks -file hydra.cer`
     
-    `keytool -import -alias hydra -keystore ofpilot.jks -file hydra.cer`
-    
-## prepare keystore
-- Generate user.key and user.pem files and convert them to cert.p12.
+## Prepare keystore
+
+If mTLS is enabled on the OBP API instance, the client key needs to be signed by OBP API client CA. Else, any self-signed certificate will do. Continuing assuming you have `client.key` and `client.crt`:
+
+- convert client key and cert to client-cert.p12:
   
-    `openssl pkcs12 -export -in user.pem -inkey user.key -certfile user.pem -out user.p12`
-- convert cert.p12 to file user.jks
+    `openssl pkcs12 -export -in client.crt -inkey client.key -certfile user.crt -out client-cert.p12`
 
-    `keytool -importkeystore -srckeystore user.p12 -srcstoretype pkcs12 -destkeystore user.jks`
+- import client-cert.p12 to keystore.jks:
 
-## config application.properties file
+    `keytool -importkeystore -srckeystore client-cert.p12 -srcstoretype pkcs12 -destkeystore keystore.jks`
 
-```
-## keystore and truststore files can be local files or web resources, as example:
-mtls.keyStore.path=file:///Users/<some path>/cert/user.jks
-#mtls.keyStore.path=http://<some domain>/user.jks
-mtls.keyStore.password=<keystore password>
-mtls.trustStore.path=file:///Users/<some path>/cert/ofpilot.jks
-#mtls.trustStore.path=http://<some domain>/ofpilot.jks
-mtls.trustStore.password=<truststore password>
-```
+## Adjust application.properties file
+
+Create `application.properties` according to `application.properties.example`:
+
+* `oauth2.public_url` is the URL of the OAuth2 server of the OBP instance.
+* `obp.base_url` is the main URL of the OBP instance.
+* Fill in the locations and passphrases of the previously created keystore and truststore into `mtls.keyStore` and `mtls.trustStore` props
+* Register a new API key on the OBP instance, e.g. https://apisandbox.openbankproject.com/consumer-registration and copy and paste all props below "OAuth2:" into  `application.properties`:
+  * `oauth2.client_id`
+  * `oauth2.redirect_uri`
+  * `oauth2.client_scope`
+  * `oauth2.jws_alg`
+  * `oauth2.jwk_private_key`
+* All other props can be left at default values.
+
+## Run
+
+`java -jar obp-hola-app-0.0.29-SNAPSHOT.jar`
 
 ## Screenshots of the app
 
