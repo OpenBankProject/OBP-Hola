@@ -60,7 +60,7 @@ Create `application.properties` according to `application.properties.example`:
 
 `java -jar obp-hola-app-0.0.29-SNAPSHOT.jar`
 
-while the app is running, point your browser to the configured port on localhost (e.g. `http://localhost:8087`) to start the consent flow.
+While the app is running, point your browser to the configured port on localhost (e.g. `http://localhost:8087`) to start the consent flow.
 
 ## Screenshots of the app
 
