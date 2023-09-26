@@ -135,6 +135,7 @@ public class RestTemplateConfig {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        traceResponse(response, httpBody);
         if(forceJws(uri)) {
             
             String xJwsSignature = getOrEmptyValue("x-jws-signature", response);
@@ -178,7 +179,6 @@ public class RestTemplateConfig {
                 response.setStatusLine(version, 400, "The signed response cannot be verified.");
             }
         }
-        traceResponse(response, httpBody);
     }
 
     /**
