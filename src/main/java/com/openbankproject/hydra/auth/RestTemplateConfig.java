@@ -218,13 +218,15 @@ public class RestTemplateConfig {
             InetAddress ip = getInetAddress();
             JwsUtil jwsUtil = new JwsUtil();
             Map<String, String> requestHeaders = new HashMap<>();
-            requestHeaders.put("host", request.getFirstHeader("host").getValue());
+            String host = request.getFirstHeader("host").getValue().replaceAll(":8080", ":8081");
+            requestHeaders.put("host", host);
             requestHeaders.put("content-type", request.getFirstHeader("content-type").getValue());
             requestHeaders.put("psu-ip-address", ip.getHostAddress());
             requestHeaders.put("psu-geo-location", "GEO:52.506931,13.144558");
             String digest = jwsUtil.createDigestHeaderValue(httpBody);
             String xJwsSignature = jwsUtil.createJwsSignature((RSAKey)getRsaKey().get("jwk"), (String)getRsaKey().get("x5c"), httpMethod, url, requestHeaders, httpBody);
             // Set request's mandatory headers
+            request.setHeader("host", host);
             request.setHeader("Digest", digest);
             request.setHeader("x-jws-signature", xJwsSignature);
             request.setHeader("PSU-IP-Address", ip.getHostAddress());
