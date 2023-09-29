@@ -3,12 +3,13 @@ package com.openbankproject.hydra.auth.VO;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Banks {
     private List<Bank> banks;
 
     public List<Bank> getBanks() {
-        return banks;
+        return banks.stream().sorted().collect(Collectors.toList());
     }
 
     public void setBanks(List<Bank> banks) {
@@ -16,7 +17,7 @@ public class Banks {
     }
 }
 
-class Bank {
+class Bank implements Comparable<Bank> {
     private String id;
     @JsonProperty("short_name")
     private String short_name;
@@ -45,5 +46,10 @@ class Bank {
 
     public void setFull_name(String full_name) {
         this.full_name = full_name;
+    }
+
+    @Override
+    public int compareTo(Bank obj) {
+        return ((this.full_name + this.id).toLowerCase().compareTo((obj.full_name + obj.id).toLowerCase()));
     }
 }
