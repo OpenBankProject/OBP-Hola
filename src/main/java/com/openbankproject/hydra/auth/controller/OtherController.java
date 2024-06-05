@@ -2,7 +2,6 @@ package com.openbankproject.hydra.auth.controller;
 
 import com.openbankproject.hydra.auth.VO.AccountDataValue;
 import com.openbankproject.hydra.auth.VO.SessionData;
-import com.openbankproject.hydra.auth.VO.UserInfo;
 import com.openbankproject.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +22,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 public class OtherController {
@@ -65,8 +63,14 @@ public class OtherController {
     @Value("${obp.base_url}/obp/v5.1.0/my/banks/BANK_ID/accounts/ACCOUNT_ID/account")
     private String getCoreAccountById;
     
+    @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/views/VIEW_ID")
+    private String getCoreAccountByIdThroughView;
+    
     @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/balances")
-    private String getBankAccountBalances;
+    private String getBankAccountBalances;  
+    
+    @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/views/VIEW_ID/balances")
+    private String getBankAccountBalancesThroughView;
     
     @Value("${obp.base_url}/obp/v5.1.0/my/banks/BANK_ID/accounts/ACCOUNT_ID/transactions")
     private String getCoreTransactionsForBankAccount;
@@ -211,26 +215,30 @@ public class OtherController {
                 .exchange(getObpAccountsUrl.replace("BANK_ID", bankId), HttpMethod.GET, entity, HashMap.class);
         return exchange.getBody();
     }
-    @GetMapping("/account_obp/{bankId}/{accountId}")
-    public Object getAccountObp(@PathVariable String bankId, @PathVariable String accountId, HttpSession session) {
+    @GetMapping("/account_obp/{bankId}/{accountId}/{viewId}")
+    public Object getAccountObp(@PathVariable String bankId, @PathVariable String accountId, @PathVariable String viewId, HttpSession session) {
         String consentId = SessionData.getConsentId(session);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Consent-Id", consentId);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<HashMap> exchange = restTemplate
-                .exchange(getCoreAccountById.replace("ACCOUNT_ID", accountId).replace("BANK_ID", bankId).replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+                .exchange(getCoreAccountByIdThroughView
+                        .replace("ACCOUNT_ID", accountId)
+                        .replace("BANK_ID", bankId)
+                        .replace("VIEW_ID", viewId), HttpMethod.GET, entity, HashMap.class);
         return  exchange.getBody();
     }
-    @GetMapping("/balances_obp/bank_id/{bankId}/account_id/{accountId}")
-    public Object getBalanceObp(@PathVariable String bankId, @PathVariable String accountId, HttpSession session) {
+    @GetMapping("/balances_obp/bank_id/{bankId}/account_id/{accountId}/view_id/{viewId}")
+    public Object getBalanceObp(@PathVariable String bankId, @PathVariable String accountId, @PathVariable String viewId, HttpSession session) {
         String consentId = SessionData.getConsentId(session);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Consent-Id", consentId);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<HashMap> exchange = restTemplate
-                .exchange(getBankAccountBalances.replace("ACCOUNT_ID", accountId)
+                .exchange(getBankAccountBalancesThroughView.replace("ACCOUNT_ID", accountId)
+                        .replace("VIEW_ID", viewId)
                         .replace("BANK_ID", bankId), HttpMethod.GET, entity, HashMap.class);
         return exchange.getBody();
     }
