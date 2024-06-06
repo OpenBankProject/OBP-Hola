@@ -70,8 +70,10 @@ $(function () {
                         <button onclick="getAccountDetails(this)" id="get_account_detail_obp_${account['id']}" class="btn btn-success" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Account detail</button>
                         <button onclick="getBalances(this)" id="get_balances_obp_${account['id']}" class="btn btn-warning" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Balances</button>
                         <button onclick="getTransactions(this)" id="get_transactions_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Transactions</button>
-                        <label for=${viewHtmlId}>Choose a view:</label>
-                        <select id=${viewHtmlId}></select>
+                        <div class="input-group">
+                          <label for=${viewHtmlId}>Choose a view:</label>
+                          <select class="form-control" id=${viewHtmlId}></select>
+                        </div>
                         <div class="account_detail_obp" style="margin-left: 50px;"></div>
                         <div class="balances_obp" style="margin-left: 50px;"></div>
                         <div class="transactions_obp" style="margin-left: 50px;"></div>
