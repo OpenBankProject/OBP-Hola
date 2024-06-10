@@ -7,8 +7,7 @@ import com.nimbusds.jwt.JWTParser;
 import com.openbankproject.hydra.auth.HydraConfig;
 import com.openbankproject.hydra.auth.VO.*;
 import com.openbankproject.hydra.auth.util.PKCEUtil;
-import com.openbankproject.model.PostConsentJson;
-import com.openbankproject.model.PostConsentRequestJson;
+import com.openbankproject.model.*;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -560,10 +559,14 @@ public class IndexController implements ServletContextAware {
             return "error";
         }
     }
-    @PostMapping(value="/request_consents_obp", params = {"bank", "time_to_live_in_seconds", "valid_from"})
+    @PostMapping(value="/request_consents_obp", params = {"bank", "time_to_live_in_seconds", "valid_from", "everything_indicator", "permission_routing_scheme", "permission_routing_address", "permission_view_id"})
     public String requestConsentsOpenBankProject(@RequestParam("bank") String bankId,
                                                  @RequestParam("time_to_live_in_seconds") String timeToLiveInSeconds,
                                                  @RequestParam("valid_from") String validFrom,
+                                                 @RequestParam("everything_indicator") String everythingIndicator,
+                                                 @RequestParam("permission_routing_scheme") String permissionRoutingScheme,
+                                                 @RequestParam("permission_routing_address") String permissionRoutingAddress,
+                                                 @RequestParam("permission_view_id") String permissionViewId,
                                                  HttpSession session, Model model
     ) throws UnsupportedEncodingException, ParseException, JOSEException, RestClientException {
         try {
@@ -573,11 +576,21 @@ public class IndexController implements ServletContextAware {
             headers.setBearerAuth(clientCredentialsToken);
             String validFromTime = localToGMT(validFrom);
             
+            boolean everything = everythingIndicator.equalsIgnoreCase("true");
+
+            AccountRouting accountRouting = new AccountRouting(permissionRoutingScheme, permissionRoutingAddress);
+            AccountAccess accountAccess = new AccountAccess(accountRouting, permissionViewId);
+            List<AccountAccess> accountAccessArrayList = new ArrayList<>();
+            if(!everything) {
+                accountAccessArrayList.add(accountAccess);
+            }
+            
             PostConsentRequestJson body = new PostConsentRequestJson(
-                    true,
+                    everything,
                     bankId,
                     Integer.parseInt(timeToLiveInSeconds),
-                    validFromTime
+                    validFromTime,
+                    accountAccessArrayList
             );
             String consentRequestId = "";
             try {
@@ -621,6 +634,7 @@ public class IndexController implements ServletContextAware {
             queryParam.put("time_to_live_in_seconds", timeToLiveInSeconds);
             queryParam.put("valid_from", validFromTime);
             queryParam.put("api_standard", "OBP");
+            queryParam.put("everything_indicator", everythingIndicator);
             SessionData.setApiStandard(session, "OBP");
             SessionData.setBankId(session, bankId);
             // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.

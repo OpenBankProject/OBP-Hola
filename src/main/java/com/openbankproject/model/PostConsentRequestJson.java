@@ -7,40 +7,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
 
-class AccountRouting {
-    
-    @JsonProperty("scheme")
-    String scheme;
-    public String getScheme() { return this.scheme; }
-    public void setScheme(String scheme) { this.scheme = scheme; }
-    @JsonProperty("address")
-            
-    String address;
-    public String getAddress() { return this.address; }
-    public void setAddress(String address) { this.address = address; }
-}
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
-class AccountAccess{
-    @JsonProperty("account_routing")
-    AccountRouting accountRouting;
-    @JsonProperty("view_id")
-    String viewId;
-
-    public AccountRouting getAccountRouting() {
-        return accountRouting;
-    }
-
-    public void setAccountRouting(AccountRouting accountRouting) {
-        this.accountRouting = accountRouting;
-    }
-
-    public AccountAccess(AccountRouting accountRouting, String viewId) {
-        this.viewId = viewId;
-        this.accountRouting = accountRouting;
-    }
-}
-
 class Entitlement {
     @JsonProperty("bank_id")
     String bankId;
@@ -93,6 +59,20 @@ public class PostConsentRequestJson{
         this.entitlements = entitlements;
         
         List<AccountAccess> accountAccesses = new ArrayList<>();
+        this.accountAccesses = accountAccesses;
+        
+        this.bankId = bankId;
+        
+        this.timeToLiveInSeconds = ttl;
+        
+        this.validFrom = validFrom;
+    }
+    public PostConsentRequestJson(boolean everything, String bankId, int ttl, String validFrom, List<AccountAccess> accountAccesses) {
+        this.everything = everything;
+        
+        List<Entitlement> entitlements = new ArrayList<>();
+        this.entitlements = entitlements;
+        
         this.accountAccesses = accountAccesses;
         
         this.bankId = bankId;

@@ -31,7 +31,7 @@
     <div class="container">
         <div class="row">
             <div class="col-sm-6 col-lg-offset-3">
-                <h2>Give Consent</h2>
+                <h2>Create Consent</h2>
                 <form th:action="@{/request_consents_obp}" method="post">
                     <div class="form-group">
                         <label for="bank">Select your Bank</label>
@@ -41,6 +41,14 @@
                                     th:value="${bank.id}" th:text="${bank.full_name} + ' (' + ${bank.id} + ')'">
                             </option>
                         </select>
+                        <!--
+                        <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseBankSearch" aria-expanded="false" aria-controls="collapseBankSearch">
+                            Show/Hide bank search
+                        </button>
+                        <div class="collapse" id="collapseBankSearch">
+                          <input type="search" id="searchBox" class="form-control" hidden>
+                        </div>
+                        -->
                     </div>
 <!--
                     <label>Select one or more Permissions</label>
@@ -62,14 +70,26 @@
                         <label for="valid_from">Valid from</label>
                         <input type="text" name="valid_from" id="valid_from" class="form-control" data-date-format="YYYY-MM-DDTHH:mm:ss">
                     </div>
-<!--               
-                    <div class="form-group">
-                        <input type="checkbox" id="everything_indicator" name="everything_indicator" value="false"
-                               checked>
-                        <label for="everything_indicator">Everything</label>
+              
+                    <div class="form-group" >
+                        <input type="checkbox" id="everything_indicator_checkbox" name="everything_indicator_checkbox" value="true" onclick="checkboxEventHandler()" checked>
+                        <label for="everything_indicator_checkbox">All Accounts (everything)</label>
+                        <input type="text" style="display:none" name="everything_indicator" id="everything_indicator" class="form-control">
                     </div>
--->
-                    <button type="submit" class="btn btn-danger">Give Consent</button>
+
+                    <div class="form-group">
+                        <div class="collapse" id="collapse-permission-box" style="display:none">
+                            <label for="permission_routing_scheme">Routing Scheme</label>
+                            <input type="text" name="permission_routing_scheme" id="permission_routing_scheme" class="form-control">
+                            <label for="permission_routing_address">Routing Address</label>
+                            <input type="text" name="permission_routing_address" id="permission_routing_address" class="form-control">
+                            <label for="permission_view_id">View ID</label>
+                            <input type="text" name="permission_view_id" id="permission_view_id" class="form-control">
+                        </div>
+                        
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success">Proceed</button>
                 </form>
             </div>
         </div>
@@ -109,6 +129,52 @@
             });
 
         });
+        
+        
+        searchBox = document.querySelector("#searchBox");
+        banks = document.querySelector("#bank");
+        var when = "keyup"; //You can change this to keydown, keypress or change
+        
+        if(searchBox) {
+            searchBox.addEventListener("keyup", function (e) {
+                var text = e.target.value; 
+                var options = banks.options; 
+                for (var i = 0; i < options.length; i++) {
+                    var option = options[i]; 
+                    var optionText = option.text; 
+                    var lowerOptionText = optionText.toLowerCase();
+                    var lowerText = text.toLowerCase(); 
+                    var regex = new RegExp("^" + text, "i");
+                    var match = optionText.match(regex); 
+                    var contains = lowerOptionText.indexOf(lowerText) != -1;
+                    if (match || contains) {
+                        option.selected = true;
+                        return;
+                    }
+                    searchBox.selectedIndex = 0;
+                }
+            });
+        };
+        
+        
+        
+        function checkboxEventHandler() {
+            // Get the checkbox
+            var checkBox = document.getElementById("everything_indicator_checkbox");
+            var indicator = document.getElementById("everything_indicator");
+            // Get the permission box
+            var box = document.getElementById("collapse-permission-box");
+            // If the checkbox is checked, display the output text
+            if (checkBox.checked == true){
+              checkBox.value = "true";
+              indicator.value = "true";
+              box.style.display = "none";
+            } else {
+              checkBox.value = "false";
+              indicator.value = "false";
+              box.style.display = "block";
+            }
+        }
 
     </script>
 </body>
