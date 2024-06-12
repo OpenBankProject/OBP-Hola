@@ -75,6 +75,9 @@ public class OtherController {
     @Value("${obp.base_url}/obp/v5.1.0/my/banks/BANK_ID/accounts/ACCOUNT_ID/transactions")
     private String getCoreTransactionsForBankAccount;
     
+    @Value("${obp.base_url}/obp/v5.1.0/consumer/consents/CONSENT_ID")
+    private String getConsentByConsentId;
+    
     @Value("${obp.base_url}/obp/v5.1.0/my/consent/current")
     private String selfRevokeConsentUrl;
     
@@ -277,6 +280,18 @@ public class OtherController {
 
         ResponseEntity<HashMap> exchange = restTemplate
                 .exchange(mtlsClientCertificateInfo, HttpMethod.GET, entity, HashMap.class);
+        return exchange.getBody();
+    }
+    @GetMapping("/consent_info")
+    public Object consentInfo(HttpSession session) {
+        String consentId = SessionData.getConsentId(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Consent-Id", consentId);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        logger.debug("Consent-Id: " + consentId);
+
+        ResponseEntity<HashMap> exchange = restTemplate
+                .exchange(getConsentByConsentId.replace("CONSENT_ID", consentId), HttpMethod.GET, entity, HashMap.class);
         return exchange.getBody();
     }
     

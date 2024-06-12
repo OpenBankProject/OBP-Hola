@@ -50,6 +50,13 @@ $(function () {
             container.empty().append(`<pre>${zson}</pre>`).append('<br>');
         });
     });
+    $('#consent_info_obp').click(function () {   
+        $.getJSON('/consent_info', function (data) {
+            const container = $('#consent_info_obp_div')
+            let zson = JSON.stringify(data, null, 2);
+            container.empty().append(`<pre>${zson}</pre>`).append('<br>');
+        });
+    });
     $('#get_accounts_obp').click(function () {
         $.getJSON("/account_obp", function (data) {
             const container = $('#account_list_obp').empty().append('<h1>Account List:</h1>');
