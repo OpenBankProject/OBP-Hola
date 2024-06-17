@@ -28,7 +28,9 @@ function getTransactions(button) {
     let resultBox = $(button).siblings('.transactions_obp').empty().append('<h3>Transaction List:</h3>');
     let bankId = $(button).attr('bank_id');
     let accountId = $(button).attr('account_id');
-    $.getJSON('/transactions_obp/bank_id/' + bankId + '/account_id/' + accountId, function (data) {
+    const viewHtmlId = "views-" + accountId;
+    const selectedViewId = $('#' + viewHtmlId).find(":selected").text();
+    $.getJSON('/transactions_obp/bank_id/' + bankId + '/account_id/' + accountId + "/view_id/" + selectedViewId, function (data) {
         let zson = JSON.stringify(data, null, 2);
         let iconId = "result_copy_icon_" + accountId + button.id;
         let resultBoxId = "result_box_"  + accountId + button.id;

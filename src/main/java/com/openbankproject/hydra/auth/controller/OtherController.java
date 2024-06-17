@@ -75,6 +75,9 @@ public class OtherController {
     @Value("${obp.base_url}/obp/v5.1.0/my/banks/BANK_ID/accounts/ACCOUNT_ID/transactions")
     private String getCoreTransactionsForBankAccount;
     
+    @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transactions")
+    private String getTransactionsForBankAccount;
+    
     @Value("${obp.base_url}/obp/v5.1.0/consumer/consents/CONSENT_ID")
     private String getConsentByConsentId;
     
@@ -245,15 +248,16 @@ public class OtherController {
                         .replace("BANK_ID", bankId), HttpMethod.GET, entity, HashMap.class);
         return exchange.getBody();
     }
-    @GetMapping("/transactions_obp/bank_id/{bankId}/account_id/{accountId}")
-    public Object getTransactionsObp(@PathVariable String bankId, @PathVariable String accountId, HttpSession session) {
+    @GetMapping("/transactions_obp/bank_id/{bankId}/account_id/{accountId}/view_id/{viewId}")
+    public Object getTransactionsObp(@PathVariable String bankId, @PathVariable String accountId, @PathVariable String viewId, HttpSession session) {
         String consentId = SessionData.getConsentId(session);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Consent-Id", consentId);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<HashMap> exchange = restTemplate
-                .exchange(getCoreTransactionsForBankAccount.replace("ACCOUNT_ID", accountId)
+                .exchange(getTransactionsForBankAccount.replace("ACCOUNT_ID", accountId)
+                        .replace("VIEW_ID", viewId)
                         .replace("BANK_ID", bankId), HttpMethod.GET, entity,  HashMap.class);
         return exchange.getBody();
     }
