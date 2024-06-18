@@ -559,7 +559,7 @@ public class IndexController implements ServletContextAware {
             return "error";
         }
     }
-    @PostMapping(value="/request_consents_obp", params = {"bank", "time_to_live_in_seconds", "valid_from", "everything_indicator", "permission_routing_scheme", "permission_routing_address", "permission_view_id"})
+    @PostMapping(value="/request_consents_obp", params = {"bank", "time_to_live_in_seconds", "valid_from", "everything_indicator", "permission_routing_scheme", "permission_routing_address", "permission_view_id", "permission_routing_scheme_2", "permission_routing_address_2", "permission_view_id_2"})
     public String requestConsentsOpenBankProject(@RequestParam("bank") String bankId,
                                                  @RequestParam("time_to_live_in_seconds") String timeToLiveInSeconds,
                                                  @RequestParam("valid_from") String validFrom,
@@ -567,6 +567,9 @@ public class IndexController implements ServletContextAware {
                                                  @RequestParam("permission_routing_scheme") String permissionRoutingScheme,
                                                  @RequestParam("permission_routing_address") String permissionRoutingAddress,
                                                  @RequestParam("permission_view_id") String permissionViewId,
+                                                 @RequestParam("permission_routing_scheme_2") String permissionRoutingScheme2,
+                                                 @RequestParam("permission_routing_address_2") String permissionRoutingAddress2,
+                                                 @RequestParam("permission_view_id_2") String permissionViewId2,
                                                  HttpSession session, Model model
     ) throws UnsupportedEncodingException, ParseException, JOSEException, RestClientException {
         try {
@@ -578,11 +581,18 @@ public class IndexController implements ServletContextAware {
             
             boolean everything = everythingIndicator.equalsIgnoreCase("true");
 
-            AccountRouting accountRouting = new AccountRouting(permissionRoutingScheme, permissionRoutingAddress);
-            AccountAccess accountAccess = new AccountAccess(accountRouting, permissionViewId);
+            AccountRouting accountRoutingRow1 = new AccountRouting(permissionRoutingScheme, permissionRoutingAddress);
+            AccountAccess accountAccessRow1 = new AccountAccess(accountRoutingRow1, permissionViewId);
+            AccountRouting accountRoutingRow2 = new AccountRouting(permissionRoutingScheme2, permissionRoutingAddress2);
+            AccountAccess accountAccessRow2 = new AccountAccess(accountRoutingRow2, permissionViewId2);
             List<AccountAccess> accountAccessArrayList = new ArrayList<>();
             if(!everything) {
-                accountAccessArrayList.add(accountAccess);
+                if(!permissionRoutingScheme.isEmpty() && !permissionRoutingAddress.isEmpty() && !permissionViewId.isEmpty()) {
+                    accountAccessArrayList.add(accountAccessRow1);
+                }
+                if(!permissionRoutingScheme2.isEmpty() && !permissionRoutingAddress2.isEmpty() && !permissionViewId2.isEmpty()) {
+                    accountAccessArrayList.add(accountAccessRow2);
+                }
             }
             
             PostConsentRequestJson body = new PostConsentRequestJson(
