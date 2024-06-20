@@ -18,7 +18,9 @@
 
     <style th:if="${buttonBackgroundColor  != null}" th:text="'.btn-danger {background-color: ' + ${buttonBackgroundColor} + ';} .btn-danger:hover {background-color: ' + ${buttonHoverBackgroundColor} + ';}'"></style>
     <style th:unless="${displayStandards == 'BerlinGroup'}"></style>
-    
+    <!-- Common JS code -->
+    <script type="text/javascript" th:src="@{/js/index-bg-html-common-code.js}"></script>
+
 </head>
 <body>
 <nav class="navbar navbar-light bg-light">
@@ -35,8 +37,8 @@
                 <form th:action="@{/request_consents_bg}" method="post">
                     <div class="form-group">
                         <label for="bank">Select your Bank</label>
-                        <select class="form-control" name="bank" id="bank">
-                            <option value="">--select one bank--</option>
+                        <select class="form-control" name="bank" id="bank" onchange="setBankSelection()">
+                            <!--<option value="">--select one bank--</option>-->
                             <option th:each="bank : ${banks}" 
                                     th:value="${bank.id}" th:text="${bank.full_name} + ' (' + ${bank.id} + ')'">
                             </option>
