@@ -15,6 +15,8 @@
     <script type="text/javascript" th:src="@{/js/html5shiv.min.js}"></script>
     <script type="text/javascript" th:src="@{/js/respond.min.js}" ></script>
     <![endif]-->
+    <!-- Common JS code -->
+    <script type="text/javascript" th:src="@{/js/index-uk-html-common-code.js}"></script>
 </head>
 <body>
 <nav class="navbar navbar-light bg-light">
@@ -31,8 +33,8 @@
                 <form th:action="@{/request_consents}" method="post">
                     <div class="form-group">
                         <label for="bank">Select your Bank</label>
-                        <select class="form-control" name="bank" id="bank">
-                            <option value="">--select one bank--</option>
+                        <select class="form-control" name="bank" id="bank" onchange="setBankSelection()">
+                            <!--<option value="">--select one bank--</option>-->
                             <option th:each="bank : ${banks}" 
                                     th:value="${bank.id}" th:text="${bank.full_name} + ' (' + ${bank.id} + ')'">
                             </option>
