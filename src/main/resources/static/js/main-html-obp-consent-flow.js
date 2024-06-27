@@ -1,3 +1,55 @@
+function makePaymentOBP(button) {
+    let resultBox = $(button).siblings('.payments_obp').empty().append('<h3>Payment List:</h3>');
+    let bankId = $(button).attr('bank_id');
+    let accountId = $(button).attr('account_id');
+    const viewHtmlId = "views-" + accountId;
+    const selectedViewId = $('#' + viewHtmlId).find(":selected").text();
+    let counterpartyId = document.getElementById("creditor_counterparty_obp").value;
+    let amount = document.getElementById("obp_payment_amount_of_money").value;
+    let currency = document.getElementById("obp_payment_currency").value;
+    let description = document.getElementById("obp_payment_description").value;
+    
+    // The data to be sent to the server
+    var data = {
+                 to: {
+                   counterparty_id: counterpartyId
+                 },
+                 value: {
+                   currency: currency,
+                   amount: amount
+                 },
+                 description: description,
+                 charge_policy: "SHARED",
+                 future_date: "20200127"
+               };
+    
+    // URL to which the request is sent
+    var url = '/payment_obp/' + bankId + '/' + accountId + "/" + selectedViewId + "/" + 
+    data.to.counterparty_id + "/" + 
+    data.value.currency + "/" + data.value.amount + "/" + 
+    data.description + "/" + 
+    data.charge_policy + "/" +
+     data.future_date;
+    
+    // Success callback function
+    function onSuccess(response) {
+        console.log('Success:', response);
+        let zson = JSON.stringify(response, null, 2);
+        let iconId = "result_copy_icon_" + accountId + button.id;
+        let resultBoxId = "result_box_" + accountId + button.id;
+        resultBox.append(`<div id=${iconId} style="cursor:pointer;" onclick="copyJsonResultToClipboard(this)" class="fa-solid fa-copy"></div><pre><div id=${resultBoxId}>${zson}</div></pre>`).append('<br>');    
+    }
+    
+    // Sending the GET request
+    $.getJSON(url, onSuccess)
+        .fail(function(jqxhr, textStatus, error) {
+            console.log('Request Failed:', textStatus, error);
+        });
+};
+function clearMakePaymentOBP(button) {
+    let resultBox = $('#payment_details_obp_div');
+    resultBox.empty();
+};
 function getAccountDetails(button) {
     let resultBox = $(button).siblings('.account_detail_obp').empty().append('<h3>Account Detail:</h3>');
     let accountId = $(button).attr('account_id');
@@ -79,6 +131,7 @@ $(function () {
                         <button onclick="getAccountDetails(this)" id="get_account_detail_obp_${account['id']}" class="btn btn-success" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Account detail</button>
                         <button onclick="getBalances(this)" id="get_balances_obp_${account['id']}" class="btn btn-warning" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Balances</button>
                         <button onclick="getTransactions(this)" id="get_transactions_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Transactions</button>
+                        <button onclick="makePaymentOBP(this)" id="make_payment_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Make payment</button>
                         <div class="input-group">
                           <label for=${viewHtmlId}>Choose a view:</label>
                           <select class="form-control" id=${viewHtmlId}></select>
@@ -86,6 +139,7 @@ $(function () {
                         <div class="account_detail_obp" style="margin-left: 50px;"></div>
                         <div class="balances_obp" style="margin-left: 50px;"></div>
                         <div class="transactions_obp" style="margin-left: 50px;"></div>
+                        <div class="payments_obp" style="margin-left: 50px;"></div>
                         <hr>
                     </div>
                 `);
@@ -96,4 +150,22 @@ $(function () {
             });
         });
     });
+});
+
+function labelEventHandler() {
+    var div = document.getElementById("make_payment_obp_div");
+    var label = document.getElementById("make_payment_obp_label");
+    if (div.style.display == "none"){
+      div.style.display = "block";
+      label.textContent = "Hide payment box"
+    } else {
+      div.style.display = "none";
+      label.textContent = "Show payment box"
+    }
+}
+
+window.addEventListener("load", (event) => {
+  console.log("Page fully loaded");
+  // The function to be executed
+  labelEventHandler();
 });

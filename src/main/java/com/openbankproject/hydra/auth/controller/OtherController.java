@@ -10,10 +10,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
@@ -86,6 +83,10 @@ public class OtherController {
     
     @Value("${obp.base_url}/obp/v5.1.0/my/mtls/certificate/current")
     private String mtlsClientCertificateInfo;
+
+
+    @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transaction-request-types/COUNTERPARTY/transaction-requests")
+    private String makePaymentCouterpartyObp;
 
     @Resource
     private RestTemplate restTemplate;
@@ -260,6 +261,44 @@ public class OtherController {
                         .replace("VIEW_ID", viewId)
                         .replace("BANK_ID", bankId), HttpMethod.GET, entity,  HashMap.class);
         return exchange.getBody();
+    }
+    
+    @GetMapping("/payment_obp/{bankId}/{accountId}/{viewId}/{couterpartyId}/{currency}/{amount}/{description}/{chargePolicy}/{futureDate}")
+    public Object makePaymentObp(@PathVariable String bankId, 
+                                 @PathVariable String accountId, 
+                                 @PathVariable String viewId, 
+                                 @PathVariable String couterpartyId, 
+                                 @PathVariable String currency, 
+                                 @PathVariable String amount, 
+                                 @PathVariable String description, 
+                                 @PathVariable String chargePolicy, 
+                                 @PathVariable String futureDate, 
+                                 HttpSession session) {
+        String consentId = SessionData.getConsentId(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Consent-Id", consentId);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        PostJsonCreateTransactionRequestCounterparty body = new PostJsonCreateTransactionRequestCounterparty(
+                couterpartyId,
+                currency,
+                amount,
+                description,
+                chargePolicy,
+                futureDate    
+        );
+
+        HttpEntity<PostJsonCreateTransactionRequestCounterparty> request = new HttpEntity<>(body, headers);
+        ResponseEntity<HashMap> response = restTemplate.exchange(
+                makePaymentCouterpartyObp
+                        .replace("ACCOUNT_ID", accountId)
+                        .replace("VIEW_ID", viewId)
+                        .replace("BANK_ID", bankId),
+                HttpMethod.POST,
+                request,
+                HashMap.class
+        );
+        return response.getBody();
     }
     @GetMapping("/revoke_consent_obp")
     public Object revokeConsentObp(HttpSession session) {
