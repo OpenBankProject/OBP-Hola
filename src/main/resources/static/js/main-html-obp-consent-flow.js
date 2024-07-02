@@ -1,13 +1,13 @@
 function makePaymentOBP(button) {
-    let resultBox = $(button).siblings('.payments_obp').empty().append('<h3>Payment List:</h3>');
+    let resultBox = $(button).siblings('.payments_obp').empty().append('<h3>Payment:</h3>');
     let bankId = $(button).attr('bank_id');
     let accountId = $(button).attr('account_id');
     const viewHtmlId = "views-" + accountId;
     const selectedViewId = $('#' + viewHtmlId).find(":selected").text();
-    let counterpartyId = document.getElementById("creditor_counterparty_obp").value;
-    let amount = document.getElementById("obp_payment_amount_of_money").value;
-    let currency = document.getElementById("obp_payment_currency").value;
-    let description = document.getElementById("obp_payment_description").value;
+    let counterpartyId = document.getElementById("creditor_counterparty_obp_" + accountId).value;
+    let amount = document.getElementById("obp_payment_amount_of_money_" + accountId).value;
+    let currency = document.getElementById("obp_payment_currency_" + accountId).value;
+    let description = document.getElementById("obp_payment_description_" + accountId).value;
     
     // The data to be sent to the server
     var data = {
@@ -131,15 +131,39 @@ $(function () {
                         <button onclick="getAccountDetails(this)" id="get_account_detail_obp_${account['id']}" class="btn btn-success" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Account detail</button>
                         <button onclick="getBalances(this)" id="get_balances_obp_${account['id']}" class="btn btn-warning" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Balances</button>
                         <button onclick="getTransactions(this)" id="get_transactions_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Transactions</button>
-                        <button onclick="makePaymentOBP(this)" id="make_payment_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Make payment</button>
+                        <button onclick="collapsibleElementEventHandler(make_payment_obp_div_${account['id']})" id="prepare_payment_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Prepare / Hide payment</button>
                         <div class="input-group">
                           <label for=${viewHtmlId}>Choose a view:</label>
                           <select class="form-control" id=${viewHtmlId}></select>
                         </div>
+                        
+                        <div id="make_payment_obp_div_${account['id']}" class="collapse" style="display: none;  margin-left: 50px;">
+                            <hr>
+                            <div class="form-group">
+                                <label for="creditor_counterparty_obp_${account['id']}">To Counterparty ID</label>
+                                <input type="text" name="creditor_counterparty_obp_${account['id']}" id="creditor_counterparty_obp_${account['id']}" class="form-control" >
+                            </div>
+                            <div class="form-group">
+                                <label for="obp_payment_description_${account['id']}">Description</label>
+                                <input type="text" name="obp_payment_description_${account['id']}" id="obp_payment_description_${account['id']}" class="form-control" >
+                            </div>
+                            <div class="form-group">
+                                <label for="obp_payment_amount_of_money_${account['id']}">Amount of money</label>
+                                <input type="number" min="0" value="0" name="obp_payment_amount_of_money_${account['id']}" id="obp_payment_amount_of_money_${account['id']}" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="obp_payment_currency_${account['id']}">Currency</label>
+                                <input type="text" value="EUR" name="obp_payment_currency_${account['id']}" id="obp_payment_currency_${account['id']}" class="form-control" >
+                            </div>
+                            <button onclick="makePaymentOBP(this)" id="make_payment_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" result_box_id="${account['id']}">Create Transaction Request</button>
+                            <div class="payments_obp" style="margin-left: 50px;"></div>
+                            <hr>                        
+                        </div>
+                        
                         <div class="account_detail_obp" style="margin-left: 50px;"></div>
                         <div class="balances_obp" style="margin-left: 50px;"></div>
                         <div class="transactions_obp" style="margin-left: 50px;"></div>
-                        <div class="payments_obp" style="margin-left: 50px;"></div>
+                        
                         <hr>
                     </div>
                 `);
@@ -152,20 +176,15 @@ $(function () {
     });
 });
 
-function labelEventHandler() {
-    var div = document.getElementById("make_payment_obp_div");
-    var label = document.getElementById("make_payment_obp_label");
-    if (div.style.display == "none"){
-      div.style.display = "block";
-      label.textContent = "Hide payment box"
+function collapsibleElementEventHandler(elm) {
+    var element = document.getElementById(elm.id);
+    if (element.style.display == "none"){
+      element.style.display = "block";
     } else {
-      div.style.display = "none";
-      label.textContent = "Show payment box"
+      element.style.display = "none";
     }
 }
 
 window.addEventListener("load", (event) => {
   console.log("Page fully loaded");
-  // The function to be executed
-  labelEventHandler();
 });

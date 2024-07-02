@@ -141,28 +141,6 @@
             <div id="mtls_client_cert_info_obp_div"></div>
             <div id="consent_info_obp_div"></div>
             <hr>
-            <label id="make_payment_obp_label" for="make_payment_obp_div" onclick="labelEventHandler()">Show payment box</label>
-            <div id="make_payment_obp_div" class="collapse">
-                <div class="form-group">
-                    <label for="creditor_counterparty_obp">To Counterparty ID</label>
-                    <input type="text" name="creditor_counterparty_obp" id="creditor_counterparty_obp" class="form-control" >
-                </div>
-                <div class="form-group">
-                    <label for="obp_payment_description">Description</label>
-                    <input type="text" name="obp_payment_description" id="obp_payment_description" class="form-control" >
-                </div>
-                <div class="form-group">
-                    <label for="obp_payment_amount_of_money">Amount of money</label>
-                    <input type="number" min="0" value="0" name="obp_payment_amount_of_money" id="obp_payment_amount_of_money" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label for="obp_payment_currency">Currency</label>
-                    <input type="text" value="EUR" name="obp_payment_currency" id="obp_payment_currency" class="form-control" >
-                </div>
-                <br>
-                <div id="payment_details_obp_div"></div>
-            </div>
-            <hr>
             <div>
                 <button class="btn btn-primary"  id="get_accounts_obp">Get accounts via OBP APIs using Consent-ID</button>
                 <div id="account_list_obp">
