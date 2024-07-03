@@ -46,10 +46,7 @@ function makePaymentOBP(button) {
             console.log('Request Failed:', textStatus, error);
         });
 };
-function clearMakePaymentOBP(button) {
-    let resultBox = $('#payment_details_obp_div');
-    resultBox.empty();
-};
+
 function getAccountDetails(button) {
     let resultBox = $(button).siblings('.account_detail_obp').empty().append('<h3>Account Detail:</h3>');
     let accountId = $(button).attr('account_id');
@@ -64,7 +61,7 @@ function getAccountDetails(button) {
     });
 };
 function getBalances(button) {
-    let resultBox = $(button).siblings('.balances_obp').empty().append('<h3>Balance List:</h3>');
+    let resultBox = $(button).siblings('.balances_obp').empty().append('<h3>Balances:</h3>');
     let bankId = $(button).attr('bank_id');
     let accountId = $(button).attr('account_id');
     const viewHtmlId = "views-" + accountId;
@@ -77,7 +74,7 @@ function getBalances(button) {
     });
 };
 function getTransactions(button) {
-    let resultBox = $(button).siblings('.transactions_obp').empty().append('<h3>Transaction List:</h3>');
+    let resultBox = $(button).siblings('.transactions_obp').empty().append('<h3>Transactions:</h3>');
     let bankId = $(button).attr('bank_id');
     let accountId = $(button).attr('account_id');
     const viewHtmlId = "views-" + accountId;
@@ -113,7 +110,7 @@ $(function () {
     });
     $('#get_accounts_obp').click(function () {
         $.getJSON("/account_obp", function (data) {
-            const container = $('#account_list_obp').empty().append('<h1>Account List:</h1>');
+            const container = $('#account_list_obp').empty().append('<h1>Accounts:</h1>');
             if (data.code > 399 ) {
               let zson = JSON.stringify(data, null, 2);
               container.append(`<pre>${zson}</pre>`).append('<br>');
@@ -126,6 +123,7 @@ $(function () {
                 const viewHtmlId = "views-" + accountId;
                 
                 container.append(`
+                    <div><h2>Account ID: ${accountId}</2></div>
                     <div>
                         <div id=${iconId} style="cursor:pointer;" onclick="copyJsonResultToClipboard(this)" class="fa-solid fa-copy"></div><pre><div id=${resultBoxId}>${zson}</div></pre><br>
                         <button onclick="getAccountDetails(this)" id="get_account_detail_obp_${account['id']}" class="btn btn-success" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Account detail</button>
