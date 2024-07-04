@@ -1,5 +1,5 @@
 function makePaymentOBP(button) {
-    let resultBox = $(button).siblings('.payments_obp').empty().append('<h3>Payment:</h3>');
+    let resultBox = $(button).siblings('.payments_obp').empty().append('<h3>Response:</h3>');
     let bankId = $(button).attr('bank_id');
     let accountId = $(button).attr('account_id');
     const viewHtmlId = "views-" + accountId;
@@ -29,22 +29,43 @@ function makePaymentOBP(button) {
     data.value.currency + "/" + data.value.amount + "/" + 
     data.description + "/" + 
     data.charge_policy + "/" +
-     data.future_date;
+    data.future_date;
     
-    // Success callback function
-    function onSuccess(response) {
-        console.log('Success:', response);
-        let zson = JSON.stringify(response, null, 2);
+    function setResult(dataToSend) {
+        let zson = JSON.stringify(dataToSend, null, 2);
         let iconId = "result_copy_icon_" + accountId + button.id;
         let resultBoxId = "result_box_" + accountId + button.id;
         resultBox.append(`<div id=${iconId} style="cursor:pointer;" onclick="copyJsonResultToClipboard(this)" class="fa-solid fa-copy"></div><pre><div id=${resultBoxId}>${zson}</div></pre>`).append('<br>');    
     }
+    function setPathOfCall(path) {
+        document.getElementById("path-of-endpoint-" + accountId).textContent = path;
+    }
     
     // Sending the GET request
-    $.getJSON(url, onSuccess)
-        .fail(function(jqxhr, textStatus, error) {
-            console.log('Request Failed:', textStatus, error);
-        });
+    $.ajax({
+        url: url,
+        method: 'GET',
+        dataType: 'json',
+        success: function(receivedData, textStatus, jqXHR) {
+            // Handle the response data here
+            console.log(receivedData);
+            setResult(receivedData);
+            // Access response headers
+            const customHeader = jqXHR.getResponseHeader('Path-Of-Call');
+            setPathOfCall(customHeader);
+            console.log('Path-Of-Call:', customHeader);
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            console.log('Request Failed:', textStatus, errorThrown);
+            setResult(jqXHR.responseJSON);
+                   
+            // Access response headers
+            const customHeader = jqXHR.getResponseHeader('Path-Of-Call');
+            setPathOfCall(customHeader);
+            console.log('Path-Of-Call:', customHeader);
+        }
+    });
+
 };
 
 function getAccountDetails(button) {
@@ -154,6 +175,7 @@ $(function () {
                                 <input type="text" value="EUR" name="obp_payment_currency_${account['id']}" id="obp_payment_currency_${account['id']}" class="form-control" >
                             </div>
                             <button onclick="makePaymentOBP(this)" id="make_payment_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" result_box_id="${account['id']}">Create Transaction Request</button>
+                            <h6 id="path-of-endpoint-${account['id']}"></h6>
                             <div class="payments_obp" style="margin-left: 50px;"></div>
                             <hr>                        
                         </div>

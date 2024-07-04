@@ -264,7 +264,7 @@ public class OtherController {
     }
     
     @GetMapping("/payment_obp/{bankId}/{accountId}/{viewId}/{couterpartyId}/{currency}/{amount}/{description}/{chargePolicy}/{futureDate}")
-    public Object makePaymentObp(@PathVariable String bankId, 
+    public ResponseEntity<Object> makePaymentObp(@PathVariable String bankId, 
                                  @PathVariable String accountId, 
                                  @PathVariable String viewId, 
                                  @PathVariable String couterpartyId, 
@@ -289,16 +289,25 @@ public class OtherController {
         );
 
         HttpEntity<PostJsonCreateTransactionRequestCounterparty> request = new HttpEntity<>(body, headers);
-        ResponseEntity<HashMap> response = restTemplate.exchange(
-                makePaymentCouterpartyObp
-                        .replace("ACCOUNT_ID", accountId)
-                        .replace("VIEW_ID", viewId)
-                        .replace("BANK_ID", bankId),
-                HttpMethod.POST,
-                request,
-                HashMap.class
-        );
-        return response.getBody();
+        String url = makePaymentCouterpartyObp
+                .replace("ACCOUNT_ID", accountId)
+                .replace("VIEW_ID", viewId)
+                .replace("BANK_ID", bankId);
+
+        // Create response headers
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.add("Path-Of-Call", HttpMethod.POST + ": " + url);
+        try {
+            ResponseEntity<HashMap> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    request,
+                    HashMap.class
+            );
+            return new ResponseEntity<>(response.getBody(), responseHeaders, response.getStatusCode());
+        } catch (HttpClientErrorException e) {
+            return new ResponseEntity<>(e.getResponseBodyAsString(), responseHeaders, e.getStatusCode());
+        }
     }
     @GetMapping("/revoke_consent_obp")
     public Object revokeConsentObp(HttpSession session) {
