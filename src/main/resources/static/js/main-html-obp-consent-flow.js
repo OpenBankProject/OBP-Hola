@@ -1,4 +1,4 @@
-function makePaymentOBP(button) {
+function createTransactioRequestObp(button) {
     let resultBox = $(button).siblings('.payments_obp').empty().append('<h3>Response:</h3>');
     let bankId = $(button).attr('bank_id');
     let accountId = $(button).attr('account_id');
@@ -174,7 +174,7 @@ $(function () {
                                 <label for="obp_payment_currency_${account['id']}">Currency</label>
                                 <input type="text" value="EUR" name="obp_payment_currency_${account['id']}" id="obp_payment_currency_${account['id']}" class="form-control" >
                             </div>
-                            <button onclick="makePaymentOBP(this)" id="make_payment_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" result_box_id="${account['id']}">Create Transaction Request</button>
+                            <button onclick="createTransactioRequestObp(this)" id="make_payment_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" result_box_id="${account['id']}">Create Transaction Request</button>
                             <h6 id="path-of-endpoint-${account['id']}"></h6>
                             <div class="payments_obp" style="margin-left: 50px;"></div>
                             <hr>                        
