@@ -75,7 +75,7 @@ public class OtherController {
     @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transactions")
     private String getTransactionsForBankAccount;
     
-    @Value("${obp.base_url}/obp/v5.1.0/consumer/consents/CONSENT_ID")
+    @Value("${obp.base_url}/obp/v5.1.0/consumer/current/consents/CONSENT_ID")
     private String getConsentByConsentId;
     
     @Value("${obp.base_url}/obp/v5.1.0/my/consent/current")
