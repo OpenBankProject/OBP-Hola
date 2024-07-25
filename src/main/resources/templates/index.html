@@ -32,9 +32,10 @@
             <div class="row">
                 <tr th:each="standard : ${displayStandards}">
                     <td th:switch="${standard}">
-                        <a th:case="'UKOpenBanking'" th:href="@{/index_uk.html}" class="btn btn-primary btn-lg">UK Open Banking</a>
-                        <a th:case="'BerlinGroup'" th:href="@{/index_bg.html}" class="btn btn-danger btn-lg">Berlin Group</a>
-                        <a th:case="'OBP-API'" th:href="@{/index_obp.html}" class="btn btn-info btn-lg">Open Bank Project</a>
+                        <a th:case="'UKOpenBanking'" th:href="@{/index_uk.html}" class="btn btn-primary btn-lg">UK Open Banking Consent</a>
+                        <a th:case="'BerlinGroup'" th:href="@{/index_bg.html}" class="btn btn-danger btn-lg">Berlin Group Consent</a>
+                        <a th:case="'OBP-API'" th:href="@{/index_obp.html}" class="btn btn-info btn-lg">Open Bank Project Consent Request</a>
+                        <a th:case="'OBP-API'" th:href="@{/index_obp_vrp.html}" class="btn btn-info btn-lg">Open Bank Project Consent Request VRP</a>
                         <a th:case="*" th:href="@{/index.html}" class="btn btn-danger btn-lg"><th:block th:text="${standard}"></th:block></a>
                     </td>
                 </tr>

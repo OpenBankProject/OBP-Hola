@@ -221,7 +221,7 @@ $(function () {
                         <button onclick="getAccountDetails(this)" id="get_account_detail_obp_${account['id']}" class="btn btn-success" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Account detail</button>
                         <button onclick="getBalances(this)" id="get_balances_obp_${account['id']}" class="btn btn-warning" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Balances</button>
                         <button onclick="getTransactions(this)" id="get_transactions_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Transactions</button>
-                        <button onclick="collapsibleElementEventHandler(make_payment_obp_div_${account['id']})" id="prepare_payment_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Prepare / Hide payment</button>
+                        <button onclick="collapsibleElementEventHandler(make_payment_obp_div_${account['id']})" id="prepare_payment_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Prepare / Hide Counterparty payment</button>
                         <button onclick="collapsibleElementEventHandler(make_payment_obp_sepa_div_${account['id']})" id="prepare_payment_obp_sepa_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Prepare / Hide SEPA payment</button>
                         <div class="input-group">
                           <label for=${viewHtmlId}>Choose a view:</label>
