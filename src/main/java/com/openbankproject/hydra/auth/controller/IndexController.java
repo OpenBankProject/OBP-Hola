@@ -122,7 +122,7 @@ public class IndexController implements ServletContextAware {
         String[] apiStandards = displayStandards.split(",");
         String[] displayStandards = apiStandards;
         if(apiStandards.length == 1 && apiStandards[0].trim().isEmpty()) {
-            displayStandards = new String[] {"display_standards=UKOpenBanking,BerlinGroup,OBP-API"};
+            displayStandards = new String[] {"display_standards=UKOpenBanking,BerlinGroup,OBP-API,OBP-API-VRP"};
         }
         model.addAttribute("displayStandards", displayStandards);
         model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
