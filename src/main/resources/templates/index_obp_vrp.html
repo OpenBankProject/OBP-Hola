@@ -1,0 +1,182 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OBP Hola App - Grant Berlin Group Permissions</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap.min.css}" />
+    <link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap-datetimepicker.min.css}" />
+    <link rel="stylesheet" type="text/css" th:href="@{/css/custom.css}" />
+
+    <!--[if lt IE 9]>
+    <script type="text/javascript" th:src="@{/js/html5shiv.min.js}"></script>
+    <script type="text/javascript" th:src="@{/js/respond.min.js}" ></script>
+    <![endif]-->
+
+    <style th:if="${buttonBackgroundColor  != null}" th:text="'.btn-danger {background-color: ' + ${buttonBackgroundColor} + ';} .btn-danger:hover {background-color: ' + ${buttonHoverBackgroundColor} + ';}'"></style>
+    <style th:unless="${displayStandards == 'OBP-API'}"></style>
+    <!-- Common JS code -->
+    <script type="text/javascript" th:src="@{/js/index-obp-html-common-code.js}"></script>
+
+</head>
+<body>
+
+<nav class="navbar navbar-light bg-light">
+    <a class="navbar-brand" th:href="@{${obpBaseUrl}}">
+        <img th:if="${showBankLogo == 'true'}" th:src="@{${bankLogoUrl}}" height="55" class="d-inline-block align-top" alt=""></img>
+        <img th:unless="${showBankLogo == 'true'}" th:src="@{/images/logo.png}" height="55" class="d-inline-block align-top" alt=""></img>
+        <span class="badge badge-primary">AISP</span>
+    </a>
+</nav>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-6 col-lg-offset-3">
+                <h2>Create Consent Request VRP</h2>
+                <form th:action="@{/request_consents_obp_vrp}" method="post">
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label for="bank">Select your Bank</label>
+                                <select class="form-control" name="bank" id="bank" onchange="setBankSelection()" >
+                                    <!--<option value="">--select one bank--</option>-->
+                                    <option th:each="bank : ${banks}" 
+                                            th:value="${bank.id}" th:text="${bank.full_name} + ' (' + ${bank.id} + ')'">
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label for="email">Email</label>
+                                <input type="text" name="email" id="email" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label for="phone_number">Phone number</label>
+                                <input type="text" name="phone_number" id="phone_number" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label for="time_to_live_in_seconds">Time to live</label>
+                                <input type="number" min="1" value="3600" name="time_to_live_in_seconds" id="time_to_live_in_seconds" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label for="valid_from">Valid from</label>
+                                <input type="text" name="valid_from" id="valid_from" class="form-control" data-date-format="YYYY-MM-DDTHH:mm:ss">
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <h4>Limits</h4>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label for="currency">Currency</label>
+                                <input type="text" name="currency" id="currency" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-4">
+                                <label for="max_single_amount">Max single amount</label>
+                                <input type="text" name="max_single_amount" id="max_single_amount" class="form-control">
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="max_monthly_amount">Max monthly amount</label>
+                                <input type="text" name="max_monthly_amount" id="max_monthly_amount" class="form-control">
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="max_yearly_amount">Max yearly amount</label>
+                                <input type="text" name="max_yearly_amount" id="max_yearly_amount" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="max_number_of_monthly_transactions">Max number of monthly transactions</label>
+                                <input type="text" name="max_number_of_monthly_transactions" id="max_number_of_monthly_transactions" class="form-control">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="max_number_of_yearly_transactions">Max number of yearly transactions</label>
+                                <input type="text" name="max_number_of_yearly_transactions" id="max_number_of_yearly_transactions" class="form-control">
+                            </div>
+                        </div>
+                        <hr>
+                        <h4>From account</h4>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="permission_routing_scheme">Routing Scheme</label>
+                                <input type="text" name="permission_routing_scheme" id="permission_routing_scheme" class="form-control">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="permission_routing_address">Routing Address</label>
+                                <input type="text" name="permission_routing_address" id="permission_routing_address" class="form-control">
+                            </div>
+                        </div>
+                        <hr>
+                        <h4>To account</h4>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="permission_routing_scheme_2">Routing Scheme</label>
+                                <input type="text" name="permission_routing_scheme_2" id="permission_routing_scheme_2" class="form-control">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="permission_routing_address_2">Routing Address</label>
+                                <input type="text" name="permission_routing_address_2" id="permission_routing_address_2" class="form-control">
+                            </div>
+                        </div>
+                        
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success">Proceed</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript" th:src="@{/js/jquery-1.12.4.min.js}" ></script>
+    <script type="text/javascript" th:src="@{/js/jquery-validate-1.19.2.min.js}" ></script>
+    <script type="text/javascript" th:src="@{/js/bootstrap.min.js}" ></script>
+    <script type="text/javascript" th:src="@{/js/moment-with-locales.min.js}" ></script>
+    <script type="text/javascript" th:src="@{/js/bootstrap-datetimepicker.min.js}" ></script>
+    
+
+    <script type="text/javascript">
+        $(function(){
+            $("form").validate({
+                rules: {
+                    bank: "required",
+                    time_to_live_in_seconds: "required",
+                    valid_from: "required",
+                },
+                messages: {
+                    bank: "Bank should not be empty",
+                    time_to_live_in_seconds: "Time to live should not be empty",
+                    valid_from: "Valid from should not be empty",
+                },
+                errorPlacement: function(error, element) {
+                    error.addClass('text-danger');
+                    if (element.attr("name") == "consents") {
+                        error.appendTo("#consents_error");
+                    } else {
+                        error.insertAfter(element);
+                    }
+                }
+            });
+            
+            $('#valid_from').datetimepicker({
+                defaultDate: new Date(),
+                minDate: new Date()
+            });
+
+        });
+
+    </script>
+</body>
+</html>

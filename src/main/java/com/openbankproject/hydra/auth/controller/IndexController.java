@@ -217,6 +217,27 @@ public class IndexController implements ServletContextAware {
         }
         return "index_obp";
     }
+    @GetMapping({"/index_obp_vrp", "index_obp_vrp.html"})
+    public String index_obp_vrp(Model model, HttpSession session) throws ParseException, JOSEException {
+        {// initiate consent names
+            // exclude "openid" and "offline", they are used by hydra
+            String[] consents = allScopes.stream()
+                    .filter(it -> !"openid".equals(it) && !"offline".equals(it))
+                    .filter(it -> it.contains("Obp"))
+                    .toArray(String[]::new);
+            model.addAttribute("consents", consents);
+        }
+        { // initiate all bank names and bank ids
+            Banks banks = restTemplate.getForObject(getBanksUrl, Banks.class);
+            model.addAttribute("banks", banks.getBanks());
+            model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
+            model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
+            model.addAttribute("showBankLogo", showBankLogo);
+            model.addAttribute("obpBaseUrl", obpBaseUrl);
+            model.addAttribute("bankLogoUrl", bankLogoUrl);
+        }
+        return "index_obp_vrp";
+    }
     @GetMapping({"/consents", "consents.html"})
     public String consents(Model model, HttpSession session) throws ParseException, JOSEException {
         { // initiate all bank names and bank ids
