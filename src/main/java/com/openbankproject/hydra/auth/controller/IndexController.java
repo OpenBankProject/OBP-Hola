@@ -76,6 +76,9 @@ public class IndexController implements ServletContextAware {
     @Value("${obp.base_url}/obp/v5.1.0/consumer/consent-requests")
     private String createConsentRequest;
     
+    @Value("${obp.base_url}/obp/v5.1.0/consumer/vrp-consent-requests")
+    private String createConsentRequestVrp;
+    
     @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/consents/CONSENT_ID")
     private String updateConsentStatusUrl;
     
@@ -666,6 +669,134 @@ public class IndexController implements ServletContextAware {
             queryParam.put("valid_from", validFromTime);
             queryParam.put("api_standard", "OBP");
             queryParam.put("everything_indicator", everythingIndicator);
+            SessionData.setApiStandard(session, "OBP");
+            SessionData.setBankId(session, bankId);
+            // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.
+            //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
+
+            // add request object query parameter
+            if(this.hydraConfig.isPublicClient()) {
+                final String requestObject = this.hydraConfig.buildRequestObject(queryParam);
+                queryParam.put("request", requestObject);
+            }
+
+            // add code_challenge
+            final String codeVerifier = PKCEUtil.generateCodeVerifier();
+            SessionData.setCodeVerifier(session, codeVerifier);
+            final String codeChallenge = PKCEUtil.generateCodeChallenge(codeVerifier);
+            queryParam.put("code_challenge_method", "S256");
+            queryParam.put("code_challenge", codeChallenge);
+
+            String queryParamStr = queryParam.entrySet().stream().map(it -> it.getKey() + "=" + it.getValue()).collect(Collectors.joining("&"));
+            String authorizationEndpoint = openIDConfiguration.getAuthorizationEndpoint();
+            String redirectUrl = "redirect:" + authorizationEndpoint + "?" + queryParamStr;
+
+            // if current user is authenticated, remove user info from session, to do re-authentication
+            SessionData.remoteUserInfo(session);
+
+            return redirectUrl;
+        } catch (Exception unhandledException) {
+            logger.error("Error: ", unhandledException);
+            if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException);
+            else model.addAttribute("errorMsg", "Internal Server Error");
+            return "error";
+        }
+    }
+    @PostMapping(value="/request_consents_obp_vrp", params = {"bank", 
+            "time_to_live_in_seconds", "valid_from", "email", "phone_number", "from_routing_scheme", 
+            "from_routing_address", "to_routing_scheme", 
+            "to_routing_address", "currency", "max_single_amount", 
+            "max_monthly_amount", "max_yearly_amount", "max_number_of_monthly_transactions", "max_number_of_yearly_transactions"})
+    public String requestConsentsVrpOpenBankProject(@RequestParam("bank") String bankId, 
+                                                    @RequestParam("time_to_live_in_seconds") String timeToLiveInSeconds,
+                                                    @RequestParam("valid_from") String validFrom,
+                                                    @RequestParam("email") String email, 
+                                                    @RequestParam("phone_number") String phoneNumber,
+                                                    @RequestParam("from_routing_scheme") String fromRoutingScheme,
+                                                    @RequestParam("from_routing_address") String fromRoutingAddress,
+                                                    @RequestParam("to_routing_scheme") String toRoutingScheme,
+                                                    @RequestParam("to_routing_address") String toRoutingAddress,
+                                                    @RequestParam("currency") String currency,
+                                                    @RequestParam("max_single_amount") String maxSingleAmount,
+                                                    @RequestParam("max_monthly_amount") String maxMonthlyAmount,
+                                                    @RequestParam("max_yearly_amount") String maxYearlyAmount,
+                                                    @RequestParam("max_number_of_monthly_transactions") String maxNumberOfMonthlyTransactions,
+                                                    @RequestParam("max_number_of_yearly_transactions") String maxNumberOfYearlyTransactions,
+                                                 HttpSession session, Model model
+    ) throws UnsupportedEncodingException, ParseException, JOSEException, RestClientException {
+        try {
+            // Create OBP Consent
+            String clientCredentialsToken = getClientCredentialsToken();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(clientCredentialsToken);
+            String validFromTime = localToGMT(validFrom);
+
+            PostConsentRequestVrpJson body = new PostConsentRequestVrpJson(
+                    new FromAccount(
+                            new BankRouting("", ""),
+                            new BranchRouting("", ""),
+                            new AccountRouting(fromRoutingScheme, fromRoutingAddress)
+                    ),
+                    new ToAccount(
+                            new BankRouting("", ""),
+                            new BranchRouting("", ""),
+                            new AccountRouting(toRoutingScheme, toRoutingAddress),
+                            new Limit(
+                                    currency = currency,
+                                    Integer.parseInt(maxSingleAmount),
+                                    Integer.parseInt(maxMonthlyAmount),
+                                    Integer.parseInt(maxYearlyAmount),
+                                    Integer.parseInt(maxNumberOfMonthlyTransactions),
+                                    Integer.parseInt(maxNumberOfYearlyTransactions)
+                            )
+                    ),
+                    Integer.parseInt(timeToLiveInSeconds),
+                    validFrom = validFromTime,
+                    email = email,
+                    phoneNumber = phoneNumber
+            );
+            String consentRequestId = "";
+            try {
+                HttpEntity<PostConsentRequestVrpJson> request = new HttpEntity<>(body, headers);
+                Map response = restTemplate.postForObject(createConsentRequestVrp, request, Map.class);
+                consentRequestId = ((Map<String, String>) response).get("consent_request_id");
+                session.setAttribute("consent_request_id", consentRequestId);
+                session.setAttribute("consent_id", "None");
+            } catch (HttpClientErrorException e) {
+                String error = "Sorry! Cannot create the consent.";
+                logger.error(error, e);
+                model.addAttribute("errorMsg", e.getMessage());
+                return "error";
+            }
+
+
+            //{"client_id", "bank_id", "consent_id", "response_type=code", "scope", "redirect_uri", "state"})
+            Map<String, String> queryParam = new LinkedHashMap<>();
+            queryParam.put("client_id", clientId);
+            queryParam.put("response_type", "code+id_token");
+            // include OBP scopes, add OAuth2 and OIDC related scope: "openid" and "offline"
+            String scope = Stream.of(new String[]{"openid", "offline"})
+                    .distinct()
+                    .map(this::encodeQueryParam)
+                    .collect(Collectors.joining("+"));
+
+            queryParam.put("scope", scope);
+            String encodeRedirectUri = URLEncoder.encode(redirectUri, "UTF-8");
+            queryParam.put("redirect_uri", encodeRedirectUri);
+            final String state = UUID.randomUUID().toString();
+            final String nonce = UUID.randomUUID().toString();
+            queryParam.put("state", state);
+            queryParam.put("nonce", nonce);
+            SessionData.setState(session, state);
+            SessionData.setNonce(session, nonce);
+
+            // the parameter consent_id and bank_id are mandatory, these two parameter is not standard parameter of OAuth2 and OIDC
+            queryParam.put("consent_request_id", consentRequestId);
+            queryParam.put("consent_id", "None");
+            queryParam.put("bank_id", bankId);
+            queryParam.put("time_to_live_in_seconds", timeToLiveInSeconds);
+            queryParam.put("valid_from", validFromTime);
+            queryParam.put("api_standard", "OBP");
             SessionData.setApiStandard(session, "OBP");
             SessionData.setBankId(session, bankId);
             // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.
