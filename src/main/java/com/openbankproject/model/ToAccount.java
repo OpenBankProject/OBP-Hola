@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ToAccount {
+    @JsonProperty("counterparty_name")
+    String counterpartyName;
     @JsonProperty("bank_routing")
     BankRouting bankRouting;
     @JsonProperty("branch_routing")
@@ -14,11 +16,20 @@ public class ToAccount {
     @JsonProperty("limit")
     Limit limit;
 
-    public ToAccount(BankRouting bankRouting, BranchRouting branchRouting, AccountRouting accountRouting, Limit limit) {
+    public ToAccount(String counterpartyName, BankRouting bankRouting, BranchRouting branchRouting, AccountRouting accountRouting, Limit limit) {
+        this.counterpartyName = counterpartyName;
         this.bankRouting = bankRouting;
         this.branchRouting = branchRouting;
         this.accountRouting = accountRouting;
         this.limit = limit;
+    }
+
+    public String getCounterpartyName() {
+        return counterpartyName;
+    }
+
+    public void setCounterpartyName(String counterpartyName) {
+        this.counterpartyName = counterpartyName;
     }
 
     public BankRouting getBankRouting() {

@@ -705,7 +705,7 @@ public class IndexController implements ServletContextAware {
     @PostMapping(value="/request_consents_obp_vrp", params = {"bank", 
             "time_to_live_in_seconds", "valid_from", "email", "phone_number", "from_routing_scheme", 
             "from_routing_address", "to_routing_scheme", 
-            "to_routing_address", "currency", "max_single_amount", 
+            "to_routing_address", "currency", "max_single_amount", "counterparty_name",
             "max_monthly_amount", "max_yearly_amount", "max_number_of_monthly_transactions", "max_number_of_yearly_transactions"})
     public String requestConsentsVrpOpenBankProject(@RequestParam("bank") String bankId, 
                                                     @RequestParam("time_to_live_in_seconds") String timeToLiveInSeconds,
@@ -715,6 +715,7 @@ public class IndexController implements ServletContextAware {
                                                     @RequestParam("from_routing_scheme") String fromRoutingScheme,
                                                     @RequestParam("from_routing_address") String fromRoutingAddress,
                                                     @RequestParam("to_routing_scheme") String toRoutingScheme,
+                                                    @RequestParam("counterparty_name") String counterpartyName,
                                                     @RequestParam("to_routing_address") String toRoutingAddress,
                                                     @RequestParam("currency") String currency,
                                                     @RequestParam("max_single_amount") String maxSingleAmount,
@@ -733,11 +734,12 @@ public class IndexController implements ServletContextAware {
 
             PostConsentRequestVrpJson body = new PostConsentRequestVrpJson(
                     new FromAccount(
-                            new BankRouting("", ""),
+                            new BankRouting("", bankId),
                             new BranchRouting("", ""),
                             new AccountRouting(fromRoutingScheme, fromRoutingAddress)
                     ),
                     new ToAccount(
+                            "",
                             new BankRouting("", ""),
                             new BranchRouting("", ""),
                             new AccountRouting(toRoutingScheme, toRoutingAddress),
@@ -751,9 +753,9 @@ public class IndexController implements ServletContextAware {
                             )
                     ),
                     Integer.parseInt(timeToLiveInSeconds),
-                    validFrom = validFromTime,
-                    email = email,
-                    phoneNumber = phoneNumber
+                    validFromTime,
+                    email,
+                    phoneNumber
             );
             String consentRequestId = "";
             try {
