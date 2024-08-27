@@ -703,20 +703,27 @@ public class IndexController implements ServletContextAware {
         }
     }
     @PostMapping(value="/request_consents_obp_vrp", params = {"bank", 
-            "time_to_live_in_seconds", "valid_from", "email", "phone_number", "from_routing_scheme", 
-            "from_routing_address", "to_routing_scheme", 
-            "to_routing_address", "currency", "max_single_amount", "counterparty_name",
+            "time_to_live_in_seconds", "valid_from", "email", "phone_number", 
+            "from_bank_routing_scheme", "from_bank_routing_address", 
+            "from_routing_scheme", "from_routing_address",
+            "to_bank_routing_scheme", "to_bank_routing_address",
+            "to_routing_scheme", "to_routing_address", 
+            "currency", "max_single_amount", "counterparty_name",
             "max_monthly_amount", "max_yearly_amount", "max_number_of_monthly_transactions", "max_number_of_yearly_transactions"})
     public String requestConsentsVrpOpenBankProject(@RequestParam("bank") String bankId, 
                                                     @RequestParam("time_to_live_in_seconds") String timeToLiveInSeconds,
                                                     @RequestParam("valid_from") String validFrom,
                                                     @RequestParam("email") String email, 
                                                     @RequestParam("phone_number") String phoneNumber,
+                                                    @RequestParam("from_bank_routing_scheme") String fromBankRoutingScheme,
+                                                    @RequestParam("from_bank_routing_address") String fromBankRoutingAddress,
                                                     @RequestParam("from_routing_scheme") String fromRoutingScheme,
                                                     @RequestParam("from_routing_address") String fromRoutingAddress,
+                                                    @RequestParam("to_bank_routing_scheme") String toBankRoutingScheme,
+                                                    @RequestParam("to_bank_routing_address") String toBankRoutingAddress,
                                                     @RequestParam("to_routing_scheme") String toRoutingScheme,
-                                                    @RequestParam("counterparty_name") String counterpartyName,
                                                     @RequestParam("to_routing_address") String toRoutingAddress,
+                                                    @RequestParam("counterparty_name") String counterpartyName,
                                                     @RequestParam("currency") String currency,
                                                     @RequestParam("max_single_amount") String maxSingleAmount,
                                                     @RequestParam("max_monthly_amount") String maxMonthlyAmount,
@@ -734,13 +741,13 @@ public class IndexController implements ServletContextAware {
 
             PostConsentRequestVrpJson body = new PostConsentRequestVrpJson(
                     new FromAccount(
-                            new BankRouting("", bankId),
+                            new BankRouting(fromBankRoutingScheme, fromBankRoutingAddress),
                             new BranchRouting("", ""),
                             new AccountRouting(fromRoutingScheme, fromRoutingAddress)
                     ),
                     new ToAccount(
                             "",
-                            new BankRouting("", ""),
+                            new BankRouting(toBankRoutingScheme, toBankRoutingAddress),
                             new BranchRouting("", ""),
                             new AccountRouting(toRoutingScheme, toRoutingAddress),
                             new Limit(
