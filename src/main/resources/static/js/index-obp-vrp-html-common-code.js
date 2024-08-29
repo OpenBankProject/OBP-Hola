@@ -13,7 +13,7 @@ function restoreLastBankSelection() {
 function setBankInAccordanceTo(bankId) {
     let bank = document.querySelector("#bank");
     let bankScheme = document.querySelector("#from_bank_routing_scheme");
-    if(bankScheme.value == "OBPBankId") {
+    if(bankScheme.value == "OBP") {
         bank.value = bankId.value;
     }
 };
