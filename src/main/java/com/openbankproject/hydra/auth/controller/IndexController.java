@@ -707,6 +707,7 @@ public class IndexController implements ServletContextAware {
             "from_bank_routing_scheme", "from_bank_routing_address", 
             "from_routing_scheme", "from_routing_address",
             "to_bank_routing_scheme", "to_bank_routing_address",
+            "to_branch_routing_scheme", "to_branch_routing_address",
             "to_routing_scheme", "to_routing_address", 
             "currency", "max_single_amount", "counterparty_name",
             "max_monthly_amount", "max_yearly_amount", "max_number_of_monthly_transactions", "max_number_of_yearly_transactions"})
@@ -721,6 +722,8 @@ public class IndexController implements ServletContextAware {
                                                     @RequestParam("from_routing_address") String fromRoutingAddress,
                                                     @RequestParam("to_bank_routing_scheme") String toBankRoutingScheme,
                                                     @RequestParam("to_bank_routing_address") String toBankRoutingAddress,
+                                                    @RequestParam("to_branch_routing_scheme") String toBranchRoutingScheme,
+                                                    @RequestParam("to_branch_routing_address") String toBranchRoutingAddress,
                                                     @RequestParam("to_routing_scheme") String toRoutingScheme,
                                                     @RequestParam("to_routing_address") String toRoutingAddress,
                                                     @RequestParam("counterparty_name") String counterpartyName,
@@ -748,7 +751,7 @@ public class IndexController implements ServletContextAware {
                     new ToAccount(
                             "",
                             new BankRouting(toBankRoutingScheme, toBankRoutingAddress),
-                            new BranchRouting("", ""),
+                            new BranchRouting(toBranchRoutingScheme, toBranchRoutingAddress),
                             new AccountRouting(toRoutingScheme, toRoutingAddress),
                             new Limit(
                                     currency = currency,
