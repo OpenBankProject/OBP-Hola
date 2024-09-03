@@ -175,9 +175,11 @@
                         <button class="get_account_detail" account_id="${account['AccountId']}">Get Account detail</button>
                         <button class="get_balances" account_id="${account['AccountId']}">Get Balances</button>
                         <button class="get_transactions" account_id="${account['AccountId']}">Get Transactions</button>
+                        <button class="get_couterparties" account_id="${account['AccountId']}">Get Counteraparties</button>
                         <div class="account_detail"></div>
                         <div class="balances"></div>
                         <div class="transactions"></div>
+                        <div class="counterparties"></div>
                         <hr>
                     </div>
                 `);
@@ -204,6 +206,14 @@
                     let accountsEle = $(this).siblings('.transactions').empty().append('<h3>Transaction List:</h3>');
                     let accountId = $(this).attr('account_id');
                     $.getJSON('/transactions/account_id/' + accountId, function (data) {
+                        let zson = JSON.stringify(data, null, 2);
+                        accountsEle.append(`<code>${zson}<code>`).append('<br>');
+                    });
+                });
+                $('.get_couterparties').click(function () {
+                    let accountsEle = $(this).siblings('.counterparties').empty().append('<h3>Couterparties List:</h3>');
+                    let accountId = $(this).attr('account_id');
+                    $.getJSON('/couterparties/account_id/' + accountId, function (data) {
                         let zson = JSON.stringify(data, null, 2);
                         accountsEle.append(`<code>${zson}<code>`).append('<br>');
                     });

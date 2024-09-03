@@ -83,8 +83,10 @@ public class OtherController {
     
     @Value("${obp.base_url}/obp/v5.1.0/my/mtls/certificate/current")
     private String mtlsClientCertificateInfo;
-
-
+    
+    @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/counterparties")
+    private String getExplicitCounterpartiesForAccount;
+    
     @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transaction-request-types/COUNTERPARTY/transaction-requests")
     private String makePaymentCouterpartyObp;
     
@@ -261,6 +263,20 @@ public class OtherController {
 
         ResponseEntity<HashMap> exchange = restTemplate
                 .exchange(getTransactionsForBankAccount.replace("ACCOUNT_ID", accountId)
+                        .replace("VIEW_ID", viewId)
+                        .replace("BANK_ID", bankId), HttpMethod.GET, entity,  HashMap.class);
+        return exchange.getBody();
+    }
+    
+    @GetMapping("/counterparties_obp/bank_id/{bankId}/account_id/{accountId}/view_id/{viewId}")
+    public Object getExplicitCounterpartiesForAccountObp(@PathVariable String bankId, @PathVariable String accountId, @PathVariable String viewId, HttpSession session) {
+        String consentId = SessionData.getConsentId(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Consent-Id", consentId);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<HashMap> exchange = restTemplate
+                .exchange(getExplicitCounterpartiesForAccount.replace("ACCOUNT_ID", accountId)
                         .replace("VIEW_ID", viewId)
                         .replace("BANK_ID", bankId), HttpMethod.GET, entity,  HashMap.class);
         return exchange.getBody();

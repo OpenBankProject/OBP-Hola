@@ -178,6 +178,19 @@ function getTransactions(button) {
         resultBox.append(`<div id=${iconId} style="cursor:pointer;" onclick="copyJsonResultToClipboard(this)" class="fa-solid fa-copy"></div><pre><div id=${resultBoxId}>${zson}</div></pre>`).append('<br>');
     });
 };
+function getCounterparties(button) {
+    let resultBox = $(button).siblings('.counterparties_obp').empty().append('<h3>Counterparties:</h3>');
+    let bankId = $(button).attr('bank_id');
+    let accountId = $(button).attr('account_id');
+    const viewHtmlId = "views-" + accountId;
+    const selectedViewId = $('#' + viewHtmlId).find(":selected").text();
+    $.getJSON('/counterparties_obp/bank_id/' + bankId + '/account_id/' + accountId + "/view_id/" + selectedViewId, function (data) {
+        let zson = JSON.stringify(data, null, 2);
+        let iconId = "result_copy_icon_" + accountId + button.id;
+        let resultBoxId = "result_box_"  + accountId + button.id;
+        resultBox.append(`<div id=${iconId} style="cursor:pointer;" onclick="copyJsonResultToClipboard(this)" class="fa-solid fa-copy"></div><pre><div id=${resultBoxId}>${zson}</div></pre>`).append('<br>');
+    });
+};
 $(function () {
     $('#revoke_consent_obp').click(function () {   
         $.getJSON('/revoke_consent_obp/', function (data) {
@@ -221,6 +234,7 @@ $(function () {
                         <button onclick="getAccountDetails(this)" id="get_account_detail_obp_${account['id']}" class="btn btn-success" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Account detail</button>
                         <button onclick="getBalances(this)" id="get_balances_obp_${account['id']}" class="btn btn-warning" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Balances</button>
                         <button onclick="getTransactions(this)" id="get_transactions_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Transactions</button>
+                        <button onclick="getCounterparties(this)" id="get_counterparties_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Counterparties</button>
                         <button onclick="collapsibleElementEventHandler(make_payment_obp_div_${account['id']})" id="prepare_payment_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Prepare / Hide Counterparty payment</button>
                         <button onclick="collapsibleElementEventHandler(make_payment_obp_sepa_div_${account['id']})" id="prepare_payment_obp_sepa_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Prepare / Hide SEPA payment</button>
                         <div class="input-group">
@@ -281,6 +295,7 @@ $(function () {
                         <div class="account_detail_obp" style="margin-left: 50px;"></div>
                         <div class="balances_obp" style="margin-left: 50px;"></div>
                         <div class="transactions_obp" style="margin-left: 50px;"></div>
+                        <div class="counterparties_obp" style="margin-left: 50px;"></div>
                         
                         <hr>
                     </div>
