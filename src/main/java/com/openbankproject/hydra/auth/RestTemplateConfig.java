@@ -25,9 +25,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import sun.security.provider.X509Factory;
 
 import javax.net.ssl.*;
+import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -116,11 +119,11 @@ public class RestTemplateConfig {
     }
 
     private void traceResponse(HttpResponse response, String body) throws IOException {
-        logger.info("=========================== response begin ================================================");
-        logger.info("=== Status Line : {}", response.getStatusLine());
-        logger.info("=== Headers : {}", StringUtils.join(response.getAllHeaders(), "; "));
-        logger.info("=== Response body: {}", body);
-        logger.info("========================== response end ================================================");
+        logger.info("=========================== response begin ================================================ Session ID : {}", getSessionId());
+        logger.info("=== Status Line : {}, Session ID : {}", response.getStatusLine(), getSessionId());
+        logger.info("=== Headers : {}, Session ID : {}", StringUtils.join(response.getAllHeaders(), "; "), getSessionId());
+        logger.info("=== Response body: {}, Session ID : {}", body, getSessionId());
+        logger.info("=========================== response end =================================================== Session ID : {}", getSessionId());
     }
 
     private void responseIntercept(org.apache.http.HttpResponse response, HttpContext httpContext) throws IOException {
@@ -198,12 +201,20 @@ public class RestTemplateConfig {
         }
     }
 
+    private String getSessionId() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes != null) {
+            return attributes.getRequest().getSession(false).getId();  // Get the existing session, don't create a new one
+        }
+        return "";
+    }
+
     private void traceRequest(HttpRequest request, String body) throws IOException {
-        logger.info("=========================== request begin ================================================");
-        logger.info("=== Request Line : {}", request.getRequestLine());
-        logger.info("=== Headers : {}", StringUtils.join(request.getAllHeaders(), "; "));
-        logger.info("=== Request body: {}", body);
-        logger.info("============================= request end ================================================");
+        logger.info("=========================== request begin ================================================ Session ID : {}", getSessionId());
+        logger.info("=== Request Line : {}, Session ID : {}", request.getRequestLine(), getSessionId());
+        logger.info("=== Headers : {}, Session ID : {}", StringUtils.join(request.getAllHeaders(), "; "), getSessionId());
+        logger.info("=== Request body: {}, Session ID : {}", body, getSessionId());
+        logger.info("============================= request end ================================================ Session ID : {}", getSessionId());
     }
 
     private void requestIntercept(org.apache.http.HttpRequest request, HttpContext httpContext) throws IOException {
