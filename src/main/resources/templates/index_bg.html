@@ -32,6 +32,7 @@
 </nav>
     <div class="container">
         <div class="row">
+            
             <div class="col-sm-6 col-lg-offset-3">
                 <h2>Give Consent</h2>
                 <form th:action="@{/request_consents_bg}" method="post">
@@ -75,7 +76,19 @@
                         <label for="recurring_indicator">Recurring indicator</label>
                     </div>
                     <button type="submit" class="btn btn-danger">Give Consent</button>
+                    <hr>
+                    <div class="form-group">
+                        <label for="preview_indicator">Preview</label>
+                        <select name="preview_indicator" id="preview_indicator" class="form-control">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
                 </form>
+                <div class="alert alert-info alert-dismissible col-md-12" role="alert" th:if="${errorMsg}">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <span id="warning_msg" th:utext="${errorMsg}" style="white-space: pre-wrap;"></span>
+                </div>
             </div>
         </div>
     </div>

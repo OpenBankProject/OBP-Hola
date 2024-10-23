@@ -24,13 +24,13 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import sun.security.provider.X509Factory;
 
 import javax.net.ssl.*;
-import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -209,7 +209,12 @@ public class RestTemplateConfig {
         return "";
     }
 
-    private void traceRequest(HttpRequest request, String body) throws IOException {
+    private void traceRequest(HttpRequest request, String body) throws IOException, RestClientException {
+        // Condition to interrupt the request
+        if (!getSessionId().isEmpty() && isPreviewRequest(request)) {
+            throw new RestClientException(buildRequestInfo(request, body).toString());
+        }
+        
         logger.info("=========================== request begin ================================================ Session ID : {}", getSessionId());
         logger.info("=== Request Line : {}, Session ID : {}", request.getRequestLine(), getSessionId());
         logger.info("=== Headers : {}, Session ID : {}", StringUtils.join(request.getAllHeaders(), "; "), getSessionId());
@@ -217,7 +222,30 @@ public class RestTemplateConfig {
         logger.info("============================= request end ================================================ Session ID : {}", getSessionId());
     }
 
-    private void requestIntercept(org.apache.http.HttpRequest request, HttpContext httpContext) throws IOException {
+    private StringBuilder buildRequestInfo(HttpRequest request, String body) {
+        StringBuilder logEntry = new StringBuilder();
+        logEntry.append("=========================== request begin ================================================\n")
+                .append("=== Session ID: ").append(getSessionId()).append("\n")
+                .append("=== Status Line : ").append(request.getRequestLine()).append("\n")
+                .append("=== Headers : ").append(StringUtils.join(request.getAllHeaders(), "; ")).append("\n")
+                .append("=== Response body: ").append(body).append("\n")
+                .append("========================== request end ================================================\n");
+        return logEntry;
+    }
+
+    // Helper method to check for mocked request
+    private boolean isPreviewRequest(HttpRequest request) {
+        // Implement your validation logic here, e.g., check if specific headers exist
+        Header[] headers = request.getAllHeaders();
+        for (Header header : headers) {
+            if (header.getName().equals("Preview-Request")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void requestIntercept(org.apache.http.HttpRequest request, HttpContext httpContext) throws RestClientException, IOException {
         Header[] headers = request.getHeaders(HttpHeaders.CONTENT_TYPE);
         if(ArrayUtils.isEmpty(headers)) {
             request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);

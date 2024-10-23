@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.ServletContextAware;
@@ -29,6 +30,7 @@ import org.springframework.web.context.ServletContextAware;
 import javax.annotation.Resource;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -179,26 +181,48 @@ public class IndexController implements ServletContextAware {
     }
 
     @GetMapping({"/index_bg", "index_bg.html"})
-    public String index_bg(Model model, HttpSession session) throws ParseException, JOSEException {
-        {// initiate consent names
-            // exclude "openid" and "offline", they are used by hydra
+    public String index_bg(Model model, HttpSession session) {
+        try {
+            // Initiate consent names
             String[] consents = allScopes.stream()
                     .filter(it -> !"openid".equals(it) && !"offline".equals(it))
                     .filter(it -> it.contains("BerlinGroup"))
                     .toArray(String[]::new);
             model.addAttribute("consents", consents);
-        }
-        { // initiate all bank names and bank ids
+
+            // Initiate all bank names and bank ids
             Banks banks = restTemplate.getForObject(getBanksUrl, Banks.class);
+
+            // Check if banks data is null (meaning the request failed or returned empty)
+            if (banks == null || banks.getBanks().isEmpty()) {
+                throw new RestClientException("Failed to retrieve bank data.");
+            }
+
+            // Add bank-related information to the model
             model.addAttribute("banks", banks.getBanks());
             model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
             model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
             model.addAttribute("showBankLogo", showBankLogo);
             model.addAttribute("obpBaseUrl", obpBaseUrl);
             model.addAttribute("bankLogoUrl", bankLogoUrl);
+
+            return "index_bg";
+
+        } catch (HttpStatusCodeException e) {
+            // Handle HTTP-specific errors from RestTemplate
+            model.addAttribute("errorMsg", "External service error: " + e.getStatusCode() + " - " + e.getResponseBodyAsString());
+            return "error";
+        } catch (RestClientException e) {
+            // Handle other RestTemplate errors (e.g., connection failures)
+            model.addAttribute("errorMsg", e.getMessage());
+            return "index_bg";
+        } catch (Exception e) {
+            // Generic catch-all for other exceptions
+            model.addAttribute("errorMsg", "An unexpected error occurred: " + e.getMessage());
+            return "error";
         }
-        return "index_bg";
     }
+    
     @GetMapping({"/index_obp", "index_obp.html"})
     public String index_obp(Model model, HttpSession session) throws ParseException, JOSEException {
         {// initiate consent names
@@ -476,13 +500,14 @@ public class IndexController implements ServletContextAware {
     }
 
 
-    @PostMapping(value="/request_consents_bg", params = {"bank", "iban","consents", "recurring_indicator", "frequency_per_day"})
+    @PostMapping(value="/request_consents_bg", params = {"bank", "iban","consents", "recurring_indicator", "frequency_per_day", "expiration_time", "preview_indicator"})
     public String requestConsentsBerlinGroup(@RequestParam("bank") String bankId,
                                              @RequestParam("iban") String iban,
                                              @RequestParam String[] consents,
                                              @RequestParam String recurring_indicator,
                                              @RequestParam String frequency_per_day,
                                              @RequestParam String expiration_time,
+                                             @RequestParam(value = "preview_indicator") String previewIndicator,
                                              HttpSession session, Model model
     ) throws UnsupportedEncodingException, ParseException, JOSEException, RestClientException {
         try {
@@ -490,6 +515,9 @@ public class IndexController implements ServletContextAware {
             String clientCredentialsToken = getClientCredentialsToken();
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(clientCredentialsToken);
+            if(previewIndicator.equalsIgnoreCase("true")) {
+                headers.set("Preview-Request", "true");
+            }
             String recurringIndicator = recurring_indicator;
             String expirationDateTime = convertTimeFormat(expiration_time);
             String frequencyPerDay = frequency_per_day;
@@ -516,6 +544,10 @@ public class IndexController implements ServletContextAware {
                 logger.error(error, e);
                 model.addAttribute("errorMsg", e.getMessage());
                 return "error";
+            } catch (RestClientException e) {
+                // Handle other RestTemplate errors (e.g., connection failures)
+                model.addAttribute("errorMsg", e.getMessage());
+                return "index_bg"; 
             }
 
 
