@@ -4,6 +4,7 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
+import com.openbankproject.RedisService;
 import com.openbankproject.hydra.auth.HydraConfig;
 import com.openbankproject.hydra.auth.VO.*;
 import com.openbankproject.hydra.auth.util.PKCEUtil;
@@ -11,7 +12,9 @@ import com.openbankproject.model.*;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -169,7 +172,7 @@ public class IndexController implements ServletContextAware {
             model.addAttribute("consents", consents);
         }
         { // initiate all bank names and bank ids
-            Banks banks = restTemplate.getForObject(getBanksUrl, Banks.class);
+            Banks banks = getBanks();
             model.addAttribute("banks", banks.getBanks());
             model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
             model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
@@ -178,6 +181,13 @@ public class IndexController implements ServletContextAware {
             model.addAttribute("bankLogoUrl", bankLogoUrl);
         }
         return "index_uk";
+    }
+
+    
+
+    private Banks getBanks() {
+        Banks banks = restTemplate.getForObject(getBanksUrl, Banks.class);
+        return banks;
     }
 
     @GetMapping({"/index_bg", "index_bg.html"})
@@ -191,7 +201,7 @@ public class IndexController implements ServletContextAware {
             model.addAttribute("consents", consents);
 
             // Initiate all bank names and bank ids
-            Banks banks = restTemplate.getForObject(getBanksUrl, Banks.class);
+            Banks banks = getBanks();
 
             // Check if banks data is null (meaning the request failed or returned empty)
             if (banks == null || banks.getBanks().isEmpty()) {
@@ -205,6 +215,9 @@ public class IndexController implements ServletContextAware {
             model.addAttribute("showBankLogo", showBankLogo);
             model.addAttribute("obpBaseUrl", obpBaseUrl);
             model.addAttribute("bankLogoUrl", bankLogoUrl);
+            String key = "log-entry-for-session-id: " + session.getId();
+            String logEntries = redisService.get(key);
+            model.addAttribute("logEntriesForHtml", logEntries);
 
             return "index_bg";
 
@@ -234,7 +247,7 @@ public class IndexController implements ServletContextAware {
             model.addAttribute("consents", consents);
         }
         { // initiate all bank names and bank ids
-            Banks banks = restTemplate.getForObject(getBanksUrl, Banks.class);
+            Banks banks = getBanks();
             model.addAttribute("banks", banks.getBanks());
             model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
             model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
@@ -255,7 +268,7 @@ public class IndexController implements ServletContextAware {
             model.addAttribute("consents", consents);
         }
         { // initiate all bank names and bank ids
-            Banks banks = restTemplate.getForObject(getBanksUrl, Banks.class);
+            Banks banks = getBanks();
             model.addAttribute("banks", banks.getBanks());
             model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
             model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
@@ -268,7 +281,7 @@ public class IndexController implements ServletContextAware {
     @GetMapping({"/consents", "consents.html"})
     public String consents(Model model, HttpSession session) throws ParseException, JOSEException {
         { // initiate all bank names and bank ids
-            Banks banks = restTemplate.getForObject(getBanksUrl, Banks.class);
+            Banks banks = getBanks();
             model.addAttribute("banks", banks.getBanks());
             model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
             model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
@@ -473,8 +486,14 @@ public class IndexController implements ServletContextAware {
         return "redirect:/main";
     }
 
+    @Autowired
+    private RedisService redisService;
+
     @GetMapping(value={"/main", "main.html"}, params="!code")
     public String main(HttpSession session, Model model) {
+        String key = "log-entry-for-session-id: " + session.getId();
+        String logEntries = redisService.get(key);
+        model.addAttribute("logEntriesForHtml", logEntries);
         String apiStandard = SessionData.getApiStandard(session);
         model.addAttribute("apiStandard", apiStandard);
         UserInfo user = SessionData.getUserInfo(session);

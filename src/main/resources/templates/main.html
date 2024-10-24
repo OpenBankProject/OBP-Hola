@@ -60,6 +60,7 @@
 <div class="container">
     <div th:switch="${apiStandard}">
         <div th:case="'UKOpenBanking'" class="row">
+            
             <div class="row">
                 <h1>Hello <span th:text="${user?.username}"></span></h1>
 
@@ -149,6 +150,21 @@
             </div>
         </div>
     </div>
+    <hr>
+    <div>
+        <!-- Collapsible Button -->
+        <button class="btn btn-info" type="button" data-toggle="collapse" data-target="#logEntriesContent" aria-expanded="false" aria-controls="logEntriesContent">
+            Show/Hide Log
+        </button>
+        <!-- Collapsible Content -->
+        <div class="collapse mt-3" id="logEntriesContent">
+            <div class="alert alert-info alert-dismissible col-md-12" role="alert" th:if="${logEntriesForHtml}">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <span id="warning_msg" th:utext="${logEntriesForHtml}" style="white-space: pre-wrap;">Not implemented</span>
+            </div>
+        </div>
+    </div>
+    
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
 <script type="text/javascript" th:src="@{/js/jquery-validate-1.19.2.min.js}" ></script>
