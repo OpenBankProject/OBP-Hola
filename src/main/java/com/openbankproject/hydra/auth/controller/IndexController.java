@@ -215,9 +215,7 @@ public class IndexController implements ServletContextAware {
             model.addAttribute("showBankLogo", showBankLogo);
             model.addAttribute("obpBaseUrl", obpBaseUrl);
             model.addAttribute("bankLogoUrl", bankLogoUrl);
-            String key = "log-entry-for-session-id: " + session.getId();
-            String logEntries = redisService.get(key);
-            model.addAttribute("logEntriesForHtml", logEntries);
+            redisService.readLogFromRedis(session, model);
 
             return "index_bg";
 
@@ -491,9 +489,7 @@ public class IndexController implements ServletContextAware {
 
     @GetMapping(value={"/main", "main.html"}, params="!code")
     public String main(HttpSession session, Model model) {
-        String key = "log-entry-for-session-id: " + session.getId();
-        String logEntries = redisService.get(key);
-        model.addAttribute("logEntriesForHtml", logEntries);
+        redisService.readLogFromRedis(session, model);
         String apiStandard = SessionData.getApiStandard(session);
         model.addAttribute("apiStandard", apiStandard);
         UserInfo user = SessionData.getUserInfo(session);
@@ -519,14 +515,13 @@ public class IndexController implements ServletContextAware {
     }
 
 
-    @PostMapping(value="/request_consents_bg", params = {"bank", "iban","consents", "recurring_indicator", "frequency_per_day", "expiration_time", "preview_indicator"})
+    @PostMapping(value="/request_consents_bg", params = {"bank", "iban","consents", "recurring_indicator", "frequency_per_day", "expiration_time"})
     public String requestConsentsBerlinGroup(@RequestParam("bank") String bankId,
                                              @RequestParam("iban") String iban,
                                              @RequestParam String[] consents,
                                              @RequestParam String recurring_indicator,
                                              @RequestParam String frequency_per_day,
                                              @RequestParam String expiration_time,
-                                             @RequestParam(value = "preview_indicator") String previewIndicator,
                                              HttpSession session, Model model
     ) throws UnsupportedEncodingException, ParseException, JOSEException, RestClientException {
         try {
@@ -534,9 +529,6 @@ public class IndexController implements ServletContextAware {
             String clientCredentialsToken = getClientCredentialsToken();
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(clientCredentialsToken);
-            if(previewIndicator.equalsIgnoreCase("true")) {
-                headers.set("Preview-Request", "true");
-            }
             String recurringIndicator = recurring_indicator;
             String expirationDateTime = convertTimeFormat(expiration_time);
             String frequencyPerDay = frequency_per_day;

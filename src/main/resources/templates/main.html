@@ -150,20 +150,7 @@
             </div>
         </div>
     </div>
-    <hr>
-    <div>
-        <!-- Collapsible Button -->
-        <button class="btn btn-info" type="button" data-toggle="collapse" data-target="#logEntriesContent" aria-expanded="false" aria-controls="logEntriesContent">
-            Show/Hide Log
-        </button>
-        <!-- Collapsible Content -->
-        <div class="collapse mt-3" id="logEntriesContent">
-            <div class="alert alert-info alert-dismissible col-md-12" role="alert" th:if="${logEntriesForHtml}">
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <span id="warning_msg" th:utext="${logEntriesForHtml}" style="white-space: pre-wrap;">Not implemented</span>
-            </div>
-        </div>
-    </div>
+    <div th:include="redis-log-widget :: redisLogWidget"></div>
     
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>

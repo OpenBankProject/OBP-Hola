@@ -7,6 +7,7 @@ import com.nimbusds.jose.JWSObject;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.openbankproject.JwsUtil;
 import com.openbankproject.RedisService;
+import com.openbankproject.RequestResponseLogger;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -50,6 +51,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.openbankproject.SessionUtils.getSessionId;
+
 @Configuration
 public class RestTemplateConfig {
     private static final Logger logger = LoggerFactory.getLogger(RestTemplateConfig.class);
@@ -66,6 +69,9 @@ public class RestTemplateConfig {
     private char[] trustStorePassword;
     @Value("${force_jws:}")
     private String forceJws;
+
+    @Autowired
+    private RequestResponseLogger requestResponseLogger;
 
     @Bean
     public RestTemplate restTemplate(SSLContext sslContext) {
@@ -129,7 +135,7 @@ public class RestTemplateConfig {
         logger.info("=========================== response end =================================================== Session ID : {}", getSessionId());
         
         // Save to Redis
-        saveResponseInfoTRedis(response, body);
+        requestResponseLogger.saveResponseInfoToRedis(response, body);
     }
 
     private void responseIntercept(org.apache.http.HttpResponse response, HttpContext httpContext) throws IOException {
@@ -207,90 +213,14 @@ public class RestTemplateConfig {
         }
     }
 
-    private String getSessionId() {
-        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attributes != null) {
-            return attributes.getRequest().getSession(false).getId();  // Get the existing session, don't create a new one
-        }
-        return "";
-    }
-
     private void traceRequest(HttpRequest request, String body) throws IOException, RestClientException {
-
-        String buildRequestInfo = buildRequestInfo(request, body).toString();
-        // Condition to interrupt the request
-        if (!getSessionId().isEmpty() && isPreviewRequest(request)) {
-            throw new RestClientException(buildRequestInfo);
-        }
-        
         logger.info("=========================== request begin ================================================ Session ID : {}", getSessionId());
         logger.info("=== Request Line : {}, Session ID : {}", request.getRequestLine(), getSessionId());
         logger.info("=== Headers : {}, Session ID : {}", StringUtils.join(request.getAllHeaders(), "; "), getSessionId());
         logger.info("=== Request body: {}, Session ID : {}", body, getSessionId());
         logger.info("============================= request end ================================================ Session ID : {}", getSessionId());
 
-        saveRequestInfoToRedis(request, body).toString();
-    }
-    
-    @Autowired
-    private RedisService redisService;
-
-    public String printUtcDateTime() {
-        Instant now = Instant.now();
-        return "at UTC Time: " + now.toString();
-    }
-    
-    private StringBuilder saveRequestInfoToRedis(HttpRequest request, String body) {
-        System.out.println("Saving to Redis...");
-        StringBuilder logEntry = buildRequestInfo(request, body);
-        String key = "log-entry-for-session-id: " + getSessionId();
-        String value = logEntry.toString();
-        redisService.appendWithTTL(key, value, 300);
-        return logEntry;
-    }
-
-    private StringBuilder buildRequestInfo(HttpRequest request, String body) {
-        StringBuilder logEntry = new StringBuilder();
-        logEntry.append("============= Request begin " + printUtcDateTime() + " =============\n")
-                .append("=== Session ID: ").append(getSessionId()).append("\n")
-                .append("=== Status Line : ").append(request.getRequestLine()).append("\n")
-                .append("=== Headers : ").append(StringUtils.join(request.getAllHeaders(), "; ")).append("\n")
-                .append("=== Request body: ").append(body).append("\n")
-                .append("============= Request end " + printUtcDateTime() + " =============\n");
-        return logEntry;
-    }
-
-    private StringBuilder saveResponseInfoTRedis(HttpResponse response, String body) {
-        System.out.println("Saving to Redis...");
-        StringBuilder logEntry = buildResponseInfo(response, body);
-        String key = "log-entry-for-session-id: " + getSessionId();
-        String value = logEntry.toString();
-        redisService.appendWithTTL(key, value, 300);
-        return logEntry;
-    }
-
-    private StringBuilder buildResponseInfo(HttpResponse response, String body) {
-        StringBuilder logEntry = new StringBuilder();
-        logEntry.append("============= Response begin " + printUtcDateTime() + " =============\n")
-                .append("=== Session ID: ").append(getSessionId()).append("\n")
-                .append("=== Status Line : ").append(response.getStatusLine()).append("\n")
-                .append("=== Headers : ").append(StringUtils.join(response.getAllHeaders(), "; ")).append("\n")
-                .append("=== Response body: ").append(body).append("\n")
-                .append("============= Response end " + printUtcDateTime() + " =============\n");
-        return logEntry;
-    }
-
-
-    // Helper method to check for mocked request
-    private boolean isPreviewRequest(HttpRequest request) {
-        // Implement your validation logic here, e.g., check if specific headers exist
-        Header[] headers = request.getAllHeaders();
-        for (Header header : headers) {
-            if (header.getName().equals("Preview-Request")) {
-                return true;
-            }
-        }
-        return false;
+        requestResponseLogger.saveRequestInfoToRedis(request, body).toString();
     }
 
     private void requestIntercept(org.apache.http.HttpRequest request, HttpContext httpContext) throws RestClientException, IOException {
