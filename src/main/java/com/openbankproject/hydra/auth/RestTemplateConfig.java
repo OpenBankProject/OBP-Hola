@@ -28,7 +28,6 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-import sun.security.provider.X509Factory;
 
 import javax.net.ssl.*;
 import java.io.*;
@@ -174,7 +173,9 @@ public class RestTemplateConfig {
             } catch (ParseException | JsonProcessingException e) {
                 e.printStackTrace();
             }
-            String pem = X509Factory.BEGIN_CERT + x5c + X509Factory.END_CERT;
+            final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
+            final String END_CERT = "-----END CERTIFICATE-----";
+            String pem = BEGIN_CERT + x5c + END_CERT;
             // Verify JWS
             boolean isVerifiedJws = JwsUtil.verifyJwsSignature(sigT, httpBody, xJwsSignature, digest, pem, rebuiltDetachedPayload);
             if(!isVerifiedJws) {
