@@ -60,6 +60,7 @@
 <div class="container">
     <div th:switch="${apiStandard}">
         <div th:case="'UKOpenBanking'" class="row">
+            
             <div class="row">
                 <h1>Hello <span th:text="${user?.username}"></span></h1>
 
@@ -149,6 +150,8 @@
             </div>
         </div>
     </div>
+    <div th:include="redis-log-widget :: redisLogWidget"></div>
+    
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
 <script type="text/javascript" th:src="@{/js/jquery-validate-1.19.2.min.js}" ></script>

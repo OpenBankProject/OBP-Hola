@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JWSObject;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.openbankproject.JwsUtil;
+import com.openbankproject.RedisService;
+import com.openbankproject.RequestResponseLogger;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -17,6 +19,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,10 +44,13 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import static com.openbankproject.SessionUtils.getSessionId;
 
 @Configuration
 public class RestTemplateConfig {
@@ -62,6 +68,9 @@ public class RestTemplateConfig {
     private char[] trustStorePassword;
     @Value("${force_jws:}")
     private String forceJws;
+
+    @Autowired
+    private RequestResponseLogger requestResponseLogger;
 
     @Bean
     public RestTemplate restTemplate(SSLContext sslContext) {
@@ -123,6 +132,9 @@ public class RestTemplateConfig {
         logger.info("=== Headers : {}, Session ID : {}", StringUtils.join(response.getAllHeaders(), "; "), getSessionId());
         logger.info("=== Response body: {}, Session ID : {}", body, getSessionId());
         logger.info("=========================== response end =================================================== Session ID : {}", getSessionId());
+        
+        // Save to Redis
+        requestResponseLogger.saveResponseInfoToRedis(response, body);
     }
 
     private void responseIntercept(org.apache.http.HttpResponse response, HttpContext httpContext) throws IOException {
@@ -202,48 +214,14 @@ public class RestTemplateConfig {
         }
     }
 
-    private String getSessionId() {
-        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attributes != null) {
-            return attributes.getRequest().getSession(false).getId();  // Get the existing session, don't create a new one
-        }
-        return "";
-    }
-
     private void traceRequest(HttpRequest request, String body) throws IOException, RestClientException {
-        // Condition to interrupt the request
-        if (!getSessionId().isEmpty() && isPreviewRequest(request)) {
-            throw new RestClientException(buildRequestInfo(request, body).toString());
-        }
-        
         logger.info("=========================== request begin ================================================ Session ID : {}", getSessionId());
         logger.info("=== Request Line : {}, Session ID : {}", request.getRequestLine(), getSessionId());
         logger.info("=== Headers : {}, Session ID : {}", StringUtils.join(request.getAllHeaders(), "; "), getSessionId());
         logger.info("=== Request body: {}, Session ID : {}", body, getSessionId());
         logger.info("============================= request end ================================================ Session ID : {}", getSessionId());
-    }
 
-    private StringBuilder buildRequestInfo(HttpRequest request, String body) {
-        StringBuilder logEntry = new StringBuilder();
-        logEntry.append("=========================== request begin ================================================\n")
-                .append("=== Session ID: ").append(getSessionId()).append("\n")
-                .append("=== Status Line : ").append(request.getRequestLine()).append("\n")
-                .append("=== Headers : ").append(StringUtils.join(request.getAllHeaders(), "; ")).append("\n")
-                .append("=== Response body: ").append(body).append("\n")
-                .append("========================== request end ================================================\n");
-        return logEntry;
-    }
-
-    // Helper method to check for mocked request
-    private boolean isPreviewRequest(HttpRequest request) {
-        // Implement your validation logic here, e.g., check if specific headers exist
-        Header[] headers = request.getAllHeaders();
-        for (Header header : headers) {
-            if (header.getName().equals("Preview-Request")) {
-                return true;
-            }
-        }
-        return false;
+        requestResponseLogger.saveRequestInfoToRedis(request, body).toString();
     }
 
     private void requestIntercept(org.apache.http.HttpRequest request, HttpContext httpContext) throws RestClientException, IOException {
