@@ -1,4 +1,4 @@
-package com.openbankproject.hydra.auth.VO;
+package com.openbankproject.identityprovider.auth.VO;
 
 import javax.servlet.http.HttpSession;
 

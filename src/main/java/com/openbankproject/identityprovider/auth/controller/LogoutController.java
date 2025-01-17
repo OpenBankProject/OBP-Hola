@@ -1,8 +1,8 @@
-package com.openbankproject.hydra.auth.controller;
+package com.openbankproject.identityprovider.auth.controller;
 
-import com.openbankproject.hydra.auth.HydraConfig;
-import com.openbankproject.hydra.auth.VO.SessionData;
-import com.openbankproject.hydra.auth.VO.WellKnown;
+import com.openbankproject.identityprovider.auth.IdentityProviderConfig;
+import com.openbankproject.identityprovider.auth.VO.SessionData;
+import com.openbankproject.identityprovider.auth.VO.WellKnown;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -38,7 +38,7 @@ public class LogoutController {
     @Resource
     private RestTemplate restTemplate;
     @Resource
-    private HydraConfig hydraConfig;
+    private IdentityProviderConfig identityProviderConfig;
 
     @GetMapping("/logout")
     public String logout(HttpSession session) throws UnsupportedEncodingException {
@@ -57,9 +57,9 @@ public class LogoutController {
             // Revoking a refresh token also invalidates the access token that was created with it
             // Reference: https://www.ory.sh/hydra/docs/reference/api#revoke-oauth2-tokens
             body.add("token", refreshToken);
-            if (hydraConfig.isPublicClient()) {
+            if (identityProviderConfig.isPublicClient()) {
                 body.add("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
-                body.add("client_assertion", this.hydraConfig.buildClientAssertion());
+                body.add("client_assertion", this.identityProviderConfig.buildClientAssertion());
             } else {
                 body.add("client_id", clientId);
                 body.add("client_secret", clientSecret);

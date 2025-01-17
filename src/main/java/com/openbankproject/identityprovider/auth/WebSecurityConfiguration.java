@@ -1,4 +1,4 @@
-package com.openbankproject.hydra.auth;
+package com.openbankproject.identityprovider.auth;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;

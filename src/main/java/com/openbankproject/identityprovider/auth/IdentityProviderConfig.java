@@ -1,4 +1,4 @@
-package com.openbankproject.hydra.auth;
+package com.openbankproject.identityprovider.auth;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -12,7 +12,7 @@ import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import com.openbankproject.hydra.auth.VO.WellKnown;
+import com.openbankproject.identityprovider.auth.VO.WellKnown;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -35,10 +35,10 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 @Configuration
-public class HydraConfig {
-    Logger log = LoggerFactory.getLogger(HydraConfig.class);
+public class IdentityProviderConfig {
+    Logger log = LoggerFactory.getLogger(IdentityProviderConfig.class);
     @Value("${oauth2.public_url}/.well-known/openid-configuration")
-    private String hydraWellKnownUrl;
+    private String identityProviderWellKnownUrl;
 
     @Value("${oauth2.client_id}")
     private String clientId;
@@ -79,7 +79,7 @@ public class HydraConfig {
         if(count != 1L) {
             throw new IllegalStateException("Properties value oauth2.jwk_private_key and oauth2.client_secret must only one have value.");
         }
-        openIDConfiguration = restTemplate.getForObject(hydraWellKnownUrl, WellKnown.class);
+        openIDConfiguration = restTemplate.getForObject(identityProviderWellKnownUrl, WellKnown.class);
     }
 
 
@@ -89,7 +89,7 @@ public class HydraConfig {
     }
 
     /**
-     * Whether the hydra client is public:
+     * Whether the Identity provider client is public:
      * if token_endpoint_auth_methods_supported=private_key_jwt, return ture
      * @return
      */

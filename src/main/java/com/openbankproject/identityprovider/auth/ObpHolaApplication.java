@@ -1,4 +1,4 @@
-package com.openbankproject.hydra.auth;
+package com.openbankproject.identityprovider.auth;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -8,8 +8,8 @@ import org.springframework.context.annotation.ComponentScan;
 @EnableCaching
 @SpringBootApplication
 @ComponentScan(basePackages = "com.openbankproject")  // Ensure this package is scanned
-public class ObpHydraAuthApplication {
+public class ObpHolaApplication {
     public static void main(String[] args) {
-        SpringApplication.run(ObpHydraAuthApplication.class, args);
+        SpringApplication.run(ObpHolaApplication.class, args);
     }
 }

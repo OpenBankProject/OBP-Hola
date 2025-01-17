@@ -1,4 +1,4 @@
-package com.openbankproject.hydra.auth.util;
+package com.openbankproject.identityprovider.auth.util;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.RandomUtils;

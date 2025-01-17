@@ -1,7 +1,7 @@
-package com.openbankproject.hydra.auth.controller;
+package com.openbankproject.identityprovider.auth.controller;
 
-import com.openbankproject.hydra.auth.VO.AccountDataValue;
-import com.openbankproject.hydra.auth.VO.SessionData;
+import com.openbankproject.identityprovider.auth.VO.AccountDataValue;
+import com.openbankproject.identityprovider.auth.VO.SessionData;
 import com.openbankproject.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

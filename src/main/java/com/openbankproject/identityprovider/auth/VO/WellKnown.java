@@ -1,7 +1,7 @@
-package com.openbankproject.hydra.auth.VO;
+package com.openbankproject.identityprovider.auth.VO;
 
 /**
- * hydra wellknown endpoint response structure
+ * Identity provider wellknown endpoint response structure
  */
 
 import com.fasterxml.jackson.annotation.JsonInclude;

@@ -1,4 +1,4 @@
-package com.openbankproject.hydra.auth;
+package com.openbankproject.identityprovider.auth;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

@@ -1,4 +1,4 @@
-package com.openbankproject.hydra.auth.VO;
+package com.openbankproject.identityprovider.auth.VO;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;

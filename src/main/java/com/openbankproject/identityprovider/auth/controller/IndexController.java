@@ -1,20 +1,20 @@
-package com.openbankproject.hydra.auth.controller;
+package com.openbankproject.identityprovider.auth.controller;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
 import com.openbankproject.RedisService;
-import com.openbankproject.hydra.auth.HydraConfig;
-import com.openbankproject.hydra.auth.VO.*;
-import com.openbankproject.hydra.auth.util.PKCEUtil;
+import com.openbankproject.identityprovider.auth.IdentityProviderConfig;
+import com.openbankproject.identityprovider.auth.VO.*;
+import com.openbankproject.identityprovider.auth.util.PKCEUtil;
+import com.openbankproject.identityprovider.auth.VO.*;
 import com.openbankproject.model.*;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -33,7 +33,6 @@ import org.springframework.web.context.ServletContextAware;
 import javax.annotation.Resource;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -109,7 +108,7 @@ public class IndexController implements ServletContextAware {
     @Resource
     private WellKnown openIDConfiguration;
     @Resource
-    private HydraConfig hydraConfig;
+    private IdentityProviderConfig identityProviderConfig;
 
     /**
      * initiate global variable
@@ -164,7 +163,7 @@ public class IndexController implements ServletContextAware {
     @GetMapping({ "/index_uk", "index_uk.html"})
     public String index_uk(Model model) throws ParseException, JOSEException {
         {// initiate consent names
-            // exclude "openid" and "offline", they are used by hydra
+            // exclude "openid" and "offline", they are used by Identity provider
             String[] consents = allScopes.stream()
                     .filter(it -> !"openid".equals(it) && !"offline".equals(it))
                     .filter(it -> !it.contains("BerlinGroup"))
@@ -237,7 +236,7 @@ public class IndexController implements ServletContextAware {
     @GetMapping({"/index_obp", "index_obp.html"})
     public String index_obp(Model model, HttpSession session) throws ParseException, JOSEException {
         {// initiate consent names
-            // exclude "openid" and "offline", they are used by hydra
+            // exclude "openid" and "offline", they are used by Identity provider
             String[] consents = allScopes.stream()
                     .filter(it -> !"openid".equals(it) && !"offline".equals(it))
                     .filter(it -> it.contains("Obp"))
@@ -258,7 +257,7 @@ public class IndexController implements ServletContextAware {
     @GetMapping({"/index_obp_vrp", "index_obp_vrp.html"})
     public String index_obp_vrp(Model model, HttpSession session) throws ParseException, JOSEException {
         {// initiate consent names
-            // exclude "openid" and "offline", they are used by hydra
+            // exclude "openid" and "offline", they are used by Identity provider
             String[] consents = allScopes.stream()
                     .filter(it -> !"openid".equals(it) && !"offline".equals(it))
                     .filter(it -> it.contains("Obp"))
@@ -350,8 +349,8 @@ public class IndexController implements ServletContextAware {
             //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
             // add request object query parameter
-            if(this.hydraConfig.isPublicClient()) {
-                final String requestObject = this.hydraConfig.buildRequestObject(queryParam);
+            if(this.identityProviderConfig.isPublicClient()) {
+                final String requestObject = this.identityProviderConfig.buildRequestObject(queryParam);
                 queryParam.put("request", requestObject);
             }
 
@@ -430,9 +429,9 @@ public class IndexController implements ServletContextAware {
             final String codeVerifier = SessionData.getCodeVerifier(session);
             body.add("code_verifier", codeVerifier);
 
-            if(this.hydraConfig.isPublicClient()) {
+            if(this.identityProviderConfig.isPublicClient()) {
                 body.add("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
-                body.add("client_assertion", this.hydraConfig.buildClientAssertion());
+                body.add("client_assertion", this.identityProviderConfig.buildClientAssertion());
             } else {
                 body.add("client_secret", clientSecret);
             }
@@ -599,8 +598,8 @@ public class IndexController implements ServletContextAware {
             //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
             // add request object query parameter
-            if(this.hydraConfig.isPublicClient()) {
-                final String requestObject = this.hydraConfig.buildRequestObject(queryParam);
+            if(this.identityProviderConfig.isPublicClient()) {
+                final String requestObject = this.identityProviderConfig.buildRequestObject(queryParam);
                 queryParam.put("request", requestObject);
             }
 
@@ -718,8 +717,8 @@ public class IndexController implements ServletContextAware {
             //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
             // add request object query parameter
-            if(this.hydraConfig.isPublicClient()) {
-                final String requestObject = this.hydraConfig.buildRequestObject(queryParam);
+            if(this.identityProviderConfig.isPublicClient()) {
+                final String requestObject = this.identityProviderConfig.buildRequestObject(queryParam);
                 queryParam.put("request", requestObject);
             }
 
@@ -858,8 +857,8 @@ public class IndexController implements ServletContextAware {
             //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
             // add request object query parameter
-            if(this.hydraConfig.isPublicClient()) {
-                final String requestObject = this.hydraConfig.buildRequestObject(queryParam);
+            if(this.identityProviderConfig.isPublicClient()) {
+                final String requestObject = this.identityProviderConfig.buildRequestObject(queryParam);
                 queryParam.put("request", requestObject);
             }
 
@@ -923,8 +922,8 @@ public class IndexController implements ServletContextAware {
             SessionData.setApiStandard(session, "BerlinGroup");
 
             // add request object query parameter
-            if(this.hydraConfig.isPublicClient()) {
-                final String requestObject = this.hydraConfig.buildRequestObject(queryParam);
+            if(this.identityProviderConfig.isPublicClient()) {
+                final String requestObject = this.identityProviderConfig.buildRequestObject(queryParam);
                 queryParam.put("request", requestObject);
             }
 
@@ -953,6 +952,9 @@ public class IndexController implements ServletContextAware {
 
 
 
+    // Related specifications:
+    // - https://www.rfc-editor.org/rfc/rfc6749.html
+    // - https://datatracker.ietf.org/doc/html/rfc7523
     private String getClientCredentialsToken() throws ParseException, JOSEException {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -960,13 +962,14 @@ public class IndexController implements ServletContextAware {
 
         body.add("grant_type", "client_credentials");
         body.add("client_id", clientId);
+        body.add("client_secret", "WWJ04UzMhWmLEqW2KIgBHwD4UNEotzXz");
 
-        if(this.hydraConfig.isPublicClient()) {
-            body.add("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
-            body.add("client_assertion", this.hydraConfig.buildClientAssertion());
-        } else {
-            body.add("client_secret", clientSecret);
-        }
+//        if(this.hydraConfig.isPublicClient()) {
+//            body.add("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
+//            body.add("client_assertion", this.hydraConfig.buildClientAssertion());
+//        } else {
+//            body.add("client_secret", "WWJ04UzMhWmLEqW2KIgBHwD4UNEotzXz");
+//        }
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
         String tokenEndpoint = openIDConfiguration.getTokenEndpoint();
         TokenResponse tokenResponse = restTemplate.postForObject(tokenEndpoint, request, TokenResponse.class);
