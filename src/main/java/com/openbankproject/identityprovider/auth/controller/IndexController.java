@@ -512,6 +512,14 @@ public class IndexController implements ServletContextAware {
         model.addAttribute("bankLogoUrl", bankLogoUrl);
         return "main";
     }
+    @GetMapping(value={"/main2", "main2.html"}, params="CONSENT_ID")
+    public String main(HttpSession session, Model model, @RequestParam("CONSENT_ID") String consentId) {
+        redisService.readLogFromRedis(session, model);
+        model.addAttribute("consentId", consentId);
+        SessionData.setConsentId(session, consentId);
+        model.addAttribute("apiStandard", "BerlinGroup");
+        return "main2";
+    }
 
 
     @PostMapping(value="/request_consents_bg", params = {"bank", "iban","consents", "recurring_indicator", "frequency_per_day", "expiration_time"})
@@ -528,6 +536,7 @@ public class IndexController implements ServletContextAware {
             String clientCredentialsToken = getClientCredentialsToken();
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(clientCredentialsToken);
+            headers.set("TPP-Redirect-URI", "http://localhost:8081/main2");
             String recurringIndicator = recurring_indicator;
             String expirationDateTime = convertTimeFormat(expiration_time);
             String frequencyPerDay = frequency_per_day;
@@ -612,7 +621,8 @@ public class IndexController implements ServletContextAware {
 
             String queryParamStr = queryParam.entrySet().stream().map(it -> it.getKey() + "=" + it.getValue()).collect(Collectors.joining("&"));
             String authorizationEndpoint = openIDConfiguration.getAuthorizationEndpoint();
-            String redirectUrl = "redirect:" + authorizationEndpoint + "?" + queryParamStr;
+            // String redirectUrl = "redirect:" + authorizationEndpoint + "?" + queryParamStr;
+            String redirectUrl = "redirect:" + obpBaseUrl + "/confirm-bg-consent-request?CONSENT_ID=" + consentId;
 
             // if current user is authenticated, remove user info from session, to do re-authentication
             SessionData.remoteUserInfo(session);
