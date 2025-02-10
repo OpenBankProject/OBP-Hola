@@ -46,92 +46,20 @@
 
 <div class="container">
     <div th:switch="${apiStandard}">
-        <div th:case="'UKOpenBanking'" class="row">
-
-            <div class="row">
-                <h1>Hello <span th:text="${user?.username}"></span></h1>
-
-                current user: <br>
-                email: <span th:text="${user?.email}"></span> <br>
-                username: <span th:text="${user?.username}"></span> <br>
-                <a class="btn btn-info" th:href="@{/logout}">Logout</a>
-                <br>
-                <br>
-            </div>
-            <div>
-                <button class="btn btn-primary" id="get_accounts">Get accounts via UK Open Banking</button>
-                <div id="account_list">
-
-                </div>
-            </div>
-        </div>
         <div th:case="'BerlinGroup'" class="row">
             <div class="row">
                 <h1>Hello</h1> <br>
                 Consent-ID: <span th:text="${consentId}"></span> <br>
-                Status: <span th:text="${consentStatus}"></span> <br>
-                Frequency per day: <span th:text="${frequencyPerDay}"></span> <br>
-                Recurring indicator: <span th:text="${recurringIndicator}"></span> <br>
-                Valid until: <span th:text="${validUntil}"></span> <br>
                 <a class="btn btn-info" th:href="@{/logout}">Create a new consent</a>
-                <a class="btn btn-info" id="mtls_client_cert_info_bg">MTLS Certificate Info</a>
+                <a class="btn btn-info" id="consent_info_bg">Consent Info</a>
                 <br>
                 <br>
             </div>
-            <div id="mtls_client_cert_info_bg_div"></div>
-            <br>
-            <div id="make_payment_bg_div">
-                <div class="form-group">
-                    <label for="creditor_name">To Creditor name</label>
-                    <input type="text" name="creditor_name" id="creditor_name" class="form-control" >
-                </div>
-                <div class="form-group">
-                    <label for="creditor_iban">To Creditor IBAN</label>
-                    <input type="text" name="creditor_iban" id="creditor_iban" class="form-control" >
-                </div>
-                <div class="form-group">
-                    <label for="debtor_iban">From Debtor IBAN</label>
-                    <input type="text" name="debtor_iban" id="debtor_iban" class="form-control" >
-                </div>
-                <div class="form-group">
-                    <label for="amount_of_money">Amount of money</label>
-                    <input type="number" min="0" value="0" name="amount_of_money" id="amount_of_money" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label for="currency">Currency</label>
-                    <input type="text" value="EUR" name="currency" id="currency" class="form-control" >
-                </div>
-                <button class="btn btn-primary"  onclick="makePaymentBG(this)" id="make_payment_bg_button">Make payment</button>
-                <button class="btn btn-info"  onclick="clearMakePaymentBG(this)" id="clear_make_payment_bg_button">Clear result box</button>
-                <br>
-                <div id="payment_details_bg_div"></div>
-            </div>
+           <!-- <div id="consent_info_bg_div"></div>-->
             <br>
             <div>
                 <button class="btn btn-primary"  id="get_accounts_bg">Get accounts via Berlin Group APIs using Consent-ID</button>
                 <div id="account_list_bg">
-
-                </div>
-            </div>
-        </div>
-        <div th:case="'OBP'" class="row">
-            <div class="row">
-                <h1>Hello</h1> <br>
-                Consent-Id: <span th:text="${consentId}"></span> <br>
-                <a class="btn btn-info" th:href="@{/logout}">Create a new consent</a>
-                <a class="btn btn-danger" id="revoke_consent_obp">Revoke the consent</a>
-                <a class="btn btn-info" id="mtls_client_cert_info_obp">MTLS Certificate Info</a>
-                <a class="btn btn-info" id="consent_info_obp">Consent Info</a>
-                <br>
-                <br>
-            </div>
-            <div id="revoke_consent_obp_div"></div>
-            <div id="mtls_client_cert_info_obp_div"></div>
-            <div id="consent_info_obp_div"></div>
-            <hr>
-            <div>
-                <button class="btn btn-primary"  id="get_accounts_obp">Get accounts via OBP APIs using Consent-ID</button>
-                <div id="account_list_obp">
 
                 </div>
             </div>
@@ -148,70 +76,6 @@
 <!-- BG Consent Flow GUI -->
 <script type="text/javascript" th:src="@{/js/main-html-berlin-group-flow.js}"></script>
 
-<!-- OBP Consent Flow GUI -->
-<script type="text/javascript" th:src="@{/js/main-html-obp-consent-flow.js}"></script>
-
-<!-- UK Consent Flow GUI -->
-<script lang="javascript">
-    $(function () {
-        $('#get_accounts').click(function () {
-            $.getJSON("/account", function (data) {
-                const container = $('#account_list').empty().append('<h1>Account List:</h1>');
-                $.each(data.Account, function (index, account) {
-                    let zson = JSON.stringify(account, null, 2);
-                    container.append(`
-                    <div>
-                        <code>${zson}</code><br>
-                        <button class="get_account_detail" account_id="${account['AccountId']}">Get Account detail</button>
-                        <button class="get_balances" account_id="${account['AccountId']}">Get Balances</button>
-                        <button class="get_transactions" account_id="${account['AccountId']}">Get Transactions</button>
-                        <button class="get_couterparties" account_id="${account['AccountId']}">Get Counteraparties</button>
-                        <div class="account_detail"></div>
-                        <div class="balances"></div>
-                        <div class="transactions"></div>
-                        <div class="counterparties"></div>
-                        <hr>
-                    </div>
-                `);
-                });
-                $('.get_account_detail').click(function () {
-                    let accountDetailEle = $(this).siblings('.account_detail').empty().append('<h3>Account Detail:</h3>');
-                    ;
-                    let accountId = $(this).attr('account_id');
-                    $.getJSON('/account/' + accountId, function (data) {
-                        let zson = JSON.stringify(data, null, 2);
-                        accountDetailEle.append(`<code>${zson}<code>`).append('<br>');
-                    });
-                });
-                $('.get_balances').click(function () {
-                    let balancesEle = $(this).siblings('.balances').empty().append('<h3>Balance List:</h3>');
-                    ;
-                    let accountId = $(this).attr('account_id');
-                    $.getJSON('/balances/account_id/' + accountId, function (data) {
-                        let zson = JSON.stringify(data, null, 2);
-                        balancesEle.append(`<code>${zson}<code>`).append('<br>');
-                    });
-                });
-                $('.get_transactions').click(function () {
-                    let accountsEle = $(this).siblings('.transactions').empty().append('<h3>Transaction List:</h3>');
-                    let accountId = $(this).attr('account_id');
-                    $.getJSON('/transactions/account_id/' + accountId, function (data) {
-                        let zson = JSON.stringify(data, null, 2);
-                        accountsEle.append(`<code>${zson}<code>`).append('<br>');
-                    });
-                });
-                $('.get_couterparties').click(function () {
-                    let accountsEle = $(this).siblings('.counterparties').empty().append('<h3>Couterparties List:</h3>');
-                    let accountId = $(this).attr('account_id');
-                    $.getJSON('/couterparties/account_id/' + accountId, function (data) {
-                        let zson = JSON.stringify(data, null, 2);
-                        accountsEle.append(`<code>${zson}<code>`).append('<br>');
-                    });
-                });
-            });
-        });
-    })
-</script>
 <script type="text/javascript">
         $(function(){
           $.ajaxSetup({

@@ -972,7 +972,7 @@ public class IndexController implements ServletContextAware {
 
         body.add("grant_type", "client_credentials");
         body.add("client_id", clientId);
-        body.add("client_secret", "WWJ04UzMhWmLEqW2KIgBHwD4UNEotzXz");
+        body.add("client_secret", clientSecret);
 
 //        if(this.hydraConfig.isPublicClient()) {
 //            body.add("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");

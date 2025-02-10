@@ -62,7 +62,14 @@ function getTransactionsBG(button) {
     });
 };
 $(function () {
-    $('#mtls_client_cert_info_bg').click(function () {   
+    $('#consent_info_bg').click(function () {
+        $.getJSON('/consent_info', function (data) {
+            const container = $('#consent_info_bg_div')
+            let zson = JSON.stringify(data, null, 2);
+            container.empty().append(`<pre>${zson}</pre>`).append('<br>');
+        });
+    });
+    $('#mtls_client_cert_info_bg').click(function () {
         $.getJSON('/mtls_client_cert_info', function (data) {
             const container = $('#mtls_client_cert_info_bg_div')
             let zson = JSON.stringify(data, null, 2);
