@@ -973,7 +973,7 @@ public class IndexController implements ServletContextAware {
         body.add("grant_type", "client_credentials");
 
         if(this.identityProviderConfig.isPublicClient()) {
-            body.add("client_assertion_typeclient_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
+            body.add("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
             body.add("client_assertion", this.identityProviderConfig.buildClientAssertion());
         } else {
             body.add("client_secret", clientSecret);

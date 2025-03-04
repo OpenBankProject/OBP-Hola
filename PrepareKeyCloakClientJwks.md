@@ -75,5 +75,9 @@ public JWK: {
 oauth2.jws_alg=ES256
 oauth2.jwk_private_key={"crv":"P-256","d":"-ZXB3lAwc_xEVkc8Sj3GiZD3MjR7NkVA3MPzyx-ssNM","kid":"ZpYOcPjauwcxo_4jm1QR-p0vAdxnEEB4HNecB3J2Zk8","kty":"EC","x":"tODNrchqmkr0GPZEuT1B39EUwCBeuJHWiphMIMLjLi4","y":"UfU-riAawiOxgoJqYhsvhD53Tj9fQu6UJiRIxed16wQ"}
 
+and comments the following props, we only support one type client id at one time.
+#oauth2.client_id=open-bank-project
+#oauth2.client_secret=ygVDHw7dGkd508WmmZhMga7cCaZ5DDHb
+
 and also set the public key to OBP-Hola/src/main/resources/static/.well-known/jwks.json
 and set it to KeyCloak -> Client ->Keys -> set `Use JWKS URL` on, and put `http://host.docker.internal:8081/.well-known/jwks.json` to JWKS URL   
