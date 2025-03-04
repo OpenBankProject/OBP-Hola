@@ -969,17 +969,16 @@ public class IndexController implements ServletContextAware {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-
-        body.add("grant_type", "client_credentials");
         body.add("client_id", clientId);
-        body.add("client_secret", clientSecret);
+        body.add("grant_type", "client_credentials");
 
-//        if(this.hydraConfig.isPublicClient()) {
-//            body.add("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
-//            body.add("client_assertion", this.hydraConfig.buildClientAssertion());
-//        } else {
-//            body.add("client_secret", "WWJ04UzMhWmLEqW2KIgBHwD4UNEotzXz");
-//        }
+        if(this.identityProviderConfig.isPublicClient()) {
+            body.add("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
+            body.add("client_assertion", this.identityProviderConfig.buildClientAssertion());
+        } else {
+            body.add("client_secret", clientSecret);
+        }
+        
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
         String tokenEndpoint = openIDConfiguration.getTokenEndpoint();
         TokenResponse tokenResponse = restTemplate.postForObject(tokenEndpoint, request, TokenResponse.class);
