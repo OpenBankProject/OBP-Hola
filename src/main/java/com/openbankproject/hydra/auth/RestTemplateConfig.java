@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JWSObject;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.openbankproject.JwsUtil;
+import com.openbankproject.RedisService;
+import com.openbankproject.RequestResponseLogger;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -17,6 +19,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,8 +27,10 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import sun.security.provider.X509Factory;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.net.ssl.*;
 import java.io.*;
@@ -39,10 +44,13 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import static com.openbankproject.SessionUtils.getSessionId;
 
 @Configuration
 public class RestTemplateConfig {
@@ -60,6 +68,9 @@ public class RestTemplateConfig {
     private char[] trustStorePassword;
     @Value("${force_jws:}")
     private String forceJws;
+
+    @Autowired
+    private RequestResponseLogger requestResponseLogger;
 
     @Bean
     public RestTemplate restTemplate(SSLContext sslContext) {
@@ -116,11 +127,14 @@ public class RestTemplateConfig {
     }
 
     private void traceResponse(HttpResponse response, String body) throws IOException {
-        logger.info("=========================== response begin ================================================");
-        logger.info("=== Status Line : {}", response.getStatusLine());
-        logger.info("=== Headers : {}", StringUtils.join(response.getAllHeaders(), "; "));
-        logger.info("=== Response body: {}", body);
-        logger.info("========================== response end ================================================");
+        logger.info("=========================== response begin ================================================ Session ID : {}", getSessionId());
+        logger.info("=== Status Line : {}, Session ID : {}", response.getStatusLine(), getSessionId());
+        logger.info("=== Headers : {}, Session ID : {}", StringUtils.join(response.getAllHeaders(), "; "), getSessionId());
+        logger.info("=== Response body: {}, Session ID : {}", body, getSessionId());
+        logger.info("=========================== response end =================================================== Session ID : {}", getSessionId());
+        
+        // Save to Redis
+        requestResponseLogger.saveResponseInfoToRedis(response, body);
     }
 
     private void responseIntercept(org.apache.http.HttpResponse response, HttpContext httpContext) throws IOException {
@@ -171,7 +185,9 @@ public class RestTemplateConfig {
             } catch (ParseException | JsonProcessingException e) {
                 e.printStackTrace();
             }
-            String pem = X509Factory.BEGIN_CERT + x5c + X509Factory.END_CERT;
+            final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
+            final String END_CERT = "-----END CERTIFICATE-----";
+            String pem = BEGIN_CERT + x5c + END_CERT;
             // Verify JWS
             boolean isVerifiedJws = JwsUtil.verifyJwsSignature(sigT, httpBody, xJwsSignature, digest, pem, rebuiltDetachedPayload);
             if(!isVerifiedJws) {
@@ -198,15 +214,17 @@ public class RestTemplateConfig {
         }
     }
 
-    private void traceRequest(HttpRequest request, String body) throws IOException {
-        logger.info("=========================== request begin ================================================");
-        logger.info("=== Request Line : {}", request.getRequestLine());
-        logger.info("=== Headers : {}", StringUtils.join(request.getAllHeaders(), "; "));
-        logger.info("=== Request body: {}", body);
-        logger.info("============================= request end ================================================");
+    private void traceRequest(HttpRequest request, String body) throws IOException, RestClientException {
+        logger.info("=========================== request begin ================================================ Session ID : {}", getSessionId());
+        logger.info("=== Request Line : {}, Session ID : {}", request.getRequestLine(), getSessionId());
+        logger.info("=== Headers : {}, Session ID : {}", StringUtils.join(request.getAllHeaders(), "; "), getSessionId());
+        logger.info("=== Request body: {}, Session ID : {}", body, getSessionId());
+        logger.info("============================= request end ================================================ Session ID : {}", getSessionId());
+
+        requestResponseLogger.saveRequestInfoToRedis(request, body).toString();
     }
 
-    private void requestIntercept(org.apache.http.HttpRequest request, HttpContext httpContext) throws IOException {
+    private void requestIntercept(org.apache.http.HttpRequest request, HttpContext httpContext) throws RestClientException, IOException {
         Header[] headers = request.getHeaders(HttpHeaders.CONTENT_TYPE);
         if(ArrayUtils.isEmpty(headers)) {
             request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);

@@ -60,6 +60,7 @@
 <div class="container">
     <div th:switch="${apiStandard}">
         <div th:case="'UKOpenBanking'" class="row">
+            
             <div class="row">
                 <h1>Hello <span th:text="${user?.username}"></span></h1>
 
@@ -149,6 +150,8 @@
             </div>
         </div>
     </div>
+    <div th:include="redis-log-widget :: redisLogWidget"></div>
+    
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
 <script type="text/javascript" th:src="@{/js/jquery-validate-1.19.2.min.js}" ></script>
@@ -175,9 +178,11 @@
                         <button class="get_account_detail" account_id="${account['AccountId']}">Get Account detail</button>
                         <button class="get_balances" account_id="${account['AccountId']}">Get Balances</button>
                         <button class="get_transactions" account_id="${account['AccountId']}">Get Transactions</button>
+                        <button class="get_couterparties" account_id="${account['AccountId']}">Get Counteraparties</button>
                         <div class="account_detail"></div>
                         <div class="balances"></div>
                         <div class="transactions"></div>
+                        <div class="counterparties"></div>
                         <hr>
                     </div>
                 `);
@@ -204,6 +209,14 @@
                     let accountsEle = $(this).siblings('.transactions').empty().append('<h3>Transaction List:</h3>');
                     let accountId = $(this).attr('account_id');
                     $.getJSON('/transactions/account_id/' + accountId, function (data) {
+                        let zson = JSON.stringify(data, null, 2);
+                        accountsEle.append(`<code>${zson}<code>`).append('<br>');
+                    });
+                });
+                $('.get_couterparties').click(function () {
+                    let accountsEle = $(this).siblings('.counterparties').empty().append('<h3>Couterparties List:</h3>');
+                    let accountId = $(this).attr('account_id');
+                    $.getJSON('/couterparties/account_id/' + accountId, function (data) {
                         let zson = JSON.stringify(data, null, 2);
                         accountsEle.append(`<code>${zson}<code>`).append('<br>');
                     });

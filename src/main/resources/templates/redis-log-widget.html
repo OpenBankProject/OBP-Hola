@@ -1,0 +1,21 @@
+<!-- redis-log-widget.html -->
+<div th:fragment="redisLogWidget">
+    <hr>
+    <div class="text-center">
+        <button class="btn btn-info" type="button" data-toggle="collapse" data-target="#logEntriesContent" aria-expanded="false" aria-controls="logEntriesContent">
+            Show/Hide log of Hola app
+        </button>
+    </div>
+    <br>
+    <div class="collapse mt-3" id="logEntriesContent">
+        <div th:if="${logEntriesForHtml}">
+            <!-- Iterate over each log entry in the list and display it as a dismissible alert -->
+            <div th:each="logEntry : ${logEntriesForHtml}" class="alert alert-info alert-dismissible col-md-12" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <span th:text="${logEntry}" style="white-space: pre-wrap;"></span>
+            </div>
+        </div>
+    </div>
+</div>

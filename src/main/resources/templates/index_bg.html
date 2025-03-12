@@ -32,6 +32,7 @@
 </nav>
     <div class="container">
         <div class="row">
+            
             <div class="col-sm-6 col-lg-offset-3">
                 <h2>Give Consent</h2>
                 <form th:action="@{/request_consents_bg}" method="post">
@@ -76,8 +77,13 @@
                     </div>
                     <button type="submit" class="btn btn-danger">Give Consent</button>
                 </form>
+                <div class="alert alert-info alert-dismissible col-md-12" role="alert" th:if="${errorMsg}">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <span id="warning_msg" th:utext="${errorMsg}" style="white-space: pre-wrap;"></span>
+                </div>
             </div>
         </div>
+        <div th:include="redis-log-widget :: redisLogWidget"></div>
     </div>
 
     <script type="text/javascript" th:src="@{/js/jquery-1.12.4.min.js}" ></script>
