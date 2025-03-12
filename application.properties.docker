@@ -23,7 +23,7 @@ oauth2.client_scope=${OAUTH2_CLIENT_SCOPE}
 #oauth2.jws_alg=${OAUTH2_JWS_ALG}
 #oauth2.jwk_private_key=${OAUTH2_JWK_PRIVATE_KEY}
 
-spring.redis.database=${SPRING_REDIS_DATABASE:}
+#spring.redis.database=${SPRING_REDIS_DATABASE:}
 spring.redis.host=${SPRING_REDIS_HOST}
 spring.redis.port=${SPRING_REDIS_PORT:6379}
 spring.redis.password=${SPRING_REDIS_PASSWORD:} #sets to empty if not present
