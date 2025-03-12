@@ -40,9 +40,5 @@ jobs:
                       docker.io/${{ env.DOCKER_HUB_ORGANIZATION }}/${{ env.DOCKER_HUB_REPOSITORY }}:latest
           cosign sign -y --key cosign.key \
                       docker.io/${{ env.DOCKER_HUB_ORGANIZATION }}/${{ env.DOCKER_HUB_REPOSITORY }}:$GITHUB_SHA
-          cosign sign -y --key cosign.key \
-                      docker.io/${{ env.DOCKER_HUB_ORGANIZATION }}/${{ env.DOCKER_HUB_REPOSITORY }}:develop-OC
-          cosign sign -y --key cosign.key \
-                      docker.io/${{ env.DOCKER_HUB_ORGANIZATION }}/${{ env.DOCKER_HUB_REPOSITORY }}:latest-OC
         env:
           COSIGN_PASSWORD: "${{secrets.COSIGN_PASSWORD}}"
