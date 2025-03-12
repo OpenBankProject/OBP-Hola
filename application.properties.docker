@@ -1,0 +1,26 @@
+server.port=${SERVER_PORT}
+oauth2.public_url=${OAUTH_2_PUBLIC_URL}
+obp.base_url=${OBP_BASE_URL}
+endpoint.path.prefix=${OBP_BASE_URL}/open-banking/v3.1
+
+mtls.keyStore.path=file:///keystore/keystore.jks
+mtls.keyStore.password=${KEYSTORE_PASSWD}
+mtls.keyStore.alias=${KEYSTORE_ALIAS}
+mtls.trustStore.path=file:///truststore/truststore.jks
+mtls.trustStore.password=${TRUSTSTORE_PASSWD}
+
+display_standards=${DISPLAY_STANDARDS}
+force_jws=${FORCE_JWS}
+server.servlet.session.cookie.name=${COOKIE_NAME}
+
+logo.bank.enabled=${LOGO_BANK_ENABLED}
+logo.bank.url=${LOGO_BANK_URL}
+
+### insert oauth2-related keys from API consumer registration below ###
+
+oauth2.client_id=${OAUTH2_CLIENT_ID}
+oauth2.redirect_uri=${OAUTH2_REDIRECT_URI}
+oauth2.client_scope=${OAUTH2_CLIENT_SCOPE}
+oauth2.jws_alg=${OAUTH2_JWS_ALG}
+oauth2.jwk_private_key=${OAUTH2_JWK_PRIVATE_KEY}
+

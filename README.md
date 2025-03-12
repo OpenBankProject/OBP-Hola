@@ -62,6 +62,12 @@ Create `application.properties` according to `application.properties.example`:
 
 While the app is running, point your browser to the configured port on localhost (e.g. `http://localhost:8087`) to start the consent flow.
 
+## Build and Run in Docker/Kubernetes
+
+The included Dockerfile will build Hola using Maven and create an image.
+
+Please see `application.properties.docker` for all vars to pass to the container for configuration.
+
 ## Screenshots of the app
 
 ### Landing page
