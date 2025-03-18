@@ -30,6 +30,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.ServletContextAware;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
@@ -66,6 +67,14 @@ public class IndexController implements ServletContextAware {
 
     @Value("${obp.base_url:#}")
     private String obpBaseUrl;
+    @Value("${obp.portal_url:}")
+    private String obpPortalUrl;
+    @PostConstruct
+    private void init() {
+        if (obpPortalUrl.isEmpty()) {
+            obpPortalUrl = obpBaseUrl;
+        }
+    }
     @Value("${obp.base_url}/obp/v4.0.0/users/current")
     private String currentUserUrl;
     @Value("${obp.base_url}/obp/v4.0.0/banks")
@@ -622,7 +631,7 @@ public class IndexController implements ServletContextAware {
             String queryParamStr = queryParam.entrySet().stream().map(it -> it.getKey() + "=" + it.getValue()).collect(Collectors.joining("&"));
             String authorizationEndpoint = openIDConfiguration.getAuthorizationEndpoint();
             // String redirectUrl = "redirect:" + authorizationEndpoint + "?" + queryParamStr;
-            String redirectUrl = "redirect:" + obpBaseUrl + "/confirm-bg-consent-request?CONSENT_ID=" + consentId;
+            String redirectUrl = "redirect:" + obpPortalUrl + "/confirm-bg-consent-request?CONSENT_ID=" + consentId;
 
             // if current user is authenticated, remove user info from session, to do re-authentication
             SessionData.remoteUserInfo(session);

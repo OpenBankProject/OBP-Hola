@@ -1,6 +1,7 @@
 server.port=8087
 oauth2.public_url=https://oauth2.openbankproject.com/hydra-public
 obp.base_url=https://apisandbox.openbankproject.com
+obp.portal_url=https://apisandbox-portal.openbankproject.com
 endpoint.path.prefix=${obp.base_url}/open-banking/v3.1
 
 logging.level.com.openbankproject=DEBUG
