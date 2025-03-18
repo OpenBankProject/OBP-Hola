@@ -73,4 +73,4 @@ While the app is running, point your browser to the configured port on localhost
 ### Get Accounts, Balances and Transactions
 ![alt text](https://github.com/OpenBankProject/OBP-Hola/blob/a124b6ace05e35e763e292144c507f2caa675159/src/main/resources/static.screenshots/accounts.png?raw=true)
 
-Copyright TESOBE GmbH 2020
+Copyright TESOBE GmbH 2020-2025
