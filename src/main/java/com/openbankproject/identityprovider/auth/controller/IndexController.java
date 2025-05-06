@@ -545,7 +545,7 @@ public class IndexController implements ServletContextAware {
             String clientCredentialsToken = getClientCredentialsToken();
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(clientCredentialsToken);
-            headers.set("TPP-Redirect-URI", "http://localhost:8081/main2");
+            headers.set("TPP-Redirect-URI", redirectUri);
             String recurringIndicator = recurring_indicator;
             String expirationDateTime = convertTimeFormat(expiration_time);
             String frequencyPerDay = frequency_per_day;
