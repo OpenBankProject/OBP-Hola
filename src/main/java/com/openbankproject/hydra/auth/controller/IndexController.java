@@ -10,6 +10,7 @@ import com.openbankproject.hydra.auth.VO.*;
 import com.openbankproject.hydra.auth.util.PKCEUtil;
 import com.openbankproject.model.*;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -370,6 +371,15 @@ public class IndexController implements ServletContextAware {
             SessionData.remoteUserInfo(session);
 
             return redirectUrl;
+        } catch (HttpStatusCodeException httpException) {
+            logger.error("Error: ", httpException);
+            String errorDetail = httpException.getStatusCode() + " " + httpException.getStatusText();
+            String responseBody = httpException.getResponseBodyAsString();
+            if (StringUtils.isNotBlank(responseBody)) {
+                errorDetail += " - " + responseBody;
+            }
+            model.addAttribute("errorMsg", errorDetail);
+            return "error";
         } catch (Exception unhandledException) {
             logger.error("Error: ", unhandledException);
             if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException);
@@ -619,6 +629,15 @@ public class IndexController implements ServletContextAware {
             SessionData.remoteUserInfo(session);
 
             return redirectUrl;
+        } catch (HttpStatusCodeException httpException) {
+            logger.error("Error: ", httpException);
+            String errorDetail = httpException.getStatusCode() + " " + httpException.getStatusText();
+            String responseBody = httpException.getResponseBodyAsString();
+            if (StringUtils.isNotBlank(responseBody)) {
+                errorDetail += " - " + responseBody;
+            }
+            model.addAttribute("errorMsg", errorDetail);
+            return "error";
         } catch (Exception unhandledException) {
             logger.error("Error: ", unhandledException);
             if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException);
@@ -738,6 +757,15 @@ public class IndexController implements ServletContextAware {
             SessionData.remoteUserInfo(session);
 
             return redirectUrl;
+        } catch (HttpStatusCodeException httpException) {
+            logger.error("Error: ", httpException);
+            String errorDetail = httpException.getStatusCode() + " " + httpException.getStatusText();
+            String responseBody = httpException.getResponseBodyAsString();
+            if (StringUtils.isNotBlank(responseBody)) {
+                errorDetail += " - " + responseBody;
+            }
+            model.addAttribute("errorMsg", errorDetail);
+            return "error";
         } catch (Exception unhandledException) {
             logger.error("Error: ", unhandledException);
             if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException);
@@ -878,6 +906,15 @@ public class IndexController implements ServletContextAware {
             SessionData.remoteUserInfo(session);
 
             return redirectUrl;
+        } catch (HttpStatusCodeException httpException) {
+            logger.error("Error: ", httpException);
+            String errorDetail = httpException.getStatusCode() + " " + httpException.getStatusText();
+            String responseBody = httpException.getResponseBodyAsString();
+            if (StringUtils.isNotBlank(responseBody)) {
+                errorDetail += " - " + responseBody;
+            }
+            model.addAttribute("errorMsg", errorDetail);
+            return "error";
         } catch (Exception unhandledException) {
             logger.error("Error: ", unhandledException);
             if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException);
@@ -943,6 +980,15 @@ public class IndexController implements ServletContextAware {
             SessionData.remoteUserInfo(session);
 
             return redirectUrl;
+        } catch (HttpStatusCodeException httpException) {
+            logger.error("Error: ", httpException);
+            String errorDetail = httpException.getStatusCode() + " " + httpException.getStatusText();
+            String responseBody = httpException.getResponseBodyAsString();
+            if (StringUtils.isNotBlank(responseBody)) {
+                errorDetail += " - " + responseBody;
+            }
+            model.addAttribute("errorMsg", errorDetail);
+            return "error";
         } catch (Exception unhandledException) {
             logger.error("Error: ", unhandledException);
             if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException);
