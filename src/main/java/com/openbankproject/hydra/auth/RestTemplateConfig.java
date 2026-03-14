@@ -56,15 +56,15 @@ import static com.openbankproject.SessionUtils.getSessionId;
 public class RestTemplateConfig {
     private static final Logger logger = LoggerFactory.getLogger(RestTemplateConfig.class);
 
-    @Value("${mtls.keyStore.path}")
+    @Value("${mtls.keyStore.path:}")
     private Resource keyStoreResource;
-    @Value("${mtls.keyStore.password}")
+    @Value("${mtls.keyStore.password:}")
     private char[] keyStorePassword;
-    @Value("${mtls.keyStore.alias}")
+    @Value("${mtls.keyStore.alias:}")
     private String keyStoreAlias;
-    @Value("${mtls.trustStore.path}")
+    @Value("${mtls.trustStore.path:}")
     private Resource trustStoreResource;
-    @Value("${mtls.trustStore.password}")
+    @Value("${mtls.trustStore.password:}")
     private char[] trustStorePassword;
     @Value("${force_jws:}")
     private String forceJws;
@@ -72,22 +72,38 @@ public class RestTemplateConfig {
     @Autowired
     private RequestResponseLogger requestResponseLogger;
 
-    @Bean
-    public RestTemplate restTemplate(SSLContext sslContext) {
-        SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext);
+    private boolean isMtlsConfigured() {
+        return keyStoreResource != null
+                && StringUtils.isNotBlank(keyStoreResource.getFilename())
+                && trustStoreResource != null
+                && StringUtils.isNotBlank(trustStoreResource.getFilename());
+    }
 
-        HttpClient httpClient = HttpClients.custom()
-                .setSSLSocketFactory(socketFactory)
-                .addInterceptorLast(this::requestIntercept)
-                .addInterceptorLast(this::responseIntercept)
-                .build();
+    @Bean
+    public RestTemplate restTemplate() throws IOException, GeneralSecurityException {
+        HttpClient httpClient;
+        if (isMtlsConfigured()) {
+            TrustManager[] trustManagers = trustManagers();
+            SSLContext sslContext = sslContext(trustManagers);
+            SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext);
+            httpClient = HttpClients.custom()
+                    .setSSLSocketFactory(socketFactory)
+                    .addInterceptorLast(this::requestIntercept)
+                    .addInterceptorLast(this::responseIntercept)
+                    .build();
+        } else {
+            logger.info("MTLS not configured, using plain HTTP client");
+            httpClient = HttpClients.custom()
+                    .addInterceptorLast(this::requestIntercept)
+                    .addInterceptorLast(this::responseIntercept)
+                    .build();
+        }
 
         HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
         return new RestTemplate(factory);
     }
 
-    @Bean
-    public SSLContext sslContext(TrustManager[] trustManagers) throws IOException, GeneralSecurityException {
+    private SSLContext sslContext(TrustManager[] trustManagers) throws IOException, GeneralSecurityException {
         KeyManager[] keyManagers = getKeyManagers();
         SSLContext sslContext = SSLContext.getInstance("SSL");
         sslContext.init(keyManagers, trustManagers, new SecureRandom());
@@ -104,9 +120,8 @@ public class RestTemplateConfig {
         keyManagerFactory.init(ks, keyStorePassword);
         return keyManagerFactory.getKeyManagers();
     }
-    @Bean
-    public TrustManager[] trustManagers() throws IOException, GeneralSecurityException {
 
+    private TrustManager[] trustManagers() throws IOException, GeneralSecurityException {
         String alg = TrustManagerFactory.getDefaultAlgorithm();
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(alg);
 

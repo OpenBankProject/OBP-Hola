@@ -2,7 +2,9 @@
 
 The Open Bank Project *Hola App* is a reference implementation of the OAuth2 authentication and consent flow. It demonstrates and tests OBP authentication, consent creation and data access via OBP API. It supports UK, Berlin Group, and OBP styles. Hola is written in Java / Spring Boot.
 
-Besides OBP API, Hola App depends on [Ory Hydra](https://www.ory.sh/hydra) and [OBP Hydra Identity Provider](https://github.com/OpenBankProject/OBP-Hydra-Identity-Provider).
+Hola App supports multiple OIDC providers:
+- **OBP-OIDC** (default) — the Open Bank Project's built-in OIDC provider
+- **Ory Hydra** — via [Ory Hydra](https://www.ory.sh/hydra) and [OBP Hydra Identity Provider](https://github.com/OpenBankProject/OBP-Hydra-Identity-Provider)
 
 A working Hola App setup can be used to drive automatic tests using [OBP Selenium](https://github.com/OpenBankProject/OBP-Selenium).
 
@@ -45,20 +47,61 @@ If mTLS is enabled on the OBP API instance, the client key needs to be signed by
 
 Create `application.properties` according to `application.properties.example`:
 
-* `oauth2.public_url` is the URL of the OAuth2 server of the OBP instance.
+* `oauth2.provider` selects the OIDC provider. Set to `obp-oidc` (default) or `hydra`.
+* `oauth2.public_url` is the URL of the OAuth2 server. For OBP-OIDC this defaults to `http://localhost:9000/obp-oidc`.
 * `obp.base_url` is the main URL of the OBP instance.
 * Fill in the locations and passphrases of the previously created keystore and truststore into `mtls.keyStore` and `mtls.trustStore` props
 * Register a new API key on the OBP instance, e.g. https://apisandbox.openbankproject.com/consumer-registration and copy and paste all props below "OAuth2:" into  `application.properties`:
   * `oauth2.client_id`
   * `oauth2.redirect_uri`
   * `oauth2.client_scope`
-  * `oauth2.jws_alg`
-  * `oauth2.jwk_private_key`
+  * `oauth2.client_secret` (for OBP-OIDC or Hydra with client_secret)
+  * `oauth2.jws_alg` (Hydra only, for private_key_jwt)
+  * `oauth2.jwk_private_key` (Hydra only, for private_key_jwt)
 * All other props can be left at default values.
 
-## Run
+### OBP-OIDC (default)
 
-`java -jar obp-hola-app-0.0.29-SNAPSHOT.jar`
+OBP-OIDC uses `client_secret` authentication and supports the `code` response type. No JWK private key configuration is needed:
+
+```properties
+oauth2.provider=obp-oidc
+oauth2.public_url=http://localhost:9000/obp-oidc
+oauth2.client_id=your_client_id
+oauth2.client_secret=your_client_secret
+```
+
+### Hydra
+
+To use Hydra, set the provider and configure either `client_secret` or `jwk_private_key` (not both):
+
+```properties
+oauth2.provider=hydra
+oauth2.public_url=https://oauth2.openbankproject.com/hydra-public
+oauth2.client_id=your_client_id
+oauth2.client_secret=your_client_secret
+```
+
+## Build and Run
+
+The quickest way to build and run:
+
+```bash
+./build_and_run.sh
+```
+
+This will build with Maven and start the app. You can pass Spring Boot arguments, e.g.:
+
+```bash
+./build_and_run.sh --oauth2.provider=hydra --oauth2.public_url=https://oauth2.example.com
+```
+
+Or manually:
+
+```bash
+mvn clean package -DskipTests
+java -jar target/obp-hola-app-0.0.29-SNAPSHOT.jar
+```
 
 While the app is running, point your browser to the configured port on localhost (e.g. `http://localhost:8087`) to start the consent flow.
 
@@ -66,7 +109,11 @@ While the app is running, point your browser to the configured port on localhost
 
 The included Dockerfile will build Hola using Maven and create an image.
 
-Please see `application.properties.docker` for all vars to pass to the container for configuration.
+Please see `application.properties.docker` for all vars to pass to the container for configuration. Key environment variables include:
+
+* `OAUTH2_PROVIDER` — `obp-oidc` (default) or `hydra`
+* `OAUTH_2_PUBLIC_URL` — URL of the OIDC provider
+* `OAUTH2_CLIENT_ID`, `OAUTH2_CLIENT_SECRET` — client credentials
 
 ## Screenshots of the app
 

@@ -18,6 +18,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
@@ -35,7 +36,8 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 @Configuration
-public class HydraConfig {
+@ConditionalOnProperty(name = "oauth2.provider", havingValue = "hydra")
+public class HydraConfig implements OIDCProvider {
     Logger log = LoggerFactory.getLogger(HydraConfig.class);
     @Value("${oauth2.public_url}/.well-known/openid-configuration")
     private String hydraWellKnownUrl;

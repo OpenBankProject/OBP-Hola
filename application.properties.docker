@@ -1,4 +1,5 @@
 server.port=${SERVER_PORT}
+oauth2.provider=${OAUTH2_PROVIDER:obp-oidc}
 oauth2.public_url=${OAUTH_2_PUBLIC_URL}
 obp.base_url=${OBP_BASE_URL}
 endpoint.path.prefix=${OBP_BASE_URL}/open-banking/v3.1

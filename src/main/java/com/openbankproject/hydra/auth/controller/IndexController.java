@@ -5,7 +5,7 @@ import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
 import com.openbankproject.RedisService;
-import com.openbankproject.hydra.auth.HydraConfig;
+import com.openbankproject.hydra.auth.OIDCProvider;
 import com.openbankproject.hydra.auth.VO.*;
 import com.openbankproject.hydra.auth.util.PKCEUtil;
 import com.openbankproject.model.*;
@@ -109,7 +109,7 @@ public class IndexController implements ServletContextAware {
     @Resource
     private WellKnown openIDConfiguration;
     @Resource
-    private HydraConfig hydraConfig;
+    private OIDCProvider oidcProvider;
 
     /**
      * initiate global variable
@@ -350,8 +350,8 @@ public class IndexController implements ServletContextAware {
             //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
             // add request object query parameter
-            if(this.hydraConfig.isPublicClient()) {
-                final String requestObject = this.hydraConfig.buildRequestObject(queryParam);
+            if(this.oidcProvider.isPublicClient()) {
+                final String requestObject = this.oidcProvider.buildRequestObject(queryParam);
                 queryParam.put("request", requestObject);
             }
 
@@ -430,9 +430,9 @@ public class IndexController implements ServletContextAware {
             final String codeVerifier = SessionData.getCodeVerifier(session);
             body.add("code_verifier", codeVerifier);
 
-            if(this.hydraConfig.isPublicClient()) {
+            if(this.oidcProvider.isPublicClient()) {
                 body.add("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
-                body.add("client_assertion", this.hydraConfig.buildClientAssertion());
+                body.add("client_assertion", this.oidcProvider.buildClientAssertion());
             } else {
                 body.add("client_secret", clientSecret);
             }
@@ -599,8 +599,8 @@ public class IndexController implements ServletContextAware {
             //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
             // add request object query parameter
-            if(this.hydraConfig.isPublicClient()) {
-                final String requestObject = this.hydraConfig.buildRequestObject(queryParam);
+            if(this.oidcProvider.isPublicClient()) {
+                final String requestObject = this.oidcProvider.buildRequestObject(queryParam);
                 queryParam.put("request", requestObject);
             }
 
@@ -718,8 +718,8 @@ public class IndexController implements ServletContextAware {
             //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
             // add request object query parameter
-            if(this.hydraConfig.isPublicClient()) {
-                final String requestObject = this.hydraConfig.buildRequestObject(queryParam);
+            if(this.oidcProvider.isPublicClient()) {
+                final String requestObject = this.oidcProvider.buildRequestObject(queryParam);
                 queryParam.put("request", requestObject);
             }
 
@@ -858,8 +858,8 @@ public class IndexController implements ServletContextAware {
             //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
             // add request object query parameter
-            if(this.hydraConfig.isPublicClient()) {
-                final String requestObject = this.hydraConfig.buildRequestObject(queryParam);
+            if(this.oidcProvider.isPublicClient()) {
+                final String requestObject = this.oidcProvider.buildRequestObject(queryParam);
                 queryParam.put("request", requestObject);
             }
 
@@ -923,8 +923,8 @@ public class IndexController implements ServletContextAware {
             SessionData.setApiStandard(session, "BerlinGroup");
 
             // add request object query parameter
-            if(this.hydraConfig.isPublicClient()) {
-                final String requestObject = this.hydraConfig.buildRequestObject(queryParam);
+            if(this.oidcProvider.isPublicClient()) {
+                final String requestObject = this.oidcProvider.buildRequestObject(queryParam);
                 queryParam.put("request", requestObject);
             }
 
@@ -961,9 +961,9 @@ public class IndexController implements ServletContextAware {
         body.add("grant_type", "client_credentials");
         body.add("client_id", clientId);
 
-        if(this.hydraConfig.isPublicClient()) {
+        if(this.oidcProvider.isPublicClient()) {
             body.add("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
-            body.add("client_assertion", this.hydraConfig.buildClientAssertion());
+            body.add("client_assertion", this.oidcProvider.buildClientAssertion());
         } else {
             body.add("client_secret", clientSecret);
         }

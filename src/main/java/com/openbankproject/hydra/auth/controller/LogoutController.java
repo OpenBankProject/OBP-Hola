@@ -1,6 +1,6 @@
 package com.openbankproject.hydra.auth.controller;
 
-import com.openbankproject.hydra.auth.HydraConfig;
+import com.openbankproject.hydra.auth.OIDCProvider;
 import com.openbankproject.hydra.auth.VO.SessionData;
 import com.openbankproject.hydra.auth.VO.WellKnown;
 import org.apache.commons.lang3.StringUtils;
@@ -38,7 +38,7 @@ public class LogoutController {
     @Resource
     private RestTemplate restTemplate;
     @Resource
-    private HydraConfig hydraConfig;
+    private OIDCProvider oidcProvider;
 
     @GetMapping("/logout")
     public String logout(HttpSession session) throws UnsupportedEncodingException {
@@ -49,26 +49,29 @@ public class LogoutController {
         session.invalidate();
         if (StringUtils.isNotBlank(refreshToken)) {
             final String revocationEndpoint = openIDConfiguration.getRevocationEndpoint();
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+            if (StringUtils.isNotBlank(revocationEndpoint)) {
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+                headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
-            MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-            // Revoking a refresh token also invalidates the access token that was created with it
-            // Reference: https://www.ory.sh/hydra/docs/reference/api#revoke-oauth2-tokens
-            body.add("token", refreshToken);
-            if (hydraConfig.isPublicClient()) {
-                body.add("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
-                body.add("client_assertion", this.hydraConfig.buildClientAssertion());
-            } else {
-                body.add("client_id", clientId);
-                body.add("client_secret", clientSecret);
+                MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+                // Revoking a refresh token also invalidates the access token that was created with it
+                // Reference: https://www.ory.sh/hydra/docs/reference/api#revoke-oauth2-tokens
+                body.add("token", refreshToken);
+                if (oidcProvider.isPublicClient()) {
+                    body.add("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
+                    body.add("client_assertion", this.oidcProvider.buildClientAssertion());
+                } else {
+                    body.add("client_id", clientId);
+                    body.add("client_secret", clientSecret);
+                }
+                HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
+                restTemplate.postForObject(revocationEndpoint, request, Map.class);
             }
-            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
-            restTemplate.postForObject(revocationEndpoint, request, Map.class);
         }
-        if (StringUtils.isNoneBlank(idToken, state)) {
-            return "redirect:" + openIDConfiguration.getEndSessionEndpoint() + "?state=" + state + "&post_logout_redirect_uri=" + encodeRedirectUri + "&id_token_hint=" + idToken;
+        final String endSessionEndpoint = openIDConfiguration.getEndSessionEndpoint();
+        if (StringUtils.isNoneBlank(endSessionEndpoint, idToken, state)) {
+            return "redirect:" + endSessionEndpoint + "?state=" + state + "&post_logout_redirect_uri=" + encodeRedirectUri + "&id_token_hint=" + idToken;
         }
         return "redirect:" + redirectUri + "?post_logout_redirect_uri=" + encodeRedirectUri;
     }
