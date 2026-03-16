@@ -93,6 +93,9 @@ public class OtherController {
     @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transaction-request-types/SEPA/transaction-requests")
     private String makePaymentSepaObp;
 
+    @Value("${oauth2.client_id}")
+    private String consumerKey;
+
     @Resource
     private RestTemplate restTemplate;
 
@@ -220,6 +223,7 @@ public class OtherController {
         String bankId = SessionData.getBankId(session);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Consent-Id", consentId);
+        headers.add("Consumer-Key", consumerKey);
         HttpEntity<String> entity = new HttpEntity<>(headers);
         logger.debug("Consent-Id: " + consentId);
 
@@ -232,6 +236,7 @@ public class OtherController {
         String consentId = SessionData.getConsentId(session);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Consent-Id", consentId);
+        headers.add("Consumer-Key", consumerKey);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<HashMap> exchange = restTemplate
@@ -246,6 +251,7 @@ public class OtherController {
         String consentId = SessionData.getConsentId(session);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Consent-Id", consentId);
+        headers.add("Consumer-Key", consumerKey);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<HashMap> exchange = restTemplate
@@ -259,6 +265,7 @@ public class OtherController {
         String consentId = SessionData.getConsentId(session);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Consent-Id", consentId);
+        headers.add("Consumer-Key", consumerKey);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<HashMap> exchange = restTemplate
@@ -273,6 +280,7 @@ public class OtherController {
         String consentId = SessionData.getConsentId(session);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Consent-Id", consentId);
+        headers.add("Consumer-Key", consumerKey);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<HashMap> exchange = restTemplate
@@ -296,6 +304,7 @@ public class OtherController {
         String consentId = SessionData.getConsentId(session);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Consent-Id", consentId);
+        headers.add("Consumer-Key", consumerKey);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         PostJsonCreateTransactionRequestCounterparty body = new PostJsonCreateTransactionRequestCounterparty(
@@ -342,6 +351,7 @@ public class OtherController {
         String consentId = SessionData.getConsentId(session);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Consent-Id", consentId);
+        headers.add("Consumer-Key", consumerKey);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         PostJsonCreateTransactionRequestSepa body = new PostJsonCreateTransactionRequestSepa(
@@ -381,6 +391,7 @@ public class OtherController {
         String bankId = SessionData.getBankId(session);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Consent-Id", consentId);
+        headers.add("Consumer-Key", consumerKey);
         HttpEntity<String> entity = new HttpEntity<>(headers);
         logger.debug("Consent-Id: " + consentId);
 
@@ -393,6 +404,7 @@ public class OtherController {
         String consentId = SessionData.getConsentId(session);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Consent-Id", consentId);
+        headers.add("Consumer-Key", consumerKey);
         HttpEntity<String> entity = new HttpEntity<>(headers);
         logger.debug("Consent-Id: " + consentId);
 
@@ -405,6 +417,7 @@ public class OtherController {
         String consentId = SessionData.getConsentId(session);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Consent-Id", consentId);
+        headers.add("Consumer-Key", consumerKey);
         HttpEntity<String> entity = new HttpEntity<>(headers);
         logger.debug("Consent-Id: " + consentId);
 

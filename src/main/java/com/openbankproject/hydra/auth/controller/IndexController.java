@@ -494,6 +494,34 @@ public class IndexController implements ServletContextAware {
         return "redirect:/main";
     }
 
+    // Consent flow callback — OBP-OIDC redirects here with consent_id after Portal consent approval.
+    // No OAuth code/token exchange needed — Hola uses Consent-Id + Consumer-Key headers to access OBP-API.
+    @GetMapping(value={"/main", "main.html"}, params={"consent_status", "consent_id"})
+    public String mainConsentCallback(@RequestParam("consent_id") String consentId,
+                                      @RequestParam("consent_status") String consentStatus,
+                                      @RequestParam(value = "state", required = false) String state,
+                                      Model model,
+                                      HttpSession session) {
+        logger.info("Consent callback received: consent_id=" + consentId + ", consent_status=" + consentStatus);
+
+        if (!"ACCEPTED".equals(consentStatus) && !"VALID".equals(consentStatus)) {
+            model.addAttribute("errorMsg", "Consent was not approved. Status: " + consentStatus);
+            return "error";
+        }
+
+        if (state != null && !state.equals(SessionData.getState(session))) {
+            model.addAttribute("errorMsg", "The request parameter [state] is not correct!");
+            return "error";
+        }
+
+        SessionData.setConsentId(session, consentId);
+        logger.info("Consent-Id stored in session: " + consentId);
+        logger.info("Session apiStandard: " + SessionData.getApiStandard(session));
+        logger.info("Session bankId: " + SessionData.getBankId(session));
+
+        return "redirect:/main";
+    }
+
     @Autowired
     private RedisService redisService;
 
