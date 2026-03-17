@@ -1,1 +1,429 @@
-hr { background-color: blue; height: 2px; border: 0; }
+/* OBP Hola - Modern UI Override
+   Inspired by OBP-Portal's design language (Skeleton UI / Tailwind)
+   Overrides Bootstrap 3 defaults for a clean, modern look */
+
+/* ---- Typography ---- */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background-color: #f8fafc;
+    color: #1e293b;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+h1 { font-size: 1.75rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.25rem; }
+
+/* ---- Navbar ---- */
+.navbar {
+    background: #ffffff !important;
+    border: none;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    padding: 8px 24px;
+    min-height: 64px;
+    margin-bottom: 0;
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+}
+
+.navbar-brand img {
+    height: 40px !important;
+}
+
+.badge-primary,
+.badge {
+    background-color: #6366f1;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* ---- Layout ---- */
+.container {
+    max-width: 960px;
+    padding: 32px 24px;
+}
+
+.jumbotron {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    border-radius: 0;
+    padding: 48px 24px;
+    margin-bottom: 0;
+}
+
+.jumbotron h3 {
+    color: white;
+    font-weight: 500;
+    margin-bottom: 24px;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.9;
+}
+
+/* ---- Cards ---- */
+.card,
+.panel,
+.well {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    padding: 24px;
+    margin-bottom: 20px;
+}
+
+/* ---- Forms ---- */
+.form-control {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: #334155;
+    background-color: #ffffff;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    height: auto;
+}
+
+.form-control:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    outline: none;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: #475569;
+    margin-bottom: 6px;
+    display: block;
+}
+
+select.form-control {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23475569' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+
+input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #6366f1;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+/* ---- Buttons ---- */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    padding: 10px 20px;
+    border: none;
+    transition: all 0.15s ease;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+}
+
+.btn:focus {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+    outline: none;
+}
+
+.btn-primary {
+    background-color: #6366f1;
+    color: white;
+}
+.btn-primary:hover, .btn-primary:focus {
+    background-color: #4f46e5;
+    color: white;
+}
+
+.btn-success {
+    background-color: #10b981;
+    color: white;
+}
+.btn-success:hover, .btn-success:focus {
+    background-color: #059669;
+    color: white;
+}
+
+.btn-danger {
+    background-color: #ef4444;
+    color: white;
+}
+.btn-danger:hover, .btn-danger:focus {
+    background-color: #dc2626;
+    color: white;
+}
+
+.btn-info {
+    background-color: #0ea5e9;
+    color: white;
+}
+.btn-info:hover, .btn-info:focus {
+    background-color: #0284c7;
+    color: white;
+}
+
+.btn-lg {
+    padding: 14px 28px;
+    font-size: 15px;
+    border-radius: 10px;
+    margin: 6px;
+}
+
+/* ---- Index Page (Choose Standard) ---- */
+.jumbotron .btn-lg {
+    min-width: 240px;
+    text-align: center;
+}
+
+.jumbotron .btn-primary {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    color: white;
+}
+.jumbotron .btn-primary:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-color: white;
+}
+.jumbotron .btn-danger {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    color: white;
+}
+.jumbotron .btn-danger:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-color: white;
+}
+.jumbotron .btn-info {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    color: white;
+}
+.jumbotron .btn-info:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-color: white;
+}
+
+/* ---- Main Page (Consent Display) ---- */
+.consent-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.consent-id-display {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 13px;
+    color: #475569;
+    word-break: break-all;
+    margin-bottom: 16px;
+}
+
+/* ---- Alerts ---- */
+.alert {
+    border-radius: 10px;
+    border: none;
+    padding: 14px 18px;
+    font-size: 14px;
+}
+
+.alert-danger {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border-left: 4px solid #ef4444;
+}
+
+.alert-info {
+    background-color: #eff6ff;
+    color: #1e40af;
+    border-left: 4px solid #3b82f6;
+}
+
+.alert-success {
+    background-color: #f0fdf4;
+    color: #166534;
+    border-left: 4px solid #22c55e;
+}
+
+/* ---- Tables ---- */
+table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table > thead > tr > th {
+    background-color: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 12px 16px;
+}
+
+.table > tbody > tr > td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.table > tbody > tr:hover {
+    background-color: #f8fafc;
+}
+
+/* ---- HR ---- */
+hr {
+    border: none;
+    height: 1px;
+    background: #e2e8f0;
+    margin: 24px 0;
+}
+
+/* ---- Action Button Row ---- */
+.btn-group-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+/* ---- Permission Row (OBP form) ---- */
+.form-container {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.form-container .form-group {
+    flex: 1;
+}
+
+/* ---- Error Page ---- */
+.error-container {
+    text-align: center;
+    padding: 64px 24px;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+    .container {
+        padding: 16px;
+    }
+
+    .jumbotron {
+        padding: 32px 16px;
+    }
+
+    .jumbotron .btn-lg {
+        min-width: 100%;
+        margin: 4px 0;
+    }
+
+    .form-container {
+        flex-direction: column;
+    }
+}
+
+/* ---- Scrollbar ---- */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* ---- Account list items (dynamically generated) ---- */
+#account_list_obp a,
+#account_list_bg a,
+#account_list a {
+    display: block;
+    padding: 12px 16px;
+    margin: 4px 0;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #334155;
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+
+#account_list_obp a:hover,
+#account_list_bg a:hover,
+#account_list a:hover {
+    background: #eff6ff;
+    border-color: #6366f1;
+    color: #4f46e5;
+}
+
+/* ---- Collapse toggle ---- */
+.collapse-toggle {
+    cursor: pointer;
+    user-select: none;
+}
+
+/* ---- Pre/Code for JSON display ---- */
+pre {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 13px;
+    color: #334155;
+    overflow-x: auto;
+}
+
+code {
+    background: #f1f5f9;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 13px;
+    color: #6366f1;
+}

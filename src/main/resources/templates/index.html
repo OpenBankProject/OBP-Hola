@@ -26,29 +26,27 @@
     </a>
 </nav>
 <div class="jumbotron text-center">
-    <div>
-        <div class="container">
-            <h3>Choose API standard</h3>
-            <div class="row">
-                <tr th:each="standard : ${displayStandards}">
-                    <td th:switch="${standard}">
-                        <a th:case="'UKOpenBanking'" th:href="@{/index_uk.html}" class="btn btn-primary btn-lg">UK Open Banking Consent</a>
-                        <a th:case="'BerlinGroup'" th:href="@{/index_bg.html}" class="btn btn-danger btn-lg">Berlin Group Consent</a>
-                        <a th:case="'OBP-API'" th:href="@{/index_obp.html}" class="btn btn-info btn-lg">Open Bank Project Consent Request</a>
-                        <a th:case="'OBP-API-VRP'" th:href="@{/index_obp_vrp.html}" class="btn btn-info btn-lg">Open Bank Project Consent Request VRP</a>
-                        <a th:case="*" th:href="@{/index.html}" class="btn btn-danger btn-lg"><th:block th:text="${standard}"></th:block></a>
-                    </td>
-                </tr>
-            </div>
-            <h3>Utility</h3>
-            <div class="row">
-                <tr>
-                    <td>
-                        <a th:href="@{/consents.html}" class="btn btn-info btn-lg">List Consents</a>
-                    </td>
-                </tr>
-            </div>
+    <div class="container">
+        <h1 style="color:white; font-size: 2rem; margin-bottom: 8px;">OBP Hola</h1>
+        <p style="opacity: 0.85; margin-bottom: 32px;">Third-party application consent flow demo</p>
+        <h3>API Standards</h3>
+        <div class="row">
+            <th:block th:each="standard : ${displayStandards}">
+                <th:block th:switch="${standard}">
+                    <a th:case="'UKOpenBanking'" th:href="@{/index_uk.html}" class="btn btn-primary btn-lg">UK Open Banking</a>
+                    <a th:case="'BerlinGroup'" th:href="@{/index_bg.html}" class="btn btn-danger btn-lg">Berlin Group</a>
+                    <a th:case="'OBP-API'" th:href="@{/index_obp.html}" class="btn btn-info btn-lg">OBP Consent</a>
+                    <a th:case="'OBP-API-VRP'" th:href="@{/index_obp_vrp.html}" class="btn btn-info btn-lg">OBP VRP Consent</a>
+                    <a th:case="*" th:href="@{/index.html}" class="btn btn-danger btn-lg"><th:block th:text="${standard}"></th:block></a>
+                </th:block>
+            </th:block>
         </div>
+        <!-- List Consents utility button removed for now
+        <h3 style="margin-top: 32px;">Utility</h3>
+        <div class="row">
+            <a th:href="@{/consents.html}" class="btn btn-info btn-lg">List Consents</a>
+        </div>
+        -->
     </div>
 </div>
 

@@ -129,26 +129,22 @@
             </div>
         </div>
         <div th:case="'OBP'" class="row">
-            <div class="row">
-                <h1>Hello</h1> <br>
-                Consent-Id: <span th:text="${consentId}"></span> <br>
-                <a class="btn btn-info" th:href="@{/logout}">Create a new consent</a>
-                <a class="btn btn-danger" id="revoke_consent_obp">Revoke the consent</a>
-                <a class="btn btn-info" id="mtls_client_cert_info_obp">MTLS Certificate Info</a>
+            <h2>Account Access</h2>
+            <div class="consent-id-display">
+                Consent-Id: <span th:text="${consentId}"></span>
+            </div>
+            <div class="btn-group-actions">
+                <button class="btn btn-primary" id="get_accounts_obp">Get Accounts</button>
                 <a class="btn btn-info" id="consent_info_obp">Consent Info</a>
-                <br>
-                <br>
+                <a class="btn btn-info" id="mtls_client_cert_info_obp">MTLS Certificate</a>
+                <a class="btn btn-danger" id="revoke_consent_obp">Revoke Consent</a>
+                <a class="btn btn-info" th:href="@{/logout}">New Consent</a>
             </div>
             <div id="revoke_consent_obp_div"></div>
             <div id="mtls_client_cert_info_obp_div"></div>
             <div id="consent_info_obp_div"></div>
             <hr>
-            <div>
-                <button class="btn btn-primary"  id="get_accounts_obp">Get accounts via OBP APIs using Consent-ID</button>
-                <div id="account_list_obp">
-
-                </div>
-            </div>
+            <div id="account_list_obp"></div>
         </div>
     </div>
     <div th:include="redis-log-widget :: redisLogWidget"></div>

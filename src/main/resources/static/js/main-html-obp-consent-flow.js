@@ -235,8 +235,6 @@ $(function () {
                         <button onclick="getBalances(this)" id="get_balances_obp_${account['id']}" class="btn btn-warning" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Balances</button>
                         <button onclick="getTransactions(this)" id="get_transactions_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Transactions</button>
                         <button onclick="getCounterparties(this)" id="get_counterparties_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Counterparties</button>
-                        <button onclick="collapsibleElementEventHandler(make_payment_obp_div_${account['id']})" id="prepare_payment_obp_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Prepare / Hide Counterparty payment</button>
-                        <button onclick="collapsibleElementEventHandler(make_payment_obp_sepa_div_${account['id']})" id="prepare_payment_obp_sepa_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" >Prepare / Hide SEPA payment</button>
                         <div class="input-group">
                           <label for=${viewHtmlId}>Choose a view:</label>
                           <select class="form-control" id=${viewHtmlId}></select>
@@ -313,8 +311,10 @@ function collapsibleElementEventHandler(elm) {
     var element = document.getElementById(elm.id);
     if (element.style.display == "none"){
       element.style.display = "block";
+      element.classList.remove("collapse");
     } else {
       element.style.display = "none";
+      element.classList.add("collapse");
     }
 }
 
