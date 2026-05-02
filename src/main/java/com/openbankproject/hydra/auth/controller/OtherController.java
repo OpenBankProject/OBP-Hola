@@ -93,6 +93,9 @@ public class OtherController {
     @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transaction-request-types/SEPA/transaction-requests")
     private String makePaymentSepaObp;
 
+    @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transaction-request-types/ACCOUNT/transaction-requests")
+    private String makePaymentAccountObp;
+
     @Value("${oauth2.client_id}")
     private String consumerKey;
 
@@ -384,7 +387,56 @@ public class OtherController {
             return new ResponseEntity<>(e.getResponseBodyAsString(), responseHeaders, e.getStatusCode());
         }
     }
-    
+    @GetMapping("/payment_obp_account/{bankId}/{accountId}/{viewId}/{toBankId}/{toAccountId}/{currency}/{amount}/{description}/{chargePolicy}/{futureDate}")
+    public ResponseEntity<Object> makePaymentAccountObp(@PathVariable String bankId,
+                                 @PathVariable String accountId,
+                                 @PathVariable String viewId,
+                                 @PathVariable String toBankId,
+                                 @PathVariable String toAccountId,
+                                 @PathVariable String currency,
+                                 @PathVariable String amount,
+                                 @PathVariable String description,
+                                 @PathVariable String chargePolicy,
+                                 @PathVariable String futureDate,
+                                 HttpSession session) {
+        String consentId = SessionData.getConsentId(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Consent-Id", consentId);
+        headers.add("Consumer-Key", consumerKey);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        PostJsonCreateTransactionRequestAccount body = new PostJsonCreateTransactionRequestAccount(
+                toBankId,
+                toAccountId,
+                currency,
+                amount,
+                description,
+                chargePolicy,
+                futureDate
+        );
+
+        HttpEntity<PostJsonCreateTransactionRequestAccount> request = new HttpEntity<>(body, headers);
+        String url = makePaymentAccountObp
+                .replace("ACCOUNT_ID", accountId)
+                .replace("VIEW_ID", viewId)
+                .replace("BANK_ID", bankId);
+
+        // Create response headers
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.add("Path-Of-Call", HttpMethod.POST + ": " + url);
+        try {
+            ResponseEntity<HashMap> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    request,
+                    HashMap.class
+            );
+            return new ResponseEntity<>(response.getBody(), responseHeaders, response.getStatusCode());
+        } catch (HttpClientErrorException e) {
+            return new ResponseEntity<>(e.getResponseBodyAsString(), responseHeaders, e.getStatusCode());
+        }
+    }
+
     @GetMapping("/revoke_consent_obp")
     public Object revokeConsentObp(HttpSession session) {
         String consentId = SessionData.getConsentId(session);

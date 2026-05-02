@@ -138,6 +138,78 @@ function createTransactionRequestObpSepa(button) {
 
 };
 
+function createTransactionRequestObpAccount(button) {
+    let resultBox = $(button).siblings('.payments_obp_account').empty().append('<h3>Response:</h3>');
+    let bankId = $(button).attr('bank_id');
+    let accountId = $(button).attr('account_id');
+    const viewHtmlId = "views-" + accountId;
+    const selectedViewId = $('#' + viewHtmlId).find(":selected").text();
+    let toBankId = document.getElementById("to_bank_id_obp_account_" + accountId).value;
+    let toAccountId = document.getElementById("to_account_id_obp_account_" + accountId).value;
+    let amount = document.getElementById("obp_payment_amount_of_money_account_" + accountId).value;
+    let currency = document.getElementById("obp_payment_currency_account_" + accountId).value;
+    let description = document.getElementById("obp_payment_description_account_" + accountId).value;
+
+    // The data to be sent to the server
+    var data = {
+                 to: {
+                   bank_id: toBankId,
+                   account_id: toAccountId
+                 },
+                 value: {
+                   currency: currency,
+                   amount: amount
+                 },
+                 description: description,
+                 charge_policy: "SHARED",
+                 future_date: "20200127"
+               };
+
+    // URL to which the request is sent
+    var url = '/payment_obp_account/' + bankId + '/' + accountId + "/" + selectedViewId + "/" +
+    data.to.bank_id + "/" +
+    data.to.account_id + "/" +
+    data.value.currency + "/" + data.value.amount + "/" +
+    data.description + "/" +
+    data.charge_policy + "/" +
+    data.future_date;
+
+    function setResult(dataToSend) {
+        let zson = JSON.stringify(dataToSend, null, 2);
+        let iconId = "result_copy_icon_" + accountId + button.id;
+        let resultBoxId = "result_box_" + accountId + button.id;
+        resultBox.append(`<div id=${iconId} style="cursor:pointer;" onclick="copyJsonResultToClipboard(this)" class="fa-solid fa-copy"></div><pre><div id=${resultBoxId}>${zson}</div></pre>`).append('<br>');
+    }
+    function setPathOfCall(path) {
+        document.getElementById("path-of-endpoint-account-" + accountId).textContent = path;
+    }
+
+    // Sending the GET request
+    $.ajax({
+        url: url,
+        method: 'GET',
+        dataType: 'json',
+        success: function(receivedData, textStatus, jqXHR) {
+            // Handle the response data here
+            console.log(receivedData);
+            setResult(receivedData);
+            // Access response headers
+            const customHeader = jqXHR.getResponseHeader('Path-Of-Call');
+            setPathOfCall(customHeader);
+            console.log('Path-Of-Call:', customHeader);
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            console.log('Request Failed:', textStatus, errorThrown);
+            setResult(jqXHR.responseJSON);
+
+            // Access response headers
+            const customHeader = jqXHR.getResponseHeader('Path-Of-Call');
+            setPathOfCall(customHeader);
+            console.log('Path-Of-Call:', customHeader);
+        }
+    });
+
+};
 
 function getAccountDetails(button) {
     let resultBox = $(button).siblings('.account_detail_obp').empty().append('<h3>Account Detail:</h3>');
@@ -229,6 +301,7 @@ $(function () {
                 
                 container.append(`
                     <div><h2>Account ID: ${accountId}</2></div>
+                    <button onclick="collapsibleElementEventHandler(document.getElementById('make_payment_obp_account_div_${account['id']}'))" class="btn btn-primary" >Create Transaction Request (ACCOUNT)</button>
                     <div>
                         <div id=${iconId} style="cursor:pointer;" onclick="copyJsonResultToClipboard(this)" class="fa-solid fa-copy"></div><pre><div id=${resultBoxId}>${zson}</div></pre><br>
                         <button onclick="getAccountDetails(this)" id="get_account_detail_obp_${account['id']}" class="btn btn-success" account_id="${account['id']}" bank_id="${account['bank_id']}" >Get Account detail</button>
@@ -287,9 +360,38 @@ $(function () {
                             <button onclick="createTransactionRequestObpSepa(this)" id="make_payment_obp_sepa_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" result_box_id="${account['id']}">Create Transaction Request</button>
                             <h6 id="path-of-endpoint-sepa-${account['id']}"></h6>
                             <div class="payments_obp_sepa" style="margin-left: 50px;"></div>
-                            <hr>                        
+                            <hr>
                         </div>
-                        
+
+                        <!-- ACCOUNT Transaction Request -->
+                        <div id="make_payment_obp_account_div_${account['id']}" class="collapse" style="display: none;  margin-left: 50px;">
+                            <hr>
+                            <div class="form-group">
+                                <label for="to_bank_id_obp_account_${account['id']}">To Bank ID</label>
+                                <input type="text" name="to_bank_id_obp_account_${account['id']}" id="to_bank_id_obp_account_${account['id']}" class="form-control" >
+                            </div>
+                            <div class="form-group">
+                                <label for="to_account_id_obp_account_${account['id']}">To Account ID</label>
+                                <input type="text" name="to_account_id_obp_account_${account['id']}" id="to_account_id_obp_account_${account['id']}" class="form-control" >
+                            </div>
+                            <div class="form-group">
+                                <label for="obp_payment_description_account_${account['id']}">Description</label>
+                                <input type="text" name="obp_payment_description_account_${account['id']}" id="obp_payment_description_account_${account['id']}" class="form-control" >
+                            </div>
+                            <div class="form-group">
+                                <label for="obp_payment_amount_of_money_account_${account['id']}">Amount of money</label>
+                                <input type="number" min="0" value="0" name="obp_payment_amount_of_money_account_${account['id']}" id="obp_payment_amount_of_money_account_${account['id']}" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="obp_payment_currency_account_${account['id']}">Currency</label>
+                                <input type="text" value="EUR" name="obp_payment_currency_account_${account['id']}" id="obp_payment_currency_account_${account['id']}" class="form-control" >
+                            </div>
+                            <button onclick="createTransactionRequestObpAccount(this)" id="make_payment_obp_account_${account['id']}" class="btn btn-info" account_id="${account['id']}" bank_id="${account['bank_id']}" result_box_id="${account['id']}">Create Transaction Request</button>
+                            <h6 id="path-of-endpoint-account-${account['id']}"></h6>
+                            <div class="payments_obp_account" style="margin-left: 50px;"></div>
+                            <hr>
+                        </div>
+
                         <div class="account_detail_obp" style="margin-left: 50px;"></div>
                         <div class="balances_obp" style="margin-left: 50px;"></div>
                         <div class="transactions_obp" style="margin-left: 50px;"></div>
