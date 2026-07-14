@@ -75,7 +75,26 @@
             <div>
                 <button class="btn btn-primary" id="get_accounts">Get accounts via UK Open Banking</button>
                 <div id="account_list">
-    
+
+                </div>
+            </div>
+        </div>
+        <div th:case="'UKOpenBankingV401'" class="row">
+
+            <div class="row">
+                <h1>Hello <span th:text="${user?.username}"></span></h1>
+
+                current user: <br>
+                email: <span th:text="${user?.email}"></span> <br>
+                username: <span th:text="${user?.username}"></span> <br>
+                <a class="btn btn-info" th:href="@{/logout}">Logout</a>
+                <br>
+                <br>
+            </div>
+            <div>
+                <button class="btn btn-primary" id="get_accounts_uk4">Get accounts via UK Open Banking v4.0.1</button>
+                <div id="account_list_uk4">
+
                 </div>
             </div>
         </div>
@@ -160,6 +179,9 @@
 
 <!-- OBP Consent Flow GUI -->
 <script type="text/javascript" th:src="@{/js/main-html-obp-consent-flow.js}"></script>
+
+<!-- UK v4.0.1 Consent Flow GUI -->
+<script type="text/javascript" th:src="@{/js/main-html-uk4-flow.js}"></script>
 
 <!-- UK Consent Flow GUI -->
 <script lang="javascript">

@@ -74,6 +74,8 @@ public class IndexController implements ServletContextAware {
     private String getBanksUrl;
     @Value("${endpoint.path.prefix}/account-access-consents")
     private String createConsentsUrl;
+    @Value("${endpoint.path.prefix.v401}/account-access-consents")
+    private String createConsentsUrlV401;
     @Value("${obp.base_url}/berlin-group/v1.3/consents")
     private String createBerlinGroupConsentsUrl;
     @Value("${obp.base_url}/berlin-group/v1.3/consents/CONSENT_ID")
@@ -131,7 +133,7 @@ public class IndexController implements ServletContextAware {
         String[] apiStandards = displayStandards.split(",");
         String[] displayStandards = apiStandards;
         if(apiStandards.length == 1 && apiStandards[0].trim().isEmpty()) {
-            displayStandards = new String[] {"display_standards=UKOpenBanking,BerlinGroup,OBP-API,OBP-API-VRP"};
+            displayStandards = new String[] {"display_standards=UKOpenBanking,UKOpenBankingV401,BerlinGroup,OBP-API,OBP-API-VRP"};
         }
         model.addAttribute("displayStandards", displayStandards);
         model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
@@ -184,7 +186,29 @@ public class IndexController implements ServletContextAware {
         return "index_uk";
     }
 
-    
+    @GetMapping({ "/index_uk4", "index_uk4.html"})
+    public String index_uk4(Model model) throws ParseException, JOSEException {
+        {// initiate consent names
+            // exclude "openid" and "offline", they are used by hydra
+            String[] consents = allScopes.stream()
+                    .filter(it -> !"openid".equals(it) && !"offline".equals(it))
+                    .filter(it -> !it.contains("BerlinGroup"))
+                    .toArray(String[]::new);
+            model.addAttribute("consents", consents);
+        }
+        { // initiate all bank names and bank ids
+            Banks banks = getBanks();
+            model.addAttribute("banks", banks.getBanks());
+            model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
+            model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
+            model.addAttribute("showBankLogo", showBankLogo);
+            model.addAttribute("obpBaseUrl", obpBaseUrl);
+            model.addAttribute("bankLogoUrl", bankLogoUrl);
+        }
+        return "index_uk4";
+    }
+
+
 
     private Banks getBanks() {
         Banks banks = restTemplate.getForObject(getBanksUrl, Banks.class);
@@ -347,6 +371,103 @@ public class IndexController implements ServletContextAware {
             queryParam.put("bank_id", bankId);
             queryParam.put("api_standard", "UKOpenBanking");
             SessionData.setApiStandard(session, "UKOpenBanking");
+            // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.
+            //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
+
+            // add request object query parameter
+            if(this.oidcProvider.isPublicClient()) {
+                final String requestObject = this.oidcProvider.buildRequestObject(queryParam);
+                queryParam.put("request", requestObject);
+            }
+
+            // add code_challenge
+            final String codeVerifier = PKCEUtil.generateCodeVerifier();
+            SessionData.setCodeVerifier(session, codeVerifier);
+            final String codeChallenge = PKCEUtil.generateCodeChallenge(codeVerifier);
+            queryParam.put("code_challenge_method", "S256");
+            queryParam.put("code_challenge", codeChallenge);
+
+            String queryParamStr = queryParam.entrySet().stream().map(it -> it.getKey() + "=" + it.getValue()).collect(Collectors.joining("&"));
+            String authorizationEndpoint = openIDConfiguration.getAuthorizationEndpoint();
+            String redirectUrl = "redirect:" + authorizationEndpoint + "?" + queryParamStr;
+
+            // if current user is authenticated, remove user info from session, to do re-authentication
+            SessionData.remoteUserInfo(session);
+
+            return redirectUrl;
+        } catch (HttpStatusCodeException httpException) {
+            logger.error("Error: ", httpException);
+            String errorDetail = httpException.getStatusCode() + " " + httpException.getStatusText();
+            String responseBody = httpException.getResponseBodyAsString();
+            if (StringUtils.isNotBlank(responseBody)) {
+                errorDetail += " - " + responseBody;
+            }
+            model.addAttribute("errorMsg", errorDetail);
+            return "error";
+        } catch (Exception unhandledException) {
+            logger.error("Error: ", unhandledException);
+            if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException);
+            else model.addAttribute("errorMsg", "Internal Server Error");
+            return "error";
+        }
+    }
+
+    @PostMapping(value="/request_consents_uk4", params = {"bank", "consents", "transaction_from_time", "transaction_to_time", "expiration_time"})
+    public String requestConsentsV401(@RequestParam("bank") String bankId,
+                                  @RequestParam String[] consents,
+                                  @RequestParam String transaction_from_time,
+                                  @RequestParam String transaction_to_time,
+                                  @RequestParam String expiration_time,
+                                  HttpSession session, Model model
+                                  ) throws UnsupportedEncodingException, ParseException, JOSEException {
+        try {
+            final String consentId;
+            {   // Create Account Access Consents (v4.0.1 endpoint — body is ignored server-side, always returns canned example)
+                String clientCredentialsToken = getClientCredentialsToken();
+                HttpHeaders headers = new HttpHeaders();
+                headers.setBearerAuth(clientCredentialsToken);
+
+                // TODO it should have relation with rememberMe time
+                String expirationDateTime = convertTimeFormat(expiration_time);
+                ConsentPostBodyV310 body = new ConsentPostBodyV310(
+                        bankId,
+                        consents,
+                        convertTimeFormat(transaction_from_time),
+                        convertTimeFormat(transaction_to_time),
+                        expirationDateTime);
+
+                HttpEntity<ConsentPostBodyV310> request = new HttpEntity<>(body, headers);
+
+                Map response = restTemplate.postForObject(createConsentsUrlV401, request, Map.class);
+                consentId = ((Map<String, String>) response.get("Data")).get("ConsentId");
+            }
+            //{"client_id", "bank_id", "consent_id", "response_type=code", "scope", "redirect_uri", "state"})
+            Map<String, String> queryParam = new LinkedHashMap<>();
+            queryParam.put("client_id", clientId);
+            queryParam.put("response_type", "code+id_token");
+            // include OBP scopes, add OAuth2 and OIDC related scope: "openid" and "offline"
+            consents = ArrayUtils.addAll(new String[]{"openid", "offline"}, consents);
+            String scope = Stream.of(consents)
+                    .distinct()
+                    .map(this::encodeQueryParam)
+                    .collect(Collectors.joining("+"));
+
+            queryParam.put("scope", scope);
+            String encodeRedirectUri = URLEncoder.encode(redirectUri, "UTF-8");
+            queryParam.put("redirect_uri", encodeRedirectUri);
+            final String state = UUID.randomUUID().toString();
+            final String nonce = UUID.randomUUID().toString();
+            queryParam.put("state", state);
+            queryParam.put("nonce", nonce);
+            SessionData.setState(session, state);
+            SessionData.setNonce(session, nonce);
+
+            // the parameter consent_id and bank_id are mandatory, these two parameter is not standard parameter of OAuth2 and OIDC
+            queryParam.put("consent_id", consentId);
+            queryParam.put("bank_id", bankId);
+            queryParam.put("api_standard", "UKOpenBankingV401");
+            SessionData.setApiStandard(session, "UKOpenBankingV401");
+            SessionData.setBankId(session, bankId);
             // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.
             //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 

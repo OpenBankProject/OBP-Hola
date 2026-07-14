@@ -37,6 +37,19 @@ public class OtherController {
     @Value("${endpoint.path.prefix}/accounts/ACCOUNT_ID/transactions")
     private String getTransactionsUrl;
 
+    // UK Open Banking v4.0.1
+    @Value("${endpoint.path.prefix.v401}/accounts")
+    private String getAccountsUrlV401;
+
+    @Value("${endpoint.path.prefix.v401}/accounts/ACCOUNT_ID")
+    private String getAccountUrlV401;
+
+    @Value("${endpoint.path.prefix.v401}/accounts/ACCOUNT_ID/balances")
+    private String getBalanceUrlV401;
+
+    @Value("${endpoint.path.prefix.v401}/accounts/ACCOUNT_ID/transactions")
+    private String getTransactionsUrlV401;
+
     // Berlin Group
     @Value("${obp.base_url}/berlin-group/v1.3/accounts")
     private String getBerlinGroupAccountsUrl;
@@ -143,8 +156,51 @@ public class OtherController {
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getTransactionsUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
         return exchange.getBody();
     }
-    
-    
+
+    // UK Open Banking v4.0.1
+    @GetMapping("/account_uk4")
+    public Object getAccountsV401(HttpSession session) {
+        String accessToken = SessionData.getAccessToken(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<AccountDataValue> exchange = restTemplate.exchange(getAccountsUrlV401, HttpMethod.GET, entity, AccountDataValue.class);
+        return exchange.getBody().getData();
+    }
+    @GetMapping("/account_uk4/{accountId}")
+    public Object getAccountV401(@PathVariable String accountId, HttpSession session) {
+        String accessToken = SessionData.getAccessToken(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<HashMap> exchange = restTemplate.exchange(getAccountUrlV401.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+        return  exchange.getBody();
+    }
+
+    @GetMapping("/balances_uk4/account_id/{accountId}")
+    public Object getBalancesV401(@PathVariable String accountId, HttpSession session) {
+        String accessToken = SessionData.getAccessToken(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<HashMap> exchange = restTemplate.exchange(getBalanceUrlV401.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+        return exchange.getBody();
+    }
+    @GetMapping("/transactions_uk4/account_id/{accountId}")
+    public Object getTransactionsV401(@PathVariable String accountId, HttpSession session) {
+        String accessToken = SessionData.getAccessToken(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<HashMap> exchange = restTemplate.exchange(getTransactionsUrlV401.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
+        return exchange.getBody();
+    }
+
+
     // Berlin Group
     @GetMapping("/account_bg")
     public Object getAccountsBerlinGroup(HttpSession session) {
