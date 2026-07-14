@@ -5,7 +5,6 @@ import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
 import com.openbankproject.RedisService;
-import com.openbankproject.hydra.auth.OIDCProvider;
 import com.openbankproject.hydra.auth.VO.*;
 import com.openbankproject.hydra.auth.util.PKCEUtil;
 import com.openbankproject.model.*;
@@ -111,8 +110,6 @@ public class IndexController implements ServletContextAware {
     private RestTemplate restTemplate;
     @Resource
     private WellKnown openIDConfiguration;
-    @Resource
-    private OIDCProvider oidcProvider;
 
     /**
      * initiate global variable
@@ -374,12 +371,6 @@ public class IndexController implements ServletContextAware {
             // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.
             //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
-            // add request object query parameter
-            if(this.oidcProvider.isPublicClient()) {
-                final String requestObject = this.oidcProvider.buildRequestObject(queryParam);
-                queryParam.put("request", requestObject);
-            }
-
             // add code_challenge
             final String codeVerifier = PKCEUtil.generateCodeVerifier();
             SessionData.setCodeVerifier(session, codeVerifier);
@@ -471,12 +462,6 @@ public class IndexController implements ServletContextAware {
             // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.
             //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
-            // add request object query parameter
-            if(this.oidcProvider.isPublicClient()) {
-                final String requestObject = this.oidcProvider.buildRequestObject(queryParam);
-                queryParam.put("request", requestObject);
-            }
-
             // add code_challenge
             final String codeVerifier = PKCEUtil.generateCodeVerifier();
             SessionData.setCodeVerifier(session, codeVerifier);
@@ -561,12 +546,7 @@ public class IndexController implements ServletContextAware {
             final String codeVerifier = SessionData.getCodeVerifier(session);
             body.add("code_verifier", codeVerifier);
 
-            if(this.oidcProvider.isPublicClient()) {
-                body.add("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
-                body.add("client_assertion", this.oidcProvider.buildClientAssertion());
-            } else {
-                body.add("client_secret", clientSecret);
-            }
+            body.add("client_secret", clientSecret);
 
             HttpEntity<MultiValueMap> request = new HttpEntity<>(body, headers);
             String tokenEndpoint = openIDConfiguration.getTokenEndpoint();
@@ -757,12 +737,6 @@ public class IndexController implements ServletContextAware {
             // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.
             //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
-            // add request object query parameter
-            if(this.oidcProvider.isPublicClient()) {
-                final String requestObject = this.oidcProvider.buildRequestObject(queryParam);
-                queryParam.put("request", requestObject);
-            }
-
             // add code_challenge
             final String codeVerifier = PKCEUtil.generateCodeVerifier();
             SessionData.setCodeVerifier(session, codeVerifier);
@@ -884,12 +858,6 @@ public class IndexController implements ServletContextAware {
             SessionData.setBankId(session, bankId);
             // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.
             //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
-
-            // add request object query parameter
-            if(this.oidcProvider.isPublicClient()) {
-                final String requestObject = this.oidcProvider.buildRequestObject(queryParam);
-                queryParam.put("request", requestObject);
-            }
 
             // add code_challenge
             final String codeVerifier = PKCEUtil.generateCodeVerifier();
@@ -1034,12 +1002,6 @@ public class IndexController implements ServletContextAware {
             // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.
             //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
-            // add request object query parameter
-            if(this.oidcProvider.isPublicClient()) {
-                final String requestObject = this.oidcProvider.buildRequestObject(queryParam);
-                queryParam.put("request", requestObject);
-            }
-
             // add code_challenge
             final String codeVerifier = PKCEUtil.generateCodeVerifier();
             SessionData.setCodeVerifier(session, codeVerifier);
@@ -1108,12 +1070,6 @@ public class IndexController implements ServletContextAware {
             queryParam.put("api_standard", "BerlinGroup");
             SessionData.setApiStandard(session, "BerlinGroup");
 
-            // add request object query parameter
-            if(this.oidcProvider.isPublicClient()) {
-                final String requestObject = this.oidcProvider.buildRequestObject(queryParam);
-                queryParam.put("request", requestObject);
-            }
-
             // add code_challenge
             final String codeVerifier = PKCEUtil.generateCodeVerifier();
             SessionData.setCodeVerifier(session, codeVerifier);
@@ -1155,13 +1111,7 @@ public class IndexController implements ServletContextAware {
 
         body.add("grant_type", "client_credentials");
         body.add("client_id", clientId);
-
-        if(this.oidcProvider.isPublicClient()) {
-            body.add("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
-            body.add("client_assertion", this.oidcProvider.buildClientAssertion());
-        } else {
-            body.add("client_secret", clientSecret);
-        }
+        body.add("client_secret", clientSecret);
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
         String tokenEndpoint = openIDConfiguration.getTokenEndpoint();
         TokenResponse tokenResponse = restTemplate.postForObject(tokenEndpoint, request, TokenResponse.class);

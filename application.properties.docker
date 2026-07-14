@@ -1,5 +1,4 @@
 server.port=${SERVER_PORT}
-oauth2.provider=${OAUTH2_PROVIDER:obp-oidc}
 oauth2.public_url=${OAUTH_2_PUBLIC_URL}
 obp.base_url=${OBP_BASE_URL}
 endpoint.path.prefix=${OBP_BASE_URL}/open-banking/v3.1
@@ -22,8 +21,6 @@ oauth2.client_secret=$(OAUTH2_CLIENT_SECRET)
 oauth2.client_id=${OAUTH2_CLIENT_ID}
 oauth2.redirect_uri=${OAUTH2_REDIRECT_URI}
 oauth2.client_scope=${OAUTH2_CLIENT_SCOPE}
-#oauth2.jws_alg=${OAUTH2_JWS_ALG}
-#oauth2.jwk_private_key=${OAUTH2_JWK_PRIVATE_KEY}
 
 spring.redis.database=${SPRING_REDIS_DATABASE:}
 spring.redis.host=${SPRING_REDIS_HOST}
