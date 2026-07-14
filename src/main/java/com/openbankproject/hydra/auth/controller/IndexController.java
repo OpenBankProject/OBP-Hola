@@ -670,6 +670,9 @@ public class IndexController implements ServletContextAware {
             headers.setBearerAuth(clientCredentialsToken);
             String recurringIndicator = recurring_indicator;
             String expirationDateTime = convertTimeFormat(expiration_time);
+            // Berlin Group's `validUntil` is validated server-side as a plain yyyy-MM-dd date,
+            // not the full timestamp `expirationDateTime` carries for the other flows/the redirect below.
+            String validUntilDate = expiration_time.substring(0, 10);
             String frequencyPerDay = frequency_per_day;
             String[] ibans = iban.split(",");
             for(int i=0; i< ibans.length; i++){
@@ -679,7 +682,7 @@ public class IndexController implements ServletContextAware {
                     consents,
                     ibans,
                     recurringIndicator.equalsIgnoreCase("true"),
-                    expirationDateTime,
+                    validUntilDate,
                     Integer.parseInt(frequencyPerDay),
                     false
             );
@@ -688,7 +691,10 @@ public class IndexController implements ServletContextAware {
                 HttpEntity<PostConsentJson> request = new HttpEntity<>(body, headers);
                 Map response = restTemplate.postForObject(createBerlinGroupConsentsUrl, request, Map.class);
                 consentId = ((Map<String, String>) response).get("consentId");
-                session.setAttribute("consent_id", consentId);
+                // main() reads this back via SessionData.getConsentId() when it later fetches the
+                // Berlin Group consent info; a raw session.setAttribute("consent_id", ...) here writes
+                // to a different storage slot and leaves that read null.
+                SessionData.setConsentId(session, consentId);
             } catch (HttpClientErrorException e) {
                 String error = "Sorry! Cannot create the consent.";
                 logger.error(error, e);
@@ -697,7 +703,7 @@ public class IndexController implements ServletContextAware {
             } catch (RestClientException e) {
                 // Handle other RestTemplate errors (e.g., connection failures)
                 model.addAttribute("errorMsg", e.getMessage());
-                return "index_bg"; 
+                return "index_bg";
             }
 
 

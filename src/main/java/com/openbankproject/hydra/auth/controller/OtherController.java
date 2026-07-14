@@ -210,8 +210,25 @@ public class OtherController {
         HttpEntity<String> entity = new HttpEntity<>(headers);
         logger.debug("Consent-ID: " + consentId);
 
-        ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupAccountsUrl, HttpMethod.GET, entity, HashMap.class);
-        return exchange.getBody();
+        try {
+            ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupAccountsUrl, HttpMethod.GET, entity, HashMap.class);
+            return exchange.getBody();
+        } catch (HttpClientErrorException e) {
+            // A freshly-created Berlin Group consent starts in status "received" and only becomes
+            // usable after the SCA confirmation step OBP-API points to via the create-consent
+            // response's _links.scaRedirect — a step Hola doesn't drive automatically. OBP-API's
+            // account lookup rejects an unconfirmed consent with a generic "not found", so surface
+            // what's actually going on instead of forwarding that as-is.
+            logger.error("getAccountsBerlinGroup failed for Consent-ID " + consentId, e);
+            HashMap<String, Object> error = new HashMap<>();
+            error.put("code", e.getStatusCode().value());
+            error.put("message", e.getResponseBodyAsString());
+            error.put("hint", "This usually means the Berlin Group consent (Consent-ID: " + consentId
+                    + ") was never confirmed via SCA after creation and is still in status 'received', "
+                    + "so OBP-API won't use it yet. Hola's Berlin Group flow does not currently perform "
+                    + "that SCA confirmation step.");
+            return error;
+        }
     }
     @GetMapping("/account_bg/{accountId}")
     public Object getAccountBerlinGroup(@PathVariable String accountId, HttpSession session) {

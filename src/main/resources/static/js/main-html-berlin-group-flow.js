@@ -74,7 +74,9 @@ $(function () {
             const container = $('#account_list_bg').empty().append('<h1>Account List:</h1>');
             if (data.code > 399 ) {
               let zson = JSON.stringify(data, null, 2);
-              container.append(`<pre>${zson}</pre>`).append('<br>');
+              let hintHtml = data.hint ? `<div class="alert alert-warning">${data.hint}</div>` : '';
+              container.append(hintHtml).append(`<pre>${zson}</pre>`).append('<br>');
+              return;
             }
             $.each(data.accounts, function (index, account) {
                 let zson = JSON.stringify(account, null, 2);
@@ -93,6 +95,11 @@ $(function () {
                 </div>
             `);
             });
+        }).fail(function (xhr) {
+            // $.getJSON only invokes the success callback above, so an actual network/5xx failure
+            // otherwise leaves the Account List silently empty with no feedback at all.
+            $('#account_list_bg').empty().append('<h1>Account List:</h1>')
+                .append(`<div class="alert alert-danger">Failed to load accounts (HTTP ${xhr.status}): ${xhr.responseText || 'no response body'}</div>`);
         });
     });
 });

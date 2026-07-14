@@ -25,6 +25,8 @@ public class GlobalExceptionHandler {
     private String showBankLogo;
     @Value("${logo.bank.url:#}")
     private String bankLogoUrl;
+    @Value("${show_unhandled_errors:false}")
+    private boolean showUnhandledErrors;
 
     @ExceptionHandler(UnsatisfiedServletRequestParameterException.class)
     public String handleUnsatisfiedServletRequestParameter(UnsatisfiedServletRequestParameterException e, Model model) {
@@ -40,6 +42,17 @@ public class GlobalExceptionHandler {
         logger.warn("Form submission rejected: {}", e.getMessage());
         addCommonAttributes(model);
         model.addAttribute("errorMsg", "The form is missing a required field: " + e.getParameterName() + ".");
+        return "error";
+    }
+
+    // Catches anything a controller method itself doesn't try/catch (this class's other handlers
+    // above take precedence for their specific exception types). Same showUnhandledErrors
+    // convention IndexController's own per-endpoint catch-all blocks use.
+    @ExceptionHandler(Exception.class)
+    public String handleUnhandled(Exception e, Model model) {
+        logger.error("Unhandled exception reached GlobalExceptionHandler", e);
+        addCommonAttributes(model);
+        model.addAttribute("errorMsg", showUnhandledErrors ? e.toString() : "Internal Server Error");
         return "error";
     }
 
