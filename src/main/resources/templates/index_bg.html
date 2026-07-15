@@ -34,7 +34,7 @@
         <div class="row">
             
             <div class="col-sm-6 col-lg-offset-3">
-                <h2>Give Consent</h2>
+                <h2>Create Consent</h2>
                 <form th:action="@{/request_consents_bg}" method="post">
                     <div class="form-group">
                         <label for="bank">Select your Bank</label>
@@ -75,7 +75,7 @@
                                checked>
                         <label for="recurring_indicator">Recurring indicator</label>
                     </div>
-                    <button type="submit" class="btn btn-danger">Give Consent</button>
+                    <button type="submit" class="btn btn-danger">Create Consent</button>
                 </form>
                 <div class="alert alert-info alert-dismissible col-md-12" role="alert" th:if="${errorMsg}">
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>

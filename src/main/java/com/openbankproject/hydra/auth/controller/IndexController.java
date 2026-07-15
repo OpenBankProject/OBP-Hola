@@ -575,23 +575,6 @@ public class IndexController implements ServletContextAware {
                 return "error";
             }
         }
-        String apiStandard = SessionData.getApiStandard(session);
-        if(apiStandard.equalsIgnoreCase("BerlinGroup")){ // fetch Consent information
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(SessionData.getAccessToken(session));
-            HttpEntity<String> entity = new HttpEntity<>(headers);
-            String consentId = SessionData.getConsentId(session);
-            ResponseEntity<Map> response = restTemplate.exchange(getConsentInformationBerlinGroup.replace("CONSENT_ID", consentId), HttpMethod.GET, entity, Map.class);
-            int frequencyPerDay = (int)response.getBody().get("frequencyPerDay");
-            String consentStatus = (String)response.getBody().get("consentStatus");
-            String validUntil = (String)response.getBody().get("validUntil");
-            boolean recurringIndicator = (boolean)response.getBody().get("recurringIndicator");
-            session.setAttribute("frequencyPerDay", String.valueOf(frequencyPerDay));
-            session.setAttribute("consentStatus", consentStatus);
-            session.setAttribute("validUntil", validUntil);
-            session.setAttribute("recurringIndicator", String.valueOf(recurringIndicator));
-        }
-
         return "redirect:/main";
     }
 
@@ -637,6 +620,26 @@ public class IndexController implements ServletContextAware {
         model.addAttribute("consentId", consentId);
         String consentRequestId = SessionData.getConsentRequestId(session);
         model.addAttribute("consentRequestId", consentRequestId);
+        // Berlin Group has no OAuth token to hang this off (see requestConsentsBerlinGroup), so unlike
+        // the other flows this can't be captured once at OIDC-callback time — fetch it fresh here,
+        // authenticating with the Consent-ID header the same way getAccountsBerlinGroup does.
+        if ("BerlinGroup".equalsIgnoreCase(apiStandard) && StringUtils.isNotBlank(consentId)) {
+            try {
+                HttpHeaders consentInfoHeaders = new HttpHeaders();
+                consentInfoHeaders.add("Consent-ID", consentId);
+                HttpEntity<String> consentInfoEntity = new HttpEntity<>(consentInfoHeaders);
+                ResponseEntity<Map> consentInfoResponse = restTemplate.exchange(
+                        getConsentInformationBerlinGroup.replace("CONSENT_ID", consentId),
+                        HttpMethod.GET, consentInfoEntity, Map.class);
+                Map consentInfoBody = consentInfoResponse.getBody();
+                session.setAttribute("frequencyPerDay", String.valueOf(consentInfoBody.get("frequencyPerDay")));
+                session.setAttribute("consentStatus", String.valueOf(consentInfoBody.get("consentStatus")));
+                session.setAttribute("validUntil", String.valueOf(consentInfoBody.get("validUntil")));
+                session.setAttribute("recurringIndicator", String.valueOf(consentInfoBody.get("recurringIndicator")));
+            } catch (RestClientException e) {
+                logger.warn("Could not fetch Berlin Group consent info for consent_id=" + consentId, e);
+            }
+        }
         String consentStatus = (String)session.getAttribute("consentStatus");
         model.addAttribute("consentStatus", consentStatus);
         String frequencyPerDay = (String)session.getAttribute("frequencyPerDay");
@@ -668,6 +671,12 @@ public class IndexController implements ServletContextAware {
             String clientCredentialsToken = getClientCredentialsToken();
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(clientCredentialsToken);
+            // OBP-API stores these into the consent's JWT (ConsentUtil.createObpConsentBerlinGroup)
+            // and Portal's SCA confirmation flow reads TPP-Redirect-URI back out of it to send the
+            // browser here once the consent is ACCEPTED, so main() (params="!code") can render it
+            // straight out of session — no OAuth code/token round-trip needed for Berlin Group.
+            headers.add("TPP-Redirect-URI", redirectUri);
+            headers.add("TPP-Nok-Redirect-URI", redirectUri);
             String recurringIndicator = recurring_indicator;
             String expirationDateTime = convertTimeFormat(expiration_time);
             // Berlin Group's `validUntil` is validated server-side as a plain yyyy-MM-dd date,
@@ -686,15 +695,28 @@ public class IndexController implements ServletContextAware {
                     Integer.parseInt(frequencyPerDay),
                     false
             );
-            String consentId = "";
+            String consentId;
+            String scaRedirectUrl;
             try {
                 HttpEntity<PostConsentJson> request = new HttpEntity<>(body, headers);
                 Map response = restTemplate.postForObject(createBerlinGroupConsentsUrl, request, Map.class);
                 consentId = ((Map<String, String>) response).get("consentId");
-                // main() reads this back via SessionData.getConsentId() when it later fetches the
-                // Berlin Group consent info; a raw session.setAttribute("consent_id", ...) here writes
-                // to a different storage slot and leaves that read null.
+                Map links = (Map) response.get("_links");
+                Map scaRedirect = links == null ? null : (Map) links.get("scaRedirect");
+                scaRedirectUrl = scaRedirect == null ? null : (String) scaRedirect.get("href");
+                if (StringUtils.isBlank(scaRedirectUrl)) {
+                    model.addAttribute("errorMsg", "OBP-API did not return a consent._links.scaRedirect URL "
+                            + "to confirm this consent (response: " + response + "). Without it there is no way "
+                            + "to complete Berlin Group's SCA step.");
+                    return "error";
+                }
+                // main() (params="!code") reads all of this straight out of session when the browser
+                // lands back on redirectUri after SCA confirmation on Portal — Berlin Group's consent
+                // is authorized via Consent-ID, not an OAuth token, so there's no code/id_token exchange
+                // to do here the way the other flows need.
                 SessionData.setConsentId(session, consentId);
+                SessionData.setApiStandard(session, "BerlinGroup");
+                SessionData.setBankId(session, bankId);
             } catch (HttpClientErrorException e) {
                 String error = "Sorry! Cannot create the consent.";
                 logger.error(error, e);
@@ -706,58 +728,10 @@ public class IndexController implements ServletContextAware {
                 return "index_bg";
             }
 
-
-            //{"client_id", "bank_id", "consent_id", "response_type=code", "scope", "redirect_uri", "state"})
-            Map<String, String> queryParam = new LinkedHashMap<>();
-            queryParam.put("client_id", clientId);
-            queryParam.put("response_type", "code+id_token");
-            // include OBP scopes, add OAuth2 and OIDC related scope: "openid" and "offline"
-            consents = ArrayUtils.addAll(new String[]{"openid", "offline"}, consents);
-            String scope = Stream.of(consents)
-                    .distinct()
-                    .map(this::encodeQueryParam)
-                    .collect(Collectors.joining("+"));
-
-            queryParam.put("scope", scope);
-            String encodeRedirectUri = URLEncoder.encode(redirectUri, "UTF-8");
-            queryParam.put("redirect_uri", encodeRedirectUri);
-            final String state = UUID.randomUUID().toString();
-            final String nonce = UUID.randomUUID().toString();
-            queryParam.put("state", state);
-            queryParam.put("nonce", nonce);
-            SessionData.setState(session, state);
-            SessionData.setNonce(session, nonce);
-
-            // the parameter consent_id and bank_id are mandatory, these two parameter is not standard parameter of OAuth2 and OIDC
-            queryParam.put("consent_id", consentId);
-            queryParam.put("bank_id", bankId);
-            String ibansTrimmed = Arrays.asList(ibans).stream()
-                    .map(n -> String.valueOf(n))
-                    .collect(Collectors.joining(","));
-            queryParam.put("iban", ibansTrimmed);
-            queryParam.put("recurring_indicator", recurring_indicator);
-            queryParam.put("frequency_per_day", frequency_per_day);
-            queryParam.put("expiration_time", expirationDateTime);
-            queryParam.put("api_standard", "BerlinGroup");
-            SessionData.setApiStandard(session, "BerlinGroup");
-            // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.
-            //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
-
-            // add code_challenge
-            final String codeVerifier = PKCEUtil.generateCodeVerifier();
-            SessionData.setCodeVerifier(session, codeVerifier);
-            final String codeChallenge = PKCEUtil.generateCodeChallenge(codeVerifier);
-            queryParam.put("code_challenge_method", "S256");
-            queryParam.put("code_challenge", codeChallenge);
-
-            String queryParamStr = queryParam.entrySet().stream().map(it -> it.getKey() + "=" + it.getValue()).collect(Collectors.joining("&"));
-            String authorizationEndpoint = openIDConfiguration.getAuthorizationEndpoint();
-            String redirectUrl = "redirect:" + authorizationEndpoint + "?" + queryParamStr;
-
             // if current user is authenticated, remove user info from session, to do re-authentication
             SessionData.remoteUserInfo(session);
 
-            return redirectUrl;
+            return "redirect:" + scaRedirectUrl;
         } catch (HttpStatusCodeException httpException) {
             logger.error("Error: ", httpException);
             String errorDetail = httpException.getStatusCode() + " " + httpException.getStatusText();
