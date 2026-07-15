@@ -1,7 +1,8 @@
 server.port=8087
-oauth2.public_url=https://oauth2.openbankproject.com/hydra-public
+oauth2.public_url=https://oauth2.openbankproject.com/obp-oidc
 obp.base_url=https://apisandbox.openbankproject.com
 endpoint.path.prefix=${obp.base_url}/open-banking/v3.1
+endpoint.path.prefix.v401=${obp.base_url}/open-banking/v4.0.1/aisp
 
 logging.level.com.openbankproject=DEBUG
 
@@ -22,6 +23,7 @@ logo.bank.url=https://static.openbankproject.com/images/obp_logo.png
 ### insert oauth2-related keys from API consumer registration below ###
 
 oauth2.client_id=taewei3sidooshoaquaisie2ohng8seepieLahna
+oauth2.client_secret=imras3cgsjwplcjdcnmj0abkx1nxqlnbyawvwx3e
 oauth2.redirect_uri=https://hola.openbankproject.com/main.html
 oauth2.client_scope=ReadAccountsBasic,\
 ReadAccountsDetail,\
@@ -32,7 +34,3 @@ ReadTransactionsDetail,\
 ReadAccountsBerlinGroup,\
 ReadBalancesBerlinGroup,\
 ReadTransactionsBerlinGroup
-
-oauth2.jws_alg=ES256
-oauth2.jwk_private_key={"kty":"EC","d":"Aepaewaibisoo8deevae1Zaeni2ahwee6ne3Aik0ahX","use":"sig","crv":"P-256","kid":"39087g94-2b67-1ab4-124e-157ae7f2c078","x":"b9HEBe415JME8W_rPwAq1Ume_tBbohy2XSXda9Mqoe4","y":"ieSahSh2cheereeF0zix4EeB-kohx9Ieb6mah8obeid","alg":"ES256"}
-

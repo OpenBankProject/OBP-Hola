@@ -37,6 +37,19 @@ public class OtherController {
     @Value("${endpoint.path.prefix}/accounts/ACCOUNT_ID/transactions")
     private String getTransactionsUrl;
 
+    // UK Open Banking v4.0.1
+    @Value("${endpoint.path.prefix.v401}/accounts")
+    private String getAccountsUrlV401;
+
+    @Value("${endpoint.path.prefix.v401}/accounts/ACCOUNT_ID")
+    private String getAccountUrlV401;
+
+    @Value("${endpoint.path.prefix.v401}/accounts/ACCOUNT_ID/balances")
+    private String getBalanceUrlV401;
+
+    @Value("${endpoint.path.prefix.v401}/accounts/ACCOUNT_ID/transactions")
+    private String getTransactionsUrlV401;
+
     // Berlin Group
     @Value("${obp.base_url}/berlin-group/v1.3/accounts")
     private String getBerlinGroupAccountsUrl;
@@ -143,8 +156,51 @@ public class OtherController {
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getTransactionsUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
         return exchange.getBody();
     }
-    
-    
+
+    // UK Open Banking v4.0.1
+    @GetMapping("/account_uk4")
+    public Object getAccountsV401(HttpSession session) {
+        String accessToken = SessionData.getAccessToken(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<AccountDataValue> exchange = restTemplate.exchange(getAccountsUrlV401, HttpMethod.GET, entity, AccountDataValue.class);
+        return exchange.getBody().getData();
+    }
+    @GetMapping("/account_uk4/{accountId}")
+    public Object getAccountV401(@PathVariable String accountId, HttpSession session) {
+        String accessToken = SessionData.getAccessToken(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<HashMap> exchange = restTemplate.exchange(getAccountUrlV401.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+        return  exchange.getBody();
+    }
+
+    @GetMapping("/balances_uk4/account_id/{accountId}")
+    public Object getBalancesV401(@PathVariable String accountId, HttpSession session) {
+        String accessToken = SessionData.getAccessToken(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<HashMap> exchange = restTemplate.exchange(getBalanceUrlV401.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+        return exchange.getBody();
+    }
+    @GetMapping("/transactions_uk4/account_id/{accountId}")
+    public Object getTransactionsV401(@PathVariable String accountId, HttpSession session) {
+        String accessToken = SessionData.getAccessToken(session);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<HashMap> exchange = restTemplate.exchange(getTransactionsUrlV401.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
+        return exchange.getBody();
+    }
+
+
     // Berlin Group
     @GetMapping("/account_bg")
     public Object getAccountsBerlinGroup(HttpSession session) {
@@ -154,8 +210,25 @@ public class OtherController {
         HttpEntity<String> entity = new HttpEntity<>(headers);
         logger.debug("Consent-ID: " + consentId);
 
-        ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupAccountsUrl, HttpMethod.GET, entity, HashMap.class);
-        return exchange.getBody();
+        try {
+            ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupAccountsUrl, HttpMethod.GET, entity, HashMap.class);
+            return exchange.getBody();
+        } catch (HttpClientErrorException e) {
+            // A freshly-created Berlin Group consent starts in status "received" and only becomes
+            // usable after the SCA confirmation step OBP-API points to via the create-consent
+            // response's _links.scaRedirect — a step Hola doesn't drive automatically. OBP-API's
+            // account lookup rejects an unconfirmed consent with a generic "not found", so surface
+            // what's actually going on instead of forwarding that as-is.
+            logger.error("getAccountsBerlinGroup failed for Consent-ID " + consentId, e);
+            HashMap<String, Object> error = new HashMap<>();
+            error.put("code", e.getStatusCode().value());
+            error.put("message", e.getResponseBodyAsString());
+            error.put("hint", "This usually means the Berlin Group consent (Consent-ID: " + consentId
+                    + ") was never confirmed via SCA after creation and is still in status 'received', "
+                    + "so OBP-API won't use it yet. Hola's Berlin Group flow does not currently perform "
+                    + "that SCA confirmation step.");
+            return error;
+        }
     }
     @GetMapping("/account_bg/{accountId}")
     public Object getAccountBerlinGroup(@PathVariable String accountId, HttpSession session) {
