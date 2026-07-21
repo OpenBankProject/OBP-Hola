@@ -8,6 +8,110 @@ Hola App supports multiple OIDC providers:
 
 A working Hola App setup can be used to drive automatic tests using [OBP Selenium](https://github.com/OpenBankProject/OBP-Selenium).
 
+## Quick start (local development)
+
+Configuration is composed from small, single-purpose Spring profiles. Each one is a delta
+on `application.properties`, and a later profile overrides an earlier one:
+
+| Profile | Tracked? | What it changes |
+|---|---|---|
+| *(none)* | yes | `application.properties` — the base: OBP-OIDC on 9000, OBP-API over plain HTTP, port 48123 |
+| `keycloak` | yes | use Keycloak as the OIDC provider instead of OBP-OIDC |
+| `mtls` | yes | talk to OBP-API over mutual TLS (https + client certificate) |
+| `local` | **no — gitignored** | your ports, URLs and secrets |
+
+```sh
+./build_and_run.sh --spring.profiles.active=keycloak,mtls,local
+```
+
+Mix them to match your setup: drop `mtls` for a plain-HTTP OBP-API, drop `keycloak` to stay
+on OBP-OIDC. `local` is optional — Spring skips a profile whose file is absent, so the
+command above is always safe.
+
+The tracked profiles contain no secrets and nothing machine-specific, so **you should never
+need to edit them** — put your own values in `local` (step 2).
+
+| Setting | Default with `keycloak,mtls` | Change it via |
+|---|---|---|
+| Hola App port | `48123` (from the base) | `server.port` in `local` |
+| OBP-API | `https://localhost:8080` | `obp.base_url` |
+| OIDC provider | `http://localhost:7070/realms/master` | `oauth2.public_url` |
+
+**These ports are a reference, not a project convention** — expect to override at least the
+OIDC one. The single hard requirement is that `oauth2.public_url` matches OBP-API's own
+Keycloak configuration (`oauth2.keycloak.host`, `oauth2.keycloak.well_known`, and the entry
+in `oauth2.jwk_set.url`); otherwise OBP-API rejects the tokens this app obtains.
+
+Any JDK from 11 upwards works.
+
+### 1. Start the dependencies
+
+```sh
+# OIDC provider, e.g. Keycloak
+docker start <your-keycloak-container>
+
+# OBP-API, from the OBP-API repo. --mtls serves HTTPS with mutual TLS on 8080.
+./flushall_fast_build_and_run.sh --mtls
+```
+
+Running OBP-API without mTLS is fine too — just leave the `mtls` profile out.
+
+### 2. Create your local profile
+
+```sh
+cd src/main/resources
+cp application-local.properties.example application-local.properties
+```
+
+Edit the copy — it is gitignored, so your ports and secrets can never be committed. A
+typical one is only a few lines:
+
+```properties
+oauth2.public_url=http://localhost:7787/realms/master
+oauth2.client_secret=<Keycloak: Clients > open-bank-project > Credentials>
+server.port=8081
+```
+
+`oauth2.redirect_uri` follows `server.port` automatically, but whatever it resolves to must
+be registered as a valid redirect URI on the Keycloak client.
+
+Environment variables work too — `OBP_BASE_URL`, `MTLS_KEYSTORE_PATH`, `KEYCLOAK_PUBLIC_URL`,
+`KEYCLOAK_CLIENT_SECRET`, and so on. **They outrank `application-local.properties`**: the
+precedence is command line › environment › property files, so "local wins" is only true
+among files. A stale `export` in your shell will silently override your local profile.
+
+### 3. Build and run
+
+```sh
+./build_and_run.sh --spring.profiles.active=keycloak,mtls,local
+```
+
+`build_and_run.sh` waits for OBP-API and the OIDC provider first, and tells you what to start
+if either is missing. `SKIP_HEALTH_CHECKS=true` bypasses the wait.
+
+Then open the app on whichever port you configured (`http://localhost:8081` above).
+
+### mTLS between Hola and OBP-API
+
+With the `mtls` profile active, Hola presents a client certificate from
+`src/main/resources/cert/hola_san_dns_ip.jks` (referenced as `classpath:`, so it works on any
+machine) and trusts OBP-API's server certificate via `new_server.trust.jks`. Both stores are
+committed for local development. OBP-API's truststore must trust the client certificate's
+issuer — the dev pairs shipped in the two repos are signed by the same CA, so a stock local
+setup matches out of the box.
+
+Clearing `mtls.keyStore.path` / `mtls.trustStore.path`, or simply not activating the `mtls`
+profile, falls back to a plain HTTP client.
+
+### Troubleshooting
+
+| Symptom | Cause |
+|---|---|
+| `Cannot reach the OIDC provider at ...` at startup | The provider is not running, or `KEYCLOAK_PUBLIC_URL` has the wrong port/realm. The discovery document is fetched eagerly, so the app cannot start without it. |
+| `OBP-API is not reachable at localhost:8080` | OBP-API is not started. The check is a TCP probe on purpose: an HTTP probe cannot succeed against mTLS, which rejects the handshake without a client certificate. |
+| Token exchange fails with `invalid_client` | `KEYCLOAK_CLIENT_SECRET` is unset or stale. |
+| OBP-API returns 401 for a token Keycloak issued happily | `KEYCLOAK_PUBLIC_URL` and OBP-API's Keycloak config disagree, so OBP-API cannot validate the signature. |
+
 ## Build with maven
 
 Check out the code from this repository and build it by running `mvn clean package` inside the main folder.

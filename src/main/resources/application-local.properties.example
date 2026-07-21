@@ -1,0 +1,46 @@
+########################################################################################
+# Template for your personal overrides.
+#
+#   cp application-local.properties.example application-local.properties
+#
+# Then edit the copy. application-local.properties is gitignored, so your ports, URLs and
+# secrets can never be committed.
+#
+# Activate it LAST so it wins -- a later profile overrides an earlier one:
+#
+#   ./build_and_run.sh --spring.profiles.active=keycloak,mtls,local
+#
+# EDIT THIS FILE, NOT THE TRACKED PROFILES. application.properties,
+# application-keycloak.properties and application-mtls.properties are shared and generic;
+# changing them to suit one machine is how everyone else's setup gets broken.
+#
+# Keep only the lines you actually need to change -- everything else is inherited.
+########################################################################################
+
+### OIDC provider ######################################################################
+## The port is whatever your Keycloak listens on. It MUST match OBP-API's own Keycloak
+## config (oauth2.keycloak.host, oauth2.keycloak.well_known, and the entry in
+## oauth2.jwk_set.url), or OBP-API will reject the tokens this app obtains.
+#oauth2.public_url=http://localhost:7787/realms/master
+
+## Keycloak admin console: Clients > open-bank-project > Credentials
+## (Can also be supplied as the KEYCLOAK_CLIENT_SECRET environment variable.)
+#oauth2.client_secret=
+
+### This app ###########################################################################
+## Defaults to 48123 from application.properties. oauth2.redirect_uri follows this
+## automatically, so it does not need repeating -- but whatever it resolves to must be
+## registered as a valid redirect URI on the OIDC client.
+#server.port=8081
+## Distinct cookie name, so a second local Spring app cannot share the session.
+#server.servlet.session.cookie.name=HALO_SESSION
+
+### OBP-API ############################################################################
+## The "mtls" profile already points at https://localhost:8080. Override only if your
+## OBP-API is elsewhere, or is running without mTLS:
+#obp.base_url=http://localhost:8080
+
+### UI #################################################################################
+## Narrow the standards shown in the UI (default shows all, including UK Open Banking).
+#display_standards=BerlinGroup
+#logo.bank.url=https://static.openbankproject.com/finca/img/finca-logo.png

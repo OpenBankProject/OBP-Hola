@@ -34,3 +34,9 @@ build/
 /src/main/resources/application-local.properties
 /src/main/resources/application-remote.properties
 /src/main/resources/cert/
+
+### Local development (never commit)
+# Personal per-machine overrides for the dev profile: ports, URLs, client secrets.
+src/main/resources/application-local.properties
+# OBP consumer registration output -- contains Consumer Key/Secret pairs.
+consumer.txt
