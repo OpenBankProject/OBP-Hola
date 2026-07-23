@@ -93,12 +93,22 @@ Then open the app on whichever port you configured (`http://localhost:8081` abov
 
 ### mTLS between Hola and OBP-API
 
-With the `mtls` profile active, Hola presents a client certificate from
-`src/main/resources/cert/hola_san_dns_ip.jks` (referenced as `classpath:`, so it works on any
-machine) and trusts OBP-API's server certificate via `new_server.trust.jks`. Both stores are
-committed for local development. OBP-API's truststore must trust the client certificate's
-issuer — the dev pairs shipped in the two repos are signed by the same CA, so a stock local
-setup matches out of the box.
+With the `mtls` profile active, Hola presents `src/main/resources/cert/hola-client.p12`
+(`CN=obp-hola, OU=TPP, O=Hola Ltd`) and trusts OBP-API's server certificate through
+`hola-truststore.p12`. Both are referenced as `classpath:` so they work on any machine, and both
+are committed for local development.
+
+Both come from OBP-API's development CA, which is the root OBP-API's own truststore trusts:
+
+```sh
+./scripts/generate_dev_certs.sh                       # finds a sibling OBP-API checkout
+OBP_API_HOME=~/src/OBP-API ./scripts/generate_dev_certs.sh
+```
+
+The script generates Hola's private key here and has that CA sign it — the arrangement being
+modelled, where the TPP holds its own key and the bank's CA issues the certificate. Hola is never
+handed a key it did not generate. Re-run it after OBP-API regenerates its set
+(`./scripts/generate_dev_certs.sh` there), since a new CA invalidates the old signature.
 
 Clearing `mtls.keyStore.path` / `mtls.trustStore.path`, or simply not activating the `mtls`
 profile, falls back to a plain HTTP client.
@@ -119,6 +129,11 @@ Check out the code from this repository and build it by running `mvn clean packa
 The resulting JAR file of Hola App will be in the `target` folder.
 
 ## Prepare truststore
+
+> For local development against a local OBP-API, use `./scripts/generate_dev_certs.sh` instead —
+> see "mTLS between Hola and OBP-API" above. The manual steps below are for pointing Hola at a
+> remote deployment, where the certificates are not yours to generate.
+
 Assuming OBP-API server URL is: `apisandbox.openbankproject.com`
 
 Assuming Hydra server URL is: `oauth2.openbankproject.com`

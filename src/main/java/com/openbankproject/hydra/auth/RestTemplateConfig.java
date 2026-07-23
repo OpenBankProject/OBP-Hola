@@ -79,6 +79,26 @@ public class RestTemplateConfig {
                 && StringUtils.isNotBlank(trustStoreResource.getFilename());
     }
 
+    /**
+     * KeyStore type for a store, by file extension: {@code .p12}/{@code .pfx} are PKCS12, anything
+     * else JKS.
+     *
+     * The type cannot be sniffed from the bytes cheaply and guessing wrong fails at load with an
+     * opaque parse error, so it is taken from the name. The same rule is applied on the OBP-API side
+     * (Http4sMtls.keyStoreTypeOf), which matters because the two ends are configured with stores
+     * generated as a matching pair.
+     */
+    private static String keyStoreTypeOf(Resource resource) {
+        String name = resource.getFilename();
+        if (name != null) {
+            String lower = name.toLowerCase();
+            if (lower.endsWith(".p12") || lower.endsWith(".pfx")) {
+                return "PKCS12";
+            }
+        }
+        return "JKS";
+    }
+
     @Bean
     public RestTemplate restTemplate() throws IOException, GeneralSecurityException {
         HttpClient httpClient;
@@ -113,7 +133,7 @@ public class RestTemplateConfig {
     private KeyManager[] getKeyManagers() throws IOException, GeneralSecurityException {
         String alg = KeyManagerFactory.getDefaultAlgorithm();
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(alg);
-        KeyStore ks = KeyStore.getInstance("jks");
+        KeyStore ks = KeyStore.getInstance(keyStoreTypeOf(keyStoreResource));
         try (InputStream inputStream = keyStoreResource.getInputStream()){
             ks.load(inputStream, keyStorePassword);
         }
@@ -125,7 +145,7 @@ public class RestTemplateConfig {
         String alg = TrustManagerFactory.getDefaultAlgorithm();
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(alg);
 
-        KeyStore ks = KeyStore.getInstance("jks");
+        KeyStore ks = KeyStore.getInstance(keyStoreTypeOf(trustStoreResource));
         try(InputStream input = trustStoreResource.getInputStream()) {
             ks.load(input, trustStorePassword);
         }
@@ -342,7 +362,7 @@ public class RestTemplateConfig {
         String alias = keyStoreAlias;
         Key key = null;
         try {
-            ks = KeyStore.getInstance("jks");
+            ks = KeyStore.getInstance(keyStoreTypeOf(keyStoreResource));
             InputStream inputStream = keyStoreResource.getInputStream();
             ks.load(inputStream, keyStorePassword);
             key = ks.getKey(alias, keyStorePassword);

@@ -34,6 +34,12 @@ build/
 /src/main/resources/application-local.properties
 /src/main/resources/application-remote.properties
 /src/main/resources/cert/
+# The development certificate set (scripts/generate_dev_certs.sh) is committed: the mtls profile
+# references it as classpath:, so it has to be on the classpath on every machine. Without these
+# two lines a regenerated set is silently untracked and only the machine that ran the script can
+# talk to OBP-API over mTLS.
+!/src/main/resources/cert/
+!/src/main/resources/cert/**
 
 ### Local development (never commit)
 # Personal per-machine overrides for the dev profile: ports, URLs, client secrets.
