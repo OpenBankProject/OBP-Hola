@@ -43,8 +43,8 @@ find_obp_api() {
         "$HOLA_ROOT/../constantine2nd/OBP-API" \
         "$HOME/Tesobe/GitHub/OBP-API" \
         "$HOME/Tesobe/GitHub/constantine2nd/OBP-API"; do
-        [ -n "$candidate" ] || continue
-        if [ -f "$candidate/obp-api/src/test/resources/cert/dev-ca.key" ]; then
+        [[ -n "$candidate" ]] || continue
+        if [[ -f "$candidate/obp-api/src/test/resources/cert/dev-ca.key" ]]; then
             (cd "$candidate" && pwd)
             return 0
         fi
