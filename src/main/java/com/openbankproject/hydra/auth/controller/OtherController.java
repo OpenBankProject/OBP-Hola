@@ -2,6 +2,8 @@ package com.openbankproject.hydra.auth.controller;
 
 import com.openbankproject.hydra.auth.VO.AccountDataValue;
 import com.openbankproject.hydra.auth.VO.SessionData;
+import com.openbankproject.hydra.auth.VO.TokenResponse;
+import com.openbankproject.hydra.auth.VO.WellKnown;
 import com.openbankproject.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +11,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -112,8 +117,34 @@ public class OtherController {
     @Value("${oauth2.client_id}")
     private String consumerKey;
 
+    // default is empty string
+    @Value("${oauth2.client_secret:}")
+    private String clientSecret;
+
     @Resource
     private RestTemplate restTemplate;
+    @Resource
+    private WellKnown openIDConfiguration;
+
+    /**
+     * An app-identity-only token: no PSU, and therefore no consent_id claim.
+     *
+     * Mirrors IndexController#getClientCredentialsToken, which uses it to lodge a consent before any
+     * PSU is involved. Here it serves the opposite purpose -- as the negative control that shows a
+     * token without a consent cannot read account data.
+     */
+    private String getClientCredentialsToken() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("grant_type", "client_credentials");
+        body.add("client_id", consumerKey);
+        body.add("client_secret", clientSecret);
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
+        TokenResponse tokenResponse = restTemplate.postForObject(
+                openIDConfiguration.getTokenEndpoint(), request, TokenResponse.class);
+        return tokenResponse.getAccess_token();
+    }
 
     @GetMapping("/account")
     public Object getAccounts(HttpSession session) {
@@ -158,6 +189,13 @@ public class OtherController {
     }
 
     // UK Open Banking v4.0.1
+    //
+    // The consent is carried inside the access token as a `consent_id` claim -- never as a request
+    // header. Sending Consent-ID/Consent-Id/Consent-JWT here would be actively wrong: OBP-API's
+    // authentication dispatcher keys off those headers to route the whole request into the Berlin
+    // Group (or OBP-native) consent path, which then rejects a UK consent for having the wrong
+    // standard. So these calls send Authorization: Bearer only, and OBP-API's checkUKConsent reads
+    // the claim off that token.
     @GetMapping("/account_uk4")
     public Object getAccountsV401(HttpSession session) {
         String accessToken = SessionData.getAccessToken(session);
@@ -165,9 +203,52 @@ public class OtherController {
         headers.setBearerAuth(accessToken);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
-        ResponseEntity<AccountDataValue> exchange = restTemplate.exchange(getAccountsUrlV401, HttpMethod.GET, entity, AccountDataValue.class);
-        return exchange.getBody().getData();
+        try {
+            ResponseEntity<AccountDataValue> exchange = restTemplate.exchange(getAccountsUrlV401, HttpMethod.GET, entity, AccountDataValue.class);
+            return exchange.getBody().getData();
+        } catch (HttpClientErrorException e) {
+            return passThroughObpError("getAccountsV401", e);
+        }
     }
+
+    /**
+     * Negative control for the consent gate: the same endpoint as {@link #getAccountsV401}, but
+     * authenticated with a client-credentials token (app identity only, no PSU and therefore no
+     * consent_id claim).
+     *
+     * That token still resolves to a consumer at OBP-API's auth layer, so the request reaches
+     * checkUKConsent -- which rejects it with 403 OBP-35035 ConsentIdClaimMissing. Same URL, same
+     * user-visible action, different token: that contrast is what demonstrates the data really is
+     * consent-gated rather than merely authenticated.
+     */
+    @GetMapping("/account_uk4_no_consent")
+    public Object getAccountsV401WithoutConsent() {
+        final String clientCredentialsToken;
+        try {
+            clientCredentialsToken = getClientCredentialsToken();
+        } catch (Exception e) {
+            logger.error("Could not obtain a client-credentials token for the no-consent control", e);
+            HashMap<String, Object> error = new HashMap<>();
+            error.put("code", 500);
+            error.put("message", "Could not obtain a client-credentials token: " + e.getMessage());
+            return ResponseEntity.status(500).body(error);
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(clientCredentialsToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        try {
+            ResponseEntity<AccountDataValue> exchange = restTemplate.exchange(getAccountsUrlV401, HttpMethod.GET, entity, AccountDataValue.class);
+            // Reaching here would mean the consent gate is NOT being enforced.
+            logger.warn("No-consent control unexpectedly succeeded — checkUKConsent did not reject a token without a consent_id claim");
+            return exchange.getBody().getData();
+        } catch (HttpClientErrorException e) {
+            logger.info("No-consent control rejected as expected: " + e.getStatusCode());
+            return passThroughObpError("getAccountsV401WithoutConsent", e);
+        }
+    }
+
     @GetMapping("/account_uk4/{accountId}")
     public Object getAccountV401(@PathVariable String accountId, HttpSession session) {
         String accessToken = SessionData.getAccessToken(session);
@@ -175,8 +256,12 @@ public class OtherController {
         headers.setBearerAuth(accessToken);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
-        ResponseEntity<HashMap> exchange = restTemplate.exchange(getAccountUrlV401.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
-        return  exchange.getBody();
+        try {
+            ResponseEntity<HashMap> exchange = restTemplate.exchange(getAccountUrlV401.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+            return exchange.getBody();
+        } catch (HttpClientErrorException e) {
+            return passThroughObpError("getAccountV401", e);
+        }
     }
 
     @GetMapping("/balances_uk4/account_id/{accountId}")
@@ -186,8 +271,12 @@ public class OtherController {
         headers.setBearerAuth(accessToken);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
-        ResponseEntity<HashMap> exchange = restTemplate.exchange(getBalanceUrlV401.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
-        return exchange.getBody();
+        try {
+            ResponseEntity<HashMap> exchange = restTemplate.exchange(getBalanceUrlV401.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+            return exchange.getBody();
+        } catch (HttpClientErrorException e) {
+            return passThroughObpError("getBalancesV401", e);
+        }
     }
     @GetMapping("/transactions_uk4/account_id/{accountId}")
     public Object getTransactionsV401(@PathVariable String accountId, HttpSession session) {
@@ -196,8 +285,27 @@ public class OtherController {
         headers.setBearerAuth(accessToken);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
-        ResponseEntity<HashMap> exchange = restTemplate.exchange(getTransactionsUrlV401.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
-        return exchange.getBody();
+        try {
+            ResponseEntity<HashMap> exchange = restTemplate.exchange(getTransactionsUrlV401.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
+            return exchange.getBody();
+        } catch (HttpClientErrorException e) {
+            return passThroughObpError("getTransactionsV401", e);
+        }
+    }
+
+    /**
+     * Forward an OBP-API client error to the browser verbatim, preserving its status code.
+     *
+     * Without this the exception reaches the generic handler and the caller sees a 500 with the
+     * real cause lost -- which is precisely how a consent rejection (403 OBP-35035 / OBP-35036 /
+     * OBP-35023) used to disappear silently. The body is passed through unparsed so the OBP error
+     * code survives intact for the page to render.
+     */
+    private ResponseEntity<String> passThroughObpError(String operation, HttpClientErrorException e) {
+        logger.warn(operation + " failed: " + e.getStatusCode() + " " + e.getResponseBodyAsString());
+        return ResponseEntity.status(e.getStatusCode())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(e.getResponseBodyAsString());
     }
 
 

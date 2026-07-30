@@ -91,11 +91,38 @@
                 <br>
                 <br>
             </div>
+            <!-- UK v4.0.1 carries the consent inside the access token (consent_id claim), not in a
+                 request header the way Berlin Group does - so show the claim the API actually reads. -->
+            <div class="row" data-testid="uk4-consent-panel">
+                <h4>Active consent (bound to the access token)</h4>
+                <span th:if="${tokenConsentId == null}" data-testid="uk4-consent-none">
+                    <em>This access token carries no consent_id claim - UK data calls will be rejected
+                        with 403 OBP-35035.</em><br>
+                </span>
+                <span th:unless="${tokenConsentId == null}">
+                    consent_id claim: <span data-testid="uk4-consent-id" th:text="${tokenConsentId}"></span> <br>
+                    Status: <span data-testid="uk4-consent-status" th:text="${ukConsentStatus}"></span> <br>
+                    Permissions: <span data-testid="uk4-consent-permissions" th:text="${ukConsentPermissions}"></span> <br>
+                    Expires: <span data-testid="uk4-consent-expiration" th:text="${ukConsentExpiration}"></span> <br>
+                    <span th:if="${ukConsentError != null}" data-testid="uk4-consent-error">
+                        Could not read consent status: <span th:text="${ukConsentError}"></span> <br>
+                    </span>
+                </span>
+                <br>
+            </div>
             <div>
                 <button class="btn btn-primary" id="get_accounts_uk4">Get accounts via UK Open Banking v4.0.1</button>
                 <div id="account_list_uk4">
 
                 </div>
+            </div>
+            <!-- Negative control: same endpoint, but authenticated with a client-credentials token that
+                 has no consent_id claim. Proves access is consent-gated, not merely authenticated. -->
+            <div>
+                <br>
+                <button class="btn btn-warning" id="get_accounts_uk4_no_consent"
+                        data-testid="uk4-no-consent-button">Get accounts WITHOUT consent (expect 403)</button>
+                <div id="account_list_uk4_no_consent"></div>
             </div>
         </div>
         <div th:case="'BerlinGroup'" class="row">

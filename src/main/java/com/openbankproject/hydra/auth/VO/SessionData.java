@@ -20,8 +20,24 @@ public class SessionData {
     private String bankId;
     private String apiStandard;
     private String consentId;
+    private String tokenConsentId;
     private String consentRequestId;
     private UserInfo userInfo;
+
+    /**
+     * The consent_id claim carried inside the OAuth2 access token.
+     *
+     * UK Open Banking v4.0.1 binds a consent to the token rather than to a request header
+     * (OBP-API's checkUKConsent reads this claim off the Bearer token), so this — not
+     * {@link #getConsentId} — is the value that actually governs what the data calls may read.
+     */
+    public static String getTokenConsentId(HttpSession session) {
+        return getOrCreateSessionData(session).tokenConsentId;
+    }
+
+    public static void setTokenConsentId(HttpSession session, String tokenConsentId) {
+        getOrCreateSessionData(session).tokenConsentId = tokenConsentId;
+    }
 
     public static String getConsentRequestId(HttpSession session) {
         return getOrCreateSessionData(session).consentRequestId;

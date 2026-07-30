@@ -75,6 +75,8 @@ public class IndexController implements ServletContextAware {
     private String createConsentsUrl;
     @Value("${endpoint.path.prefix.v401}/account-access-consents")
     private String createConsentsUrlV401;
+    @Value("${endpoint.path.prefix.v401}/account-access-consents/CONSENT_ID")
+    private String getConsentInformationUrlV401;
     @Value("${obp.base_url}/berlin-group/v1.3/consents")
     private String createBerlinGroupConsentsUrl;
     @Value("${obp.base_url}/berlin-group/v1.3/consents/CONSENT_ID")
@@ -558,6 +560,15 @@ public class IndexController implements ServletContextAware {
 
             logger.debug("idToken:\n" + tokenResponse.getId_token());
             logger.debug("accessToken:\n" + tokenResponse.getAccess_token());
+
+            // UK v4.0.1 binds the consent to the access token, not to a request header: OBP-API's
+            // checkUKConsent reads the consent_id claim straight off the Bearer token. Capture it so
+            // the UI can show which consent is actually governing the data calls. Only attempted for
+            // the UK standard -- this callback is shared with the OBP-native and Berlin Group flows,
+            // whose access tokens carry no consent_id claim and need not even be JWTs.
+            if ("UKOpenBankingV401".equals(SessionData.getApiStandard(session))) {
+                SessionData.setTokenConsentId(session, readConsentIdClaim(tokenResponse.getAccess_token()));
+            }
         }
 
         { // fetch user information
@@ -638,6 +649,43 @@ public class IndexController implements ServletContextAware {
                 session.setAttribute("recurringIndicator", String.valueOf(consentInfoBody.get("recurringIndicator")));
             } catch (RestClientException e) {
                 logger.warn("Could not fetch Berlin Group consent info for consent_id=" + consentId, e);
+            }
+        }
+        // UK v4.0.1: show which consent the access token is actually bound to. The consent_id claim
+        // inside the token -- not SessionData.consentId -- is what OBP-API's checkUKConsent reads, so
+        // that is the value worth displaying and the one used to look the consent up.
+        if ("UKOpenBankingV401".equals(apiStandard)) {
+            String tokenConsentId = SessionData.getTokenConsentId(session);
+            model.addAttribute("tokenConsentId", tokenConsentId);
+            if (StringUtils.isNotBlank(tokenConsentId)) {
+                try {
+                    // GET account-access-consents/{id} enforces ownership: only the PSU the consent is
+                    // bound to may read it. So it must be called with the user's consent-bound token,
+                    // not the client-credentials token used to lodge the consent in the first place.
+                    HttpHeaders ukConsentHeaders = new HttpHeaders();
+                    ukConsentHeaders.setBearerAuth(SessionData.getAccessToken(session));
+                    HttpEntity<String> ukConsentEntity = new HttpEntity<>(ukConsentHeaders);
+                    ResponseEntity<Map> ukConsentResponse = restTemplate.exchange(
+                            getConsentInformationUrlV401.replace("CONSENT_ID", tokenConsentId),
+                            HttpMethod.GET, ukConsentEntity, Map.class);
+                    Map ukConsentData = (Map) ukConsentResponse.getBody().get("Data");
+                    model.addAttribute("ukConsentStatus", String.valueOf(ukConsentData.get("Status")));
+                    // The consent stores one view per (account, permission) pair, so a consent covering
+                    // several accounts repeats each permission. De-duplicate for display -- what the PSU
+                    // cares about is which permissions were granted, not how many accounts they span.
+                    Object rawPermissions = ukConsentData.get("Permissions");
+                    if (rawPermissions instanceof Collection) {
+                        model.addAttribute("ukConsentPermissions",
+                                new LinkedHashSet<>((Collection<?>) rawPermissions));
+                    } else {
+                        model.addAttribute("ukConsentPermissions", rawPermissions);
+                    }
+                    model.addAttribute("ukConsentExpiration", String.valueOf(ukConsentData.get("ExpirationDateTime")));
+                } catch (RestClientException e) {
+                    // Non-fatal: the page still works, it just can't show the consent's live status.
+                    logger.warn("Could not fetch UK v4.0.1 consent info for consent_id=" + tokenConsentId, e);
+                    model.addAttribute("ukConsentError", e.getMessage());
+                }
             }
         }
         String consentStatus = (String)session.getAttribute("consentStatus");
@@ -1150,5 +1198,27 @@ public class IndexController implements ServletContextAware {
         byte[] encodedHash = md.digest(asciiValue);
         byte[] halfOfEncodedHash = Arrays.copyOf(encodedHash, (encodedHash.length / 2));
         return Base64.getUrlEncoder().withoutPadding().encodeToString(halfOfEncodedHash);
+    }
+
+    /**
+     * Read the consent_id claim from an access token, or null if it carries none.
+     *
+     * Deliberately tolerant: a token that is opaque rather than a JWT, or a JWT without the claim,
+     * is a legitimate state (it just means the token is not consent-bound) and must not break the
+     * login callback. OBP-API applies the same tolerance -- JwtUtil.getOptionalClaim swallows parse
+     * failures and treats them as "no claim", which surfaces later as 403 OBP-35035 on a data call.
+     */
+    private String readConsentIdClaim(String accessToken) {
+        if (accessToken == null || accessToken.isEmpty()) {
+            return null;
+        }
+        try {
+            String consentId = (String) JWTParser.parse(accessToken).getJWTClaimsSet().getClaim("consent_id");
+            logger.debug("access token consent_id claim: " + consentId);
+            return consentId;
+        } catch (Exception e) {
+            logger.debug("Access token carries no readable consent_id claim: " + e.getMessage());
+            return null;
+        }
     }
 }
