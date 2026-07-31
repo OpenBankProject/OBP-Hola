@@ -166,11 +166,7 @@ public class IndexController implements ServletContextAware {
     @GetMapping({ "/index_uk", "index_uk.html"})
     public String index_uk(Model model) throws ParseException, JOSEException {
         {// initiate consent names
-            // exclude "openid" and "offline", they are used by hydra
-            String[] consents = allScopes.stream()
-                    .filter(it -> !"openid".equals(it) && !"offline".equals(it))
-                    .filter(it -> !it.contains("BerlinGroup"))
-                    .toArray(String[]::new);
+            String[] consents = ukPermissionScopes();
             model.addAttribute("consents", consents);
         }
         { // initiate all bank names and bank ids
@@ -188,11 +184,7 @@ public class IndexController implements ServletContextAware {
     @GetMapping({ "/index_uk4", "index_uk4.html"})
     public String index_uk4(Model model) throws ParseException, JOSEException {
         {// initiate consent names
-            // exclude "openid" and "offline", they are used by hydra
-            String[] consents = allScopes.stream()
-                    .filter(it -> !"openid".equals(it) && !"offline".equals(it))
-                    .filter(it -> !it.contains("BerlinGroup"))
-                    .toArray(String[]::new);
+            String[] consents = ukPermissionScopes();
             model.addAttribute("consents", consents);
         }
         { // initiate all bank names and bank ids
@@ -208,6 +200,21 @@ public class IndexController implements ServletContextAware {
     }
 
 
+
+    /**
+     * The UK permission codes among the configured scopes, for the consent checkboxes on the two UK
+     * pages. Whatever the PSU ticks is sent verbatim as the consent's Permissions array, and the
+     * ASPSP rejects an array holding anything that is not a UK permission code, so the OIDC scopes
+     * configured alongside them (openid, offline, profile, email) must not be offered as choices.
+     * Selecting by the UK "Read" prefix stays correct as codes are added, where excluding a fixed
+     * list of non-permissions did not: every newly configured OIDC scope leaked into the form.
+     */
+    private String[] ukPermissionScopes() {
+        return allScopes.stream()
+                .filter(it -> it.startsWith("Read"))
+                .filter(it -> !it.contains("BerlinGroup"))
+                .toArray(String[]::new);
+    }
 
     private Banks getBanks() {
         Banks banks = restTemplate.getForObject(getBanksUrl, Banks.class);
@@ -418,7 +425,10 @@ public class IndexController implements ServletContextAware {
                                   ) throws UnsupportedEncodingException, ParseException, JOSEException {
         try {
             final String consentId;
-            {   // Create Account Access Consents (v4.0.1 endpoint — body is ignored server-side, always returns canned example)
+            // Create Account Access Consents (v4.0.1). The server validates Permissions against the
+            // UK combination rules and answers 400 for a set it must reject, so a checkbox selection
+            // the profile forbids surfaces here as an HttpStatusCodeException carrying that reason.
+            {
                 String clientCredentialsToken = getClientCredentialsToken();
                 HttpHeaders headers = new HttpHeaders();
                 headers.setBearerAuth(clientCredentialsToken);
