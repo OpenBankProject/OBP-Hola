@@ -96,7 +96,8 @@
             <!-- Status and permissions are read back from OBP-API through the consent itself, so
                  what is shown is the live server-side state of the very credential the buttons
                  below use - not anything this app remembers. -->
-            <div class="row" data-testid="uk4-consent-panel">
+            <div class="row" data-testid="uk4-consent-panel"
+                 th:attr="data-uk4-permissions=${ukConsentPermissionsCsv}">
                 <h4>Active consent (the only credential these calls use)</h4>
                 <span th:if="${ukConsentId == null}" data-testid="uk4-consent-none">
                     <em>No consent in this session - UK data calls will be rejected with 401.</em><br>
@@ -213,7 +214,20 @@
         $('#get_accounts').click(function () {
             const container = $('#account_list').empty().append('<h1>Account List:</h1>');
             $.getJSON("/account", function (data) {
-                $.each(data.Account, function (index, account) {
+                // Same trap as v4.0.1: OBP-API filters out accounts the consent grants no view on,
+                // so a consent without ReadAccountsBasic/ReadAccountsDetail answers 200 with an
+                // empty list. No error is raised, so this has to be said explicitly.
+                const accounts = (data && data.Account) || [];
+                if (accounts.length === 0) {
+                    container.append(
+                        '<div class="alert alert-warning" data-testid="uk-accounts-empty">' +
+                        '<b>No accounts returned.</b><br>' +
+                        'The call succeeded (HTTP 200) — an empty list means the consent grants no ' +
+                        'readable account: most often it carries neither ReadAccountsBasic nor ' +
+                        'ReadAccountsDetail, which UK Open Banking requires one of.</div>');
+                    return;
+                }
+                $.each(accounts, function (index, account) {
                     let zson = JSON.stringify(account, null, 2);
                     container.append(`
                     <div>

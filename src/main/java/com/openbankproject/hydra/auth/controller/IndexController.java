@@ -687,10 +687,19 @@ public class IndexController implements ServletContextAware {
                     // cares about is which permissions were granted, not how many accounts they span.
                     Object rawPermissions = ukConsentData.get("Permissions");
                     if (rawPermissions instanceof Collection) {
-                        model.addAttribute("ukConsentPermissions",
-                                new LinkedHashSet<>((Collection<?>) rawPermissions));
+                        Set<String> permissions = ((Collection<?>) rawPermissions).stream()
+                                .map(String::valueOf)
+                                .collect(Collectors.toCollection(LinkedHashSet::new));
+                        model.addAttribute("ukConsentPermissions", permissions);
+                        // Machine-readable copy for the page script: GET /aisp/accounts answers 200
+                        // with an empty list when the consent grants no ReadAccounts* view, so the
+                        // script needs the granted permissions to explain an empty result rather
+                        // than scraping the text it just rendered.
+                        model.addAttribute("ukConsentPermissionsCsv", String.join(",", permissions));
                     } else {
                         model.addAttribute("ukConsentPermissions", rawPermissions);
+                        model.addAttribute("ukConsentPermissionsCsv",
+                                rawPermissions == null ? "" : String.valueOf(rawPermissions));
                     }
                     model.addAttribute("ukConsentExpiration", String.valueOf(ukConsentData.get("ExpirationDateTime")));
                 } catch (RestClientException e) {
