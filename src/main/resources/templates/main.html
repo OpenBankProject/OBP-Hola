@@ -20,8 +20,11 @@
         let userInfo = [[${user}]]
         let consentId = [[${consentId}]]
         let hashParam = location.hash
-        if(!userInfo && !consentId && hashParam.indexOf("code") !== -1) {
-            // redirect back from hydra with hash param, convert hash param to request param, to exchange code with token
+        if(hashParam.indexOf("code") !== -1) {
+            // Redirected back from the IdP with the response in the fragment. Convert it to query
+            // params so the server-side callback can run -- it validates `state` before anything
+            // else, so this must happen whether or not a consent is already in the session (the UK
+            // flows record theirs when the consent is lodged, before this redirect ever happens).
             let mainCodeLink = '/main.html?' + hashParam.substr(1)
             window.location.replace(mainCodeLink)
         } else if(!userInfo && !consentId) {
@@ -61,14 +64,14 @@
 <div class="container">
     <div th:switch="${apiStandard}">
         <div th:case="'UKOpenBanking'" class="row">
-            
-            <div class="row">
-                <h1>Hello <span th:text="${user?.username}"></span></h1>
 
-                current user: <br>
-                email: <span th:text="${user?.email}"></span> <br>
-                username: <span th:text="${user?.username}"></span> <br>
-                <a class="btn btn-info" th:href="@{/logout}">Logout</a>
+            <!-- No user identity is shown here, and none is held: this flow never exchanges the
+                 authorisation code for an access token. The consent alone authorises the data
+                 calls below. -->
+            <div class="row">
+                <h1>Hello</h1>
+                Consent-Id: <span th:text="${consentId}"></span> <br>
+                <a class="btn btn-info" th:href="@{/logout}">Create a new consent</a>
                 <br>
                 <br>
             </div>
@@ -81,26 +84,25 @@
         </div>
         <div th:case="'UKOpenBankingV401'" class="row">
 
+            <!-- No user identity is shown here, and none is held: this flow never exchanges the
+                 authorisation code for an access token. The consent alone authorises the data
+                 calls below. -->
             <div class="row">
-                <h1>Hello <span th:text="${user?.username}"></span></h1>
-
-                current user: <br>
-                email: <span th:text="${user?.email}"></span> <br>
-                username: <span th:text="${user?.username}"></span> <br>
-                <a class="btn btn-info" th:href="@{/logout}">Logout</a>
+                <h1>Hello</h1>
+                <a class="btn btn-info" th:href="@{/logout}">Create a new consent</a>
                 <br>
                 <br>
             </div>
-            <!-- UK v4.0.1 carries the consent inside the access token (consent_id claim), not in a
-                 request header the way Berlin Group does - so show the claim the API actually reads. -->
+            <!-- Status and permissions are read back from OBP-API through the consent itself, so
+                 what is shown is the live server-side state of the very credential the buttons
+                 below use - not anything this app remembers. -->
             <div class="row" data-testid="uk4-consent-panel">
-                <h4>Active consent (bound to the access token)</h4>
-                <span th:if="${tokenConsentId == null}" data-testid="uk4-consent-none">
-                    <em>This access token carries no consent_id claim - UK data calls will be rejected
-                        with 403 OBP-35035.</em><br>
+                <h4>Active consent (the only credential these calls use)</h4>
+                <span th:if="${ukConsentId == null}" data-testid="uk4-consent-none">
+                    <em>No consent in this session - UK data calls will be rejected with 401.</em><br>
                 </span>
-                <span th:unless="${tokenConsentId == null}">
-                    consent_id claim: <span data-testid="uk4-consent-id" th:text="${tokenConsentId}"></span> <br>
+                <span th:unless="${ukConsentId == null}">
+                    Consent-Id: <span data-testid="uk4-consent-id" th:text="${ukConsentId}"></span> <br>
                     Status: <span data-testid="uk4-consent-status" th:text="${ukConsentStatus}"></span> <br>
                     Permissions: <span data-testid="uk4-consent-permissions" th:text="${ukConsentPermissions}"></span> <br>
                     Expires: <span data-testid="uk4-consent-expiration" th:text="${ukConsentExpiration}"></span> <br>
