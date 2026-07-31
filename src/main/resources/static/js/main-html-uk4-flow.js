@@ -72,20 +72,4 @@ $(function () {
             renderObpError(container, xhr);
         });
     });
-
-    // Negative control: same endpoint, but the server side authenticates with a client-credentials
-    // token that carries no consent_id claim. A 403 OBP-35035 here is the expected — and desired —
-    // outcome: it demonstrates the data is gated on the consent, not merely on being authenticated.
-    $('#get_accounts_uk4_no_consent').click(function () {
-        const container = $('#account_list_uk4_no_consent').empty()
-            .append('<h3>Same endpoint, token without a consent_id claim:</h3>');
-        $.getJSON("/account_uk4_no_consent", function (data) {
-            container.append(
-                `<div class="alert alert-warning" data-testid="uk4-no-consent-unexpected">Unexpected success — the consent gate did not reject a token with no consent: <code>${JSON.stringify(data, null, 2)}</code></div>`);
-        }).fail(function (xhr) {
-            container.append(
-                '<div data-testid="uk4-no-consent-expected">Rejected as expected — access is consent-gated:</div>');
-            renderObpError(container, xhr);
-        });
-    });
 });

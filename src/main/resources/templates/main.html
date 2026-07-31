@@ -116,14 +116,6 @@
 
                 </div>
             </div>
-            <!-- Negative control: same endpoint, but authenticated with a client-credentials token that
-                 has no consent_id claim. Proves access is consent-gated, not merely authenticated. -->
-            <div>
-                <br>
-                <button class="btn btn-warning" id="get_accounts_uk4_no_consent"
-                        data-testid="uk4-no-consent-button">Get accounts WITHOUT consent (expect 403)</button>
-                <div id="account_list_uk4_no_consent"></div>
-            </div>
         </div>
         <div th:case="'BerlinGroup'" class="row">
             <div class="row">
