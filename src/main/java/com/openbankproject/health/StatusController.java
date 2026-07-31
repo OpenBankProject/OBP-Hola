@@ -8,10 +8,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * The probes OBP-API's discovery page links to for this app.
@@ -65,6 +67,45 @@ public class StatusController {
         return version == null ? "unknown" : version;
     }
 
+    /**
+     * Written into the jar at build time by git-commit-id-maven-plugin, and read the same way
+     * OBP-API's StatusPage reads its own. Absent when built from a source tree with no .git, which
+     * is why every accessor falls back to "unknown" rather than failing.
+     */
+    private static final Properties GIT_PROPERTIES = loadGitProperties();
+
+    private static Properties loadGitProperties() {
+        Properties properties = new Properties();
+        try (InputStream in = StatusController.class.getResourceAsStream("/git.properties")) {
+            if (in != null) {
+                properties.load(in);
+            }
+        } catch (Exception ignored) {
+            // A missing or unreadable stamp must never take the status page down.
+        }
+        return properties;
+    }
+
+    private String gitCommit() {
+        return GIT_PROPERTIES.getProperty("git.commit.id", "unknown");
+    }
+
+    private String gitBranch() {
+        return GIT_PROPERTIES.getProperty("git.branch", "unknown");
+    }
+
+    private String gitBuildTime() {
+        return GIT_PROPERTIES.getProperty("git.build.time", "unknown");
+    }
+
+    /**
+     * True when the build had uncommitted changes. Without this the commit id is misleading --
+     * it names the last commit, not necessarily what was compiled.
+     */
+    private boolean gitDirty() {
+        return Boolean.parseBoolean(GIT_PROPERTIES.getProperty("git.dirty", "false"));
+    }
+
     private long uptimeSeconds() {
         return ManagementFactory.getRuntimeMXBean().getUptime() / 1000L;
     }
@@ -75,6 +116,10 @@ public class StatusController {
         sb.append("  \"timestamp\": \"").append(summary.getTimestamp()).append("\",\n");
         sb.append("  \"app\": \"obp-hola\",\n");
         sb.append("  \"version\": \"").append(jsonEscape(appVersion())).append("\",\n");
+        sb.append("  \"git_commit\": \"").append(jsonEscape(gitCommit())).append("\",\n");
+        sb.append("  \"git_branch\": \"").append(jsonEscape(gitBranch())).append("\",\n");
+        sb.append("  \"git_dirty\": ").append(gitDirty()).append(",\n");
+        sb.append("  \"build_time\": \"").append(jsonEscape(gitBuildTime())).append("\",\n");
         sb.append("  \"uptimeSeconds\": ").append(uptimeSeconds()).append(",\n");
         sb.append("  \"overallStatus\": \"").append(summary.getOverallStatus()).append("\",\n");
         sb.append("  \"healthPercentage\": ").append(summary.getHealthPercentage()).append(",\n");
@@ -240,6 +285,11 @@ public class StatusController {
                 + "    .detail code { color: #000; }\n"
                 + "    .error { background: #fdecea; color: #b71c1c; border-radius: 4px; padding: 8px 10px;\n"
                 + "             margin-top: 8px; font-family: monospace; font-size: 0.82em; }\n"
+                + "    table.instance { border-collapse: collapse; width: 100%; }\n"
+                + "    table.instance th, table.instance td { padding: 6px 12px; text-align: left;\n"
+                + "             border-bottom: 1px solid #eee; vertical-align: top; }\n"
+                + "    table.instance th { width: 180px; color: #555; }\n"
+                + "    .note { color: #666; font-size: 0.85em; margin-top: 4px; }\n"
                 + "  </style>\n</head>\n<body>\n"
                 + "  <h1>OBP Hola &mdash; System Status</h1>\n"
                 + "  <div class=\"sub\">Periodic server-side health checks &mdash; each card shows when its check last ran. "
@@ -254,10 +304,23 @@ public class StatusController {
                 + "    </div>\n"
                 + "    <div class=\"count\"><b>" + summary.getHealthPercentage() + "%</b><span>Healthy</span></div>\n"
                 + "  </div>\n"
+                + "  <h2>Instance</h2>\n  <table class=\"instance\">\n"
+                + "    <tr><th>app</th><td>obp-hola</td></tr>\n"
+                + "    <tr><th>version</th><td>" + htmlEscape(appVersion()) + "</td></tr>\n"
+                + "    <tr><th>git_commit</th><td><code>" + htmlEscape(gitCommit()) + "</code>"
+                + (gitDirty()
+                    ? " <b style=\"color:#ef6c00;\">dirty</b>"
+                      + "<div class=\"note\">built from a working tree with uncommitted changes &mdash; "
+                      + "this names the last commit, not necessarily what is running</div>"
+                    : "")
+                + "</td></tr>\n"
+                + "    <tr><th>git_branch</th><td>" + htmlEscape(gitBranch()) + "</td></tr>\n"
+                + "    <tr><th>build_time</th><td>" + htmlEscape(gitBuildTime()) + "</td></tr>\n"
+                + "    <tr><th>uptime_seconds</th><td>" + uptimeSeconds() + "</td></tr>\n"
+                + "  </table>\n"
                 + "  <h2>Service Details</h2>\n"
                 + cards
-                + "  <p class=\"sub\">app obp-hola &middot; version " + htmlEscape(appVersion())
-                + " &middot; uptime " + uptimeSeconds() + "s &middot; generated " + htmlEscape(now.truncatedTo(ChronoUnit.SECONDS).toString()) + "</p>\n"
+                + "  <p class=\"sub\">generated " + htmlEscape(now.truncatedTo(ChronoUnit.SECONDS).toString()) + "</p>\n"
                 + "</body>\n</html>";
     }
 }
