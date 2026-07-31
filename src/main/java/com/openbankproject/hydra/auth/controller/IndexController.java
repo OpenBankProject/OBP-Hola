@@ -938,7 +938,8 @@ public class IndexController implements ServletContextAware {
             "to_branch_routing_scheme", "to_branch_routing_address",
             "to_routing_scheme", "to_routing_address", 
             "currency", "max_single_amount", "counterparty_name",
-            "max_monthly_amount", "max_yearly_amount", "max_number_of_monthly_transactions", "max_number_of_yearly_transactions"})
+            "max_monthly_amount", "max_yearly_amount", "max_number_of_monthly_transactions", "max_number_of_yearly_transactions",
+            "max_total_amount", "max_number_of_transactions"})
     public String requestConsentsVrpOpenBankProject(@RequestParam("bank") String bankId, 
                                                     @RequestParam("time_to_live_in_seconds") String timeToLiveInSeconds,
                                                     @RequestParam("valid_from") String validFrom,
@@ -961,6 +962,8 @@ public class IndexController implements ServletContextAware {
                                                     @RequestParam("max_yearly_amount") String maxYearlyAmount,
                                                     @RequestParam("max_number_of_monthly_transactions") String maxNumberOfMonthlyTransactions,
                                                     @RequestParam("max_number_of_yearly_transactions") String maxNumberOfYearlyTransactions,
+                                                    @RequestParam("max_total_amount") String maxTotalAmount,
+                                                    @RequestParam("max_number_of_transactions") String maxNumberOfTransactions,
                                                  HttpSession session, Model model
     ) throws UnsupportedEncodingException, ParseException, JOSEException, RestClientException {
         try {
@@ -981,13 +984,19 @@ public class IndexController implements ServletContextAware {
                             new BankRouting(toBankRoutingScheme, toBankRoutingAddress),
                             new BranchRouting(toBranchRoutingScheme, toBranchRoutingAddress),
                             new AccountRouting(toRoutingScheme, toRoutingAddress),
+                            // Argument order follows OBP-API's PostCounterpartyLimitV510: the
+                            // amounts are Strings and each is followed by its own transaction
+                            // count. Passing them in form order instead silently swapped
+                            // max_yearly_amount with max_number_of_monthly_transactions.
                             new Limit(
-                                    currency = currency,
-                                    Integer.parseInt(maxSingleAmount),
-                                    Integer.parseInt(maxMonthlyAmount),
-                                    Integer.parseInt(maxYearlyAmount),
+                                    currency,
+                                    maxSingleAmount,
+                                    maxMonthlyAmount,
                                     Integer.parseInt(maxNumberOfMonthlyTransactions),
-                                    Integer.parseInt(maxNumberOfYearlyTransactions)
+                                    maxYearlyAmount,
+                                    Integer.parseInt(maxNumberOfYearlyTransactions),
+                                    maxTotalAmount,
+                                    Integer.parseInt(maxNumberOfTransactions)
                             )
                     ),
                     Integer.parseInt(timeToLiveInSeconds),

@@ -1,25 +1,8 @@
+// renderObpError comes from main-html-obp-error.js -- OBP-API refuses a call whose consent does
+// not cover it (403 OBP-20017), is not AUTHORISED (401 OBP-35005), belongs to another standard
+// (OBP-35036) or another consumer (OBP-35015), and each of those must be visible rather than
+// rendering as an empty result box.
 $(function () {
-    // OBP-API rejects a UK v4.0.1 data call whose token is not bound to a usable consent. Those
-    // rejections carry the reason in the OBP error code, so render it rather than swallowing it --
-    // without this a 403 from checkUKConsent shows up as nothing at all.
-    //   OBP-35035 the access token has no consent_id claim
-    //   OBP-35036 the consent belongs to a different API standard
-    //   OBP-35023 the consent is bound to a different user
-    //   OBP-35005 the consent is not (or no longer) AUTHORISED
-    function renderObpError(target, xhr) {
-        let detail = xhr.responseText || 'no response body';
-        try {
-            const parsed = JSON.parse(xhr.responseText);
-            if (parsed && parsed.message) {
-                detail = parsed.message;
-            }
-        } catch (e) {
-            // Not JSON — fall back to the raw body.
-        }
-        target.append(
-            `<div class="alert alert-danger" data-testid="uk4-error">HTTP ${xhr.status}: ${detail}</div>`);
-    }
-
     $('#get_accounts_uk4').click(function () {
         const container = $('#account_list_uk4').empty().append('<h1>Account List (UK Open Banking v4.0.1):</h1>');
         $.getJSON("/account_uk4", function (data) {
