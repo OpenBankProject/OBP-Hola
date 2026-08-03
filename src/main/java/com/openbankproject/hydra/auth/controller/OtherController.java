@@ -293,15 +293,23 @@ public class OtherController {
     public Object getAccountBerlinGroup(@PathVariable String accountId, HttpSession session) {
         HttpEntity<String> entity = new HttpEntity<>(bgConsentHeaders(session));
 
-        ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupAccountUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
-        return  exchange.getBody();
+        try {
+            ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupAccountUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+            return exchange.getBody();
+        } catch (HttpClientErrorException e) {
+            return passThroughObpError("getAccountBerlinGroup", e);
+        }
     }
     @GetMapping("/balances_bg/account_id/{accountId}")
     public Object getBalanceBerlinGroups(@PathVariable String accountId, HttpSession session) {
         HttpEntity<String> entity = new HttpEntity<>(bgConsentHeaders(session));
 
-        ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupBalanceUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
-        return exchange.getBody();
+        try {
+            ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupBalanceUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+            return exchange.getBody();
+        } catch (HttpClientErrorException e) {
+            return passThroughObpError("getBalanceBerlinGroups", e);
+        }
     }
     @GetMapping("/initiate_payment_bg/{creditorIban}/{creditorName}/{debtorIban}/{amount}/{currency}")
     public Object initiatePaymentBerlinGroupUrl(@PathVariable String creditorIban,
@@ -324,19 +332,23 @@ public class OtherController {
             ResponseEntity<HashMap> response = restTemplate.exchange(initiatePaymentBerlinGroupUrl, HttpMethod.POST, request,  HashMap.class);
             return response.getBody();
         } catch (HttpClientErrorException e) {
-            String error = "Sorry! Cannot initiate the payment.";
-            logger.error(error, e);
-            return error + System.lineSeparator() + e.getResponseBodyAsString();
+            // Was: a prose sentence with the response body glued on, returned as 200. That threw
+            // away the status code and gave the browser something that is not JSON to parse.
+            return passThroughObpError("initiatePaymentBerlinGroup", e);
         }
     }
     @GetMapping("/transactions_bg/account_id/{accountId}")
     public Object getTransactionsBerlinGroup(@PathVariable String accountId, HttpSession session) {
         HttpEntity<String> entity = new HttpEntity<>(bgConsentHeaders(session));
 
-        ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupTransactionsUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
-        logger.debug("getTransactionsBerlinGroup status:" + exchange.getStatusCode().toString());
-        logger.debug("getTransactionsBerlinGroup body:" + exchange.getBody().toString());
-        return exchange.getBody();
+        try {
+            ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupTransactionsUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
+            logger.debug("getTransactionsBerlinGroup status:" + exchange.getStatusCode().toString());
+            logger.debug("getTransactionsBerlinGroup body:" + exchange.getBody().toString());
+            return exchange.getBody();
+        } catch (HttpClientErrorException e) {
+            return passThroughObpError("getTransactionsBerlinGroup", e);
+        }
     }
 
 

@@ -24,13 +24,19 @@ function makePaymentBG(button) {
         let iconId = "result_copy_icon_" + creditorIban + button.id + timestamp;
         let resultBoxId = "result_box_" + creditorIban + button.id + timestamp;
         resultBox.append(`<div id=${iconId} style="cursor:pointer;" onclick="copyJsonResultToClipboard(this)" class="fa-solid fa-copy"></div><pre><div id=${resultBoxId}>${zson}</div></pre>`).append('<br>');
-        console.log("Response: " + json)
+    }).fail(function (xhr) {
+        renderObpError(resultBox, xhr);
     });
 };
 function clearMakePaymentBG(button) {
     let resultBox = $('#payment_details_bg_div');
     resultBox.empty();
 };
+// $.getJSON registers a success callback only, so a refusal is discarded and the box is left
+// showing just its heading -- which reads as "this account has no detail" rather than "you were
+// not allowed to see it". Every one of these calls is consent-governed and can legitimately be
+// refused (OBP-20017 for a permission the consent does not declare, OBP-35005 for a consent that
+// is not valid), so each needs a .fail(). renderObpError is shared with the UK flows.
 function getAccountDetailsBG(button) {
     let resultBox = $(button).siblings('.account_detail_bg').empty().append('<h3>Account Detail:</h3>');
     let accountId = $(button).attr('account_id');
@@ -39,6 +45,8 @@ function getAccountDetailsBG(button) {
         let iconId = "result_copy_icon_" + accountId + button.id;
         let resultBoxId = "result_box_" + accountId + button.id;
         resultBox.append(`<div id=${iconId} style="cursor:pointer;" onclick="copyJsonResultToClipboard(this)" class="fa-solid fa-copy"></div><pre><div id=${resultBoxId}>${zson}</div></pre>`).append('<br>');
+    }).fail(function (xhr) {
+        renderObpError(resultBox, xhr);
     });
 };
 function getBalancesBG(button) {
@@ -49,6 +57,8 @@ function getBalancesBG(button) {
         let iconId = "result_copy_icon_" + accountId + button.id;
         let resultBoxId = "result_box_" + accountId + button.id;
         resultBox.append(`<div id=${iconId} style="cursor:pointer;" onclick="copyJsonResultToClipboard(this)" class="fa-solid fa-copy"></div><pre><div id=${resultBoxId}>${zson}</div></pre>`).append('<br>');
+    }).fail(function (xhr) {
+        renderObpError(resultBox, xhr);
     });
 };
 function getTransactionsBG(button) {
@@ -59,6 +69,8 @@ function getTransactionsBG(button) {
         let iconId = "result_copy_icon_" + accountId + button.id;
         let resultBoxId = "result_box_"  + accountId + button.id;
         resultBox.append(`<div id=${iconId} style="cursor:pointer;" onclick="copyJsonResultToClipboard(this)" class="fa-solid fa-copy"></div><pre><div id=${resultBoxId}>${zson}</div></pre>`).append('<br>');
+    }).fail(function (xhr) {
+        renderObpError(resultBox, xhr);
     });
 };
 $(function () {
