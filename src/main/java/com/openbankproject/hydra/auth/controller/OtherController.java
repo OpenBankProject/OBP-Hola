@@ -61,7 +61,12 @@ public class OtherController {
     @Value("${obp.base_url}/berlin-group/v1.3/accounts/ACCOUNT_ID/balances")
     private String getBerlinGroupBalanceUrl;
 
-    @Value("${obp.base_url}/berlin-group/v1.3/accounts/ACCOUNT_ID/transactions")
+    // bookingStatus is mandatory on this endpoint in the Berlin Group specification, and OBP-API
+    // enforces it: no default, and it rejects anything but booked, pending or both with OBP-10034.
+    // The call has never carried it, so it could not have succeeded -- until the consent fixes
+    // above that failure was masked by an earlier one. "both" asks for booked and pending
+    // together, which is the fullest answer and what a demo client wants to show.
+    @Value("${obp.base_url}/berlin-group/v1.3/accounts/ACCOUNT_ID/transactions?bookingStatus=both")
     private String getBerlinGroupTransactionsUrl;
     
     @Value("${obp.base_url}/berlin-group/v1.3/payments/sepa-credit-transfers")
