@@ -251,12 +251,26 @@ public class OtherController {
 
 
     // Berlin Group
+    //
+    // Consent-ID is Berlin Group's spelling and is what routes the request into OBP-API's Berlin
+    // Group consent path (`Consent-Id` is the OBP/UK spelling and routes elsewhere).
+    //
+    // Consumer-Key has to travel with it. OBP-API matches the requesting consumer against the one
+    // the consent was lodged with; with no way to identify the caller the check sees consumer_id
+    // NONE, cannot match, and answers OBP-35001 -- indistinguishable, from the browser, from a
+    // consent that genuinely does not exist. The UK calls above and the OBP-native ones below have
+    // always sent it; Berlin Group was the one standard here that did not.
+    private HttpHeaders bgConsentHeaders(HttpSession session) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Consent-ID", SessionData.getConsentId(session));
+        headers.add("Consumer-Key", consumerKey);
+        return headers;
+    }
+
     @GetMapping("/account_bg")
     public Object getAccountsBerlinGroup(HttpSession session) {
         String consentId = SessionData.getConsentId(session);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Consent-ID", consentId);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = new HttpEntity<>(bgConsentHeaders(session));
         logger.debug("Consent-ID: " + consentId);
 
         try {
@@ -281,20 +295,14 @@ public class OtherController {
     }
     @GetMapping("/account_bg/{accountId}")
     public Object getAccountBerlinGroup(@PathVariable String accountId, HttpSession session) {
-        String consentId = SessionData.getConsentId(session);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Consent-ID", consentId);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = new HttpEntity<>(bgConsentHeaders(session));
 
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupAccountUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
         return  exchange.getBody();
     }
     @GetMapping("/balances_bg/account_id/{accountId}")
     public Object getBalanceBerlinGroups(@PathVariable String accountId, HttpSession session) {
-        String consentId = SessionData.getConsentId(session);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Consent-ID", consentId);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = new HttpEntity<>(bgConsentHeaders(session));
 
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupBalanceUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
         return exchange.getBody();
@@ -306,11 +314,9 @@ public class OtherController {
                                                 @PathVariable String amount,
                                                 @PathVariable String currency,
                                                 HttpSession session) {
-        String consentId = SessionData.getConsentId(session);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Consent-ID", consentId);
-        
-        SepaCreditTransfersBerlinGroupV13 body = 
+        HttpHeaders headers = bgConsentHeaders(session);
+
+        SepaCreditTransfersBerlinGroupV13 body =
                 new SepaCreditTransfersBerlinGroupV13(
                         new DebtorAccount(debtorIban),
                         new InstructedAmount(currency, amount),
@@ -329,10 +335,7 @@ public class OtherController {
     }
     @GetMapping("/transactions_bg/account_id/{accountId}")
     public Object getTransactionsBerlinGroup(@PathVariable String accountId, HttpSession session) {
-        String consentId = SessionData.getConsentId(session);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Consent-ID", consentId);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = new HttpEntity<>(bgConsentHeaders(session));
 
         ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupTransactionsUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
         logger.debug("getTransactionsBerlinGroup status:" + exchange.getStatusCode().toString());
