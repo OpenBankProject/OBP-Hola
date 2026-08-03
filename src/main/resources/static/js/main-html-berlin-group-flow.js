@@ -72,12 +72,6 @@ $(function () {
     $('#get_accounts_bg').click(function () {
         $.getJSON("/account_bg", function (data) {
             const container = $('#account_list_bg').empty().append('<h1>Account List:</h1>');
-            if (data.code > 399 ) {
-              let zson = JSON.stringify(data, null, 2);
-              let hintHtml = data.hint ? `<div class="alert alert-warning">${data.hint}</div>` : '';
-              container.append(hintHtml).append(`<pre>${zson}</pre>`).append('<br>');
-              return;
-            }
             $.each(data.accounts, function (index, account) {
                 let zson = JSON.stringify(account, null, 2);
                 let iconId = "result_copy_icon_" + account['id'];
@@ -96,10 +90,11 @@ $(function () {
             `);
             });
         }).fail(function (xhr) {
-            // $.getJSON only invokes the success callback above, so an actual network/5xx failure
-            // otherwise leaves the Account List silently empty with no feedback at all.
-            $('#account_list_bg').empty().append('<h1>Account List:</h1>')
-                .append(`<div class="alert alert-danger">Failed to load accounts (HTTP ${xhr.status}): ${xhr.responseText || 'no response body'}</div>`);
+            // $.getJSON only invokes the success callback above, so without this a refusal leaves
+            // the Account List silently empty -- indistinguishable from "no accounts". The
+            // controller passes OBP's status and body through verbatim, so renderObpError (shared
+            // with the UK flows) shows the actual OBP code rather than a guess at the cause.
+            renderObpError($('#account_list_bg').empty().append('<h1>Account List:</h1>'), xhr);
         });
     });
 });

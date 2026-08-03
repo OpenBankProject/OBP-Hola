@@ -277,20 +277,16 @@ public class OtherController {
             ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupAccountsUrl, HttpMethod.GET, entity, HashMap.class);
             return exchange.getBody();
         } catch (HttpClientErrorException e) {
-            // A freshly-created Berlin Group consent starts in status "received" and only becomes
-            // usable after the SCA confirmation step OBP-API points to via the create-consent
-            // response's _links.scaRedirect — a step Hola doesn't drive automatically. OBP-API's
-            // account lookup rejects an unconfirmed consent with a generic "not found", so surface
-            // what's actually going on instead of forwarding that as-is.
-            logger.error("getAccountsBerlinGroup failed for Consent-ID " + consentId, e);
-            HashMap<String, Object> error = new HashMap<>();
-            error.put("code", e.getStatusCode().value());
-            error.put("message", e.getResponseBodyAsString());
-            error.put("hint", "This usually means the Berlin Group consent (Consent-ID: " + consentId
-                    + ") was never confirmed via SCA after creation and is still in status 'received', "
-                    + "so OBP-API won't use it yet. Hola's Berlin Group flow does not currently perform "
-                    + "that SCA confirmation step.");
-            return error;
+            // Pass OBP's own error through, as the UK calls do, rather than guessing at a cause.
+            //
+            // This used to answer 200 with a hint that asserted the consent "was never confirmed
+            // via SCA and is still in status received". That was one possible cause presented as
+            // the certain one, and it outlived the situation it described: Hola does drive SCA
+            // now, and the same message was still shown for a consent that had completed it and
+            // was valid -- for a while it was the only thing on screen while the real cause was a
+            // missing Consumer-Key header. A guess that cannot be wrong out loud is worse than no
+            // guess: OBP's own code says which of OBP-35001, OBP-35005, OBP-20017 it actually is.
+            return passThroughObpError("getAccountsBerlinGroup", e);
         }
     }
     @GetMapping("/account_bg/{accountId}")
