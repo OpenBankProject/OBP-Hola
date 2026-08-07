@@ -999,7 +999,11 @@ public class IndexController implements ServletContextAware {
                             new AccountRouting(fromRoutingScheme, fromRoutingAddress)
                     ),
                     new ToAccount(
-                            "",
+                            // The PSU's own label for the payee. It is bound from the form above and
+                            // was being dropped here, so the approval screen had no name to show for
+                            // who may be paid under this mandate, and the counterparty OBP creates
+                            // from it was left unnamed too.
+                            counterpartyName,
                             new BankRouting(toBankRoutingScheme, toBankRoutingAddress),
                             new BranchRouting(toBranchRoutingScheme, toBranchRoutingAddress),
                             new AccountRouting(toRoutingScheme, toRoutingAddress),
