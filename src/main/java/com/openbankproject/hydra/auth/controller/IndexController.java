@@ -657,8 +657,13 @@ public class IndexController implements ServletContextAware {
         // authenticating with the Consent-ID header the same way getAccountsBerlinGroup does.
         if ("BerlinGroup".equalsIgnoreCase(apiStandard) && StringUtils.isNotBlank(consentId)) {
             try {
+                // Authenticate as the TPP, not with the consent. This endpoint carries the consent id
+                // in its path, and OBP refuses a Consent-ID header on the /consents/... family for
+                // that reason (OBP-20256), so authenticating the way the *data* calls do could never
+                // work here -- the four fields below were always blank because every attempt was
+                // refused and the failure only reached a log line.
                 HttpHeaders consentInfoHeaders = new HttpHeaders();
-                consentInfoHeaders.add("Consent-ID", consentId);
+                consentInfoHeaders.setBearerAuth(getClientCredentialsToken());
                 HttpEntity<String> consentInfoEntity = new HttpEntity<>(consentInfoHeaders);
                 ResponseEntity<Map> consentInfoResponse = restTemplate.exchange(
                         getConsentInformationBerlinGroup.replace("CONSENT_ID", consentId),
@@ -668,7 +673,9 @@ public class IndexController implements ServletContextAware {
                 session.setAttribute("consentStatus", String.valueOf(consentInfoBody.get("consentStatus")));
                 session.setAttribute("validUntil", String.valueOf(consentInfoBody.get("validUntil")));
                 session.setAttribute("recurringIndicator", String.valueOf(consentInfoBody.get("recurringIndicator")));
-            } catch (RestClientException e) {
+            } catch (Exception e) {
+                // Best effort: minting the client-credentials token can fail too, and a missing
+                // status line must not take the whole page down with it.
                 logger.warn("Could not fetch Berlin Group consent info for consent_id=" + consentId, e);
             }
         }
