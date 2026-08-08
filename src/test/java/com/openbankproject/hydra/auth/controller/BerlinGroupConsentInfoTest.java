@@ -14,10 +14,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.client.RestTemplate;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.headerDoesNotExist;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
@@ -99,5 +102,52 @@ class BerlinGroupConsentInfoTest {
         mockMvc.perform(get("/main").session(session));
 
         obp.verify();
+    }
+
+    @Test
+    @DisplayName("a field the API reports as null is left blank, not shown as the word \"null\"")
+    void nullFieldsAreNotRenderedAsTheWordNull() throws Exception {
+        obp.expect(requestTo(TOKEN_ENDPOINT))
+                .andRespond(withSuccess("{\"access_token\":\"token-under-test\"}",
+                        MediaType.APPLICATION_JSON));
+
+        // OBP returns validUntil as an explicit null when the consent has none.
+        obp.expect(requestTo(BASE + "/berlin-group/v1.3/consents/" + CONSENT_ID))
+                .andRespond(withSuccess(
+                        "{\"consentStatus\":\"valid\",\"frequencyPerDay\":4,"
+                        + "\"recurringIndicator\":true,\"validUntil\":null}",
+                        MediaType.APPLICATION_JSON));
+
+        mockMvc.perform(get("/main").session(session));
+
+        // Unset, so the template renders an empty span. String.valueOf would have made it "null" --
+        // which prints identically to a real null in a bare assertion message, hence the type here.
+        Object validUntil = session.getAttribute("validUntil");
+        assertNull(validUntil, () -> "validUntil should be unset, but was the "
+                + validUntil.getClass().getSimpleName() + " \"" + validUntil + "\"");
+        // The neighbours still arrive, so this is not just "nothing was set at all".
+        assertEquals("valid", session.getAttribute("consentStatus"));
+        assertEquals("4", session.getAttribute("frequencyPerDay"));
+    }
+
+    @Test
+    @DisplayName("a failed fetch clears the previous consent's values instead of leaving them on screen")
+    void aFailedFetchDoesNotLeaveStaleValues() throws Exception {
+        // What a previous, successful consent in this same session left behind.
+        session.setAttribute("consentStatus", "valid");
+        session.setAttribute("validUntil", "2026-12-31");
+        session.setAttribute("frequencyPerDay", "4");
+        session.setAttribute("recurringIndicator", "true");
+
+        obp.expect(requestTo(TOKEN_ENDPOINT))
+                .andRespond(withServerError());
+
+        mockMvc.perform(get("/main").session(session));
+
+        // Stale values presented as this consent's live status would be worse than showing nothing.
+        assertNull(session.getAttribute("consentStatus"));
+        assertNull(session.getAttribute("validUntil"));
+        assertNull(session.getAttribute("frequencyPerDay"));
+        assertNull(session.getAttribute("recurringIndicator"));
     }
 }

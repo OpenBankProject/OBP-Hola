@@ -656,6 +656,13 @@ public class IndexController implements ServletContextAware {
         // the other flows this can't be captured once at OIDC-callback time — fetch it fresh here,
         // authenticating with the Consent-ID header the same way getAccountsBerlinGroup does.
         if ("BerlinGroup".equalsIgnoreCase(apiStandard) && StringUtils.isNotBlank(consentId)) {
+            // Cleared first. These live in the session, so anything left from an earlier consent
+            // would still be on the page if this fetch fails -- the previous consent's status and
+            // validity, shown as if they described the one now in play. Blank is the honest answer
+            // when we could not read it.
+            for (String attribute : CONSENT_INFO_ATTRIBUTES) {
+                session.removeAttribute(attribute);
+            }
             try {
                 // Authenticate as the TPP, not with the consent. This endpoint carries the consent id
                 // in its path, and OBP refuses a Consent-ID header on the /consents/... family for
@@ -669,10 +676,9 @@ public class IndexController implements ServletContextAware {
                         getConsentInformationBerlinGroup.replace("CONSENT_ID", consentId),
                         HttpMethod.GET, consentInfoEntity, Map.class);
                 Map consentInfoBody = consentInfoResponse.getBody();
-                session.setAttribute("frequencyPerDay", String.valueOf(consentInfoBody.get("frequencyPerDay")));
-                session.setAttribute("consentStatus", String.valueOf(consentInfoBody.get("consentStatus")));
-                session.setAttribute("validUntil", String.valueOf(consentInfoBody.get("validUntil")));
-                session.setAttribute("recurringIndicator", String.valueOf(consentInfoBody.get("recurringIndicator")));
+                for (String attribute : CONSENT_INFO_ATTRIBUTES) {
+                    setIfPresent(session, attribute, consentInfoBody);
+                }
             } catch (Exception e) {
                 // Best effort: minting the client-credentials token can fail too, and a missing
                 // status line must not take the whole page down with it.
@@ -1182,6 +1188,25 @@ public class IndexController implements ServletContextAware {
     }
 
 
+
+    /** The Berlin Group consent fields the accounts page shows, in the order they are rendered. */
+    private static final String[] CONSENT_INFO_ATTRIBUTES =
+            {"frequencyPerDay", "consentStatus", "validUntil", "recurringIndicator"};
+
+    /**
+     * Copy one consent field onto the session, but only if the API actually reported it.
+     *
+     * String.valueOf(null) is the four-character string "null", and the template writes whatever it
+     * is given straight into the page -- so a consent with no validUntil, which OBP returns as an
+     * explicit JSON null, rendered as "Valid until: null". Leaving the attribute unset renders an
+     * empty span, which is what an absent value should look like.
+     */
+    private static void setIfPresent(HttpSession session, String attribute, Map body) {
+        Object value = body == null ? null : body.get(attribute);
+        if (value != null) {
+            session.setAttribute(attribute, String.valueOf(value));
+        }
+    }
 
     private String getClientCredentialsToken() throws ParseException, JOSEException {
         HttpHeaders headers = new HttpHeaders();
