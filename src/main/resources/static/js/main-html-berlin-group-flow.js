@@ -24,13 +24,19 @@ function makePaymentBG(button) {
         let iconId = "result_copy_icon_" + creditorIban + button.id + timestamp;
         let resultBoxId = "result_box_" + creditorIban + button.id + timestamp;
         resultBox.append(`<div id=${iconId} style="cursor:pointer;" onclick="copyJsonResultToClipboard(this)" class="fa-solid fa-copy"></div><pre><div id=${resultBoxId}>${zson}</div></pre>`).append('<br>');
-        console.log("Response: " + json)
+    }).fail(function (xhr) {
+        renderObpError(resultBox, xhr);
     });
 };
 function clearMakePaymentBG(button) {
     let resultBox = $('#payment_details_bg_div');
     resultBox.empty();
 };
+// $.getJSON registers a success callback only, so a refusal is discarded and the box is left
+// showing just its heading -- which reads as "this account has no detail" rather than "you were
+// not allowed to see it". Every one of these calls is consent-governed and can legitimately be
+// refused (OBP-20017 for a permission the consent does not declare, OBP-35005 for a consent that
+// is not valid), so each needs a .fail(). renderObpError is shared with the UK flows.
 function getAccountDetailsBG(button) {
     let resultBox = $(button).siblings('.account_detail_bg').empty().append('<h3>Account Detail:</h3>');
     let accountId = $(button).attr('account_id');
@@ -39,6 +45,8 @@ function getAccountDetailsBG(button) {
         let iconId = "result_copy_icon_" + accountId + button.id;
         let resultBoxId = "result_box_" + accountId + button.id;
         resultBox.append(`<div id=${iconId} style="cursor:pointer;" onclick="copyJsonResultToClipboard(this)" class="fa-solid fa-copy"></div><pre><div id=${resultBoxId}>${zson}</div></pre>`).append('<br>');
+    }).fail(function (xhr) {
+        renderObpError(resultBox, xhr);
     });
 };
 function getBalancesBG(button) {
@@ -49,6 +57,8 @@ function getBalancesBG(button) {
         let iconId = "result_copy_icon_" + accountId + button.id;
         let resultBoxId = "result_box_" + accountId + button.id;
         resultBox.append(`<div id=${iconId} style="cursor:pointer;" onclick="copyJsonResultToClipboard(this)" class="fa-solid fa-copy"></div><pre><div id=${resultBoxId}>${zson}</div></pre>`).append('<br>');
+    }).fail(function (xhr) {
+        renderObpError(resultBox, xhr);
     });
 };
 function getTransactionsBG(button) {
@@ -59,6 +69,8 @@ function getTransactionsBG(button) {
         let iconId = "result_copy_icon_" + accountId + button.id;
         let resultBoxId = "result_box_"  + accountId + button.id;
         resultBox.append(`<div id=${iconId} style="cursor:pointer;" onclick="copyJsonResultToClipboard(this)" class="fa-solid fa-copy"></div><pre><div id=${resultBoxId}>${zson}</div></pre>`).append('<br>');
+    }).fail(function (xhr) {
+        renderObpError(resultBox, xhr);
     });
 };
 $(function () {
@@ -72,12 +84,6 @@ $(function () {
     $('#get_accounts_bg').click(function () {
         $.getJSON("/account_bg", function (data) {
             const container = $('#account_list_bg').empty().append('<h1>Account List:</h1>');
-            if (data.code > 399 ) {
-              let zson = JSON.stringify(data, null, 2);
-              let hintHtml = data.hint ? `<div class="alert alert-warning">${data.hint}</div>` : '';
-              container.append(hintHtml).append(`<pre>${zson}</pre>`).append('<br>');
-              return;
-            }
             $.each(data.accounts, function (index, account) {
                 let zson = JSON.stringify(account, null, 2);
                 let iconId = "result_copy_icon_" + account['id'];
@@ -96,10 +102,11 @@ $(function () {
             `);
             });
         }).fail(function (xhr) {
-            // $.getJSON only invokes the success callback above, so an actual network/5xx failure
-            // otherwise leaves the Account List silently empty with no feedback at all.
-            $('#account_list_bg').empty().append('<h1>Account List:</h1>')
-                .append(`<div class="alert alert-danger">Failed to load accounts (HTTP ${xhr.status}): ${xhr.responseText || 'no response body'}</div>`);
+            // $.getJSON only invokes the success callback above, so without this a refusal leaves
+            // the Account List silently empty -- indistinguishable from "no accounts". The
+            // controller passes OBP's status and body through verbatim, so renderObpError (shared
+            // with the UK flows) shows the actual OBP code rather than a guess at the cause.
+            renderObpError($('#account_list_bg').empty().append('<h1>Account List:</h1>'), xhr);
         });
     });
 });

@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
@@ -60,7 +61,12 @@ public class OtherController {
     @Value("${obp.base_url}/berlin-group/v1.3/accounts/ACCOUNT_ID/balances")
     private String getBerlinGroupBalanceUrl;
 
-    @Value("${obp.base_url}/berlin-group/v1.3/accounts/ACCOUNT_ID/transactions")
+    // bookingStatus is mandatory on this endpoint in the Berlin Group specification, and OBP-API
+    // enforces it: no default, and it rejects anything but booked, pending or both with OBP-10034.
+    // The call has never carried it, so it could not have succeeded -- until the consent fixes
+    // above that failure was masked by an earlier one. "both" asks for booked and pending
+    // together, which is the fullest answer and what a demo client wants to show.
+    @Value("${obp.base_url}/berlin-group/v1.3/accounts/ACCOUNT_ID/transactions?bookingStatus=both")
     private String getBerlinGroupTransactionsUrl;
     
     @Value("${obp.base_url}/berlin-group/v1.3/payments/sepa-credit-transfers")
@@ -115,140 +121,200 @@ public class OtherController {
     @Resource
     private RestTemplate restTemplate;
 
+    // UK Open Banking v3.1 and v4.0.1
+    //
+    // The consent is the whole credential: these calls carry no Authorization header at all, only
+    // the consent the PSU authorised. That mirrors the Berlin Group and OBP-native flows below --
+    // the app never holds, and never needs, an access token of the PSU's.
+    //
+    // UK Open Banking's own specification binds a consent to an OAuth2 access token (a consent_id
+    // claim OBP-API reads via checkUKConsent), and OBP-API still accepts that. Presenting the
+    // consent on its own is an OBP extension: OBP-API's authentication dispatcher resolves the
+    // consent behind Consent-Id, sees it was created by the UK standard, and validates it through
+    // applyUKRules -- same gates as the token path, PSU resolved from the consent itself.
+    //
+    // Consumer-Key is required alongside it: OBP-API matches the requesting consumer against the
+    // one the consent was lodged with, and rejects a mismatch with OBP-35015.
+    //
+    // Note the capitalisation. `Consent-Id` is the OBP/UK spelling; `Consent-ID` is Berlin Group's
+    // and routes into the BG consent path, which rejects a UK consent with OBP-35036.
+    private HttpHeaders ukConsentHeaders(HttpSession session) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Consent-Id", SessionData.getConsentId(session));
+        headers.add("Consumer-Key", consumerKey);
+        return headers;
+    }
+
     @GetMapping("/account")
     public Object getAccounts(HttpSession session) {
-        String accessToken = SessionData.getAccessToken(session);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = new HttpEntity<>(ukConsentHeaders(session));
 
-        ResponseEntity<AccountDataValue> exchange = restTemplate.exchange(getAccountsUrl, HttpMethod.GET, entity, AccountDataValue.class);
-        return exchange.getBody().getData();
+        try {
+            ResponseEntity<AccountDataValue> exchange = restTemplate.exchange(getAccountsUrl, HttpMethod.GET, entity, AccountDataValue.class);
+            return exchange.getBody().getData();
+        } catch (HttpClientErrorException e) {
+            return passThroughObpError("getAccounts", e);
+        }
     }
     @GetMapping("/account/{accountId}")
     public Object getAccount(@PathVariable String accountId, HttpSession session) {
-        String accessToken = SessionData.getAccessToken(session);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = new HttpEntity<>(ukConsentHeaders(session));
 
-        ResponseEntity<HashMap> exchange = restTemplate.exchange(getAccountUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
-        return  exchange.getBody();
+        try {
+            ResponseEntity<HashMap> exchange = restTemplate.exchange(getAccountUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+            return exchange.getBody();
+        } catch (HttpClientErrorException e) {
+            return passThroughObpError("getAccount", e);
+        }
     }
 
     @GetMapping("/balances/account_id/{accountId}")
     public Object getBalances(@PathVariable String accountId, HttpSession session) {
-        String accessToken = SessionData.getAccessToken(session);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = new HttpEntity<>(ukConsentHeaders(session));
 
-        ResponseEntity<HashMap> exchange = restTemplate.exchange(getBalanceUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
-        return exchange.getBody();
+        try {
+            ResponseEntity<HashMap> exchange = restTemplate.exchange(getBalanceUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+            return exchange.getBody();
+        } catch (HttpClientErrorException e) {
+            return passThroughObpError("getBalances", e);
+        }
     }
     @GetMapping("/transactions/account_id/{accountId}")
     public Object getTransactions(@PathVariable String accountId, HttpSession session) {
-        String accessToken = SessionData.getAccessToken(session);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = new HttpEntity<>(ukConsentHeaders(session));
 
-        ResponseEntity<HashMap> exchange = restTemplate.exchange(getTransactionsUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
-        return exchange.getBody();
+        try {
+            ResponseEntity<HashMap> exchange = restTemplate.exchange(getTransactionsUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+            return exchange.getBody();
+        } catch (HttpClientErrorException e) {
+            return passThroughObpError("getTransactions", e);
+        }
     }
 
-    // UK Open Banking v4.0.1
     @GetMapping("/account_uk4")
     public Object getAccountsV401(HttpSession session) {
-        String accessToken = SessionData.getAccessToken(session);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = new HttpEntity<>(ukConsentHeaders(session));
 
-        ResponseEntity<AccountDataValue> exchange = restTemplate.exchange(getAccountsUrlV401, HttpMethod.GET, entity, AccountDataValue.class);
-        return exchange.getBody().getData();
+        try {
+            ResponseEntity<AccountDataValue> exchange = restTemplate.exchange(getAccountsUrlV401, HttpMethod.GET, entity, AccountDataValue.class);
+            return exchange.getBody().getData();
+        } catch (HttpClientErrorException e) {
+            return passThroughObpError("getAccountsV401", e);
+        }
     }
+
     @GetMapping("/account_uk4/{accountId}")
     public Object getAccountV401(@PathVariable String accountId, HttpSession session) {
-        String accessToken = SessionData.getAccessToken(session);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = new HttpEntity<>(ukConsentHeaders(session));
 
-        ResponseEntity<HashMap> exchange = restTemplate.exchange(getAccountUrlV401.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
-        return  exchange.getBody();
+        try {
+            ResponseEntity<HashMap> exchange = restTemplate.exchange(getAccountUrlV401.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+            return exchange.getBody();
+        } catch (HttpClientErrorException e) {
+            return passThroughObpError("getAccountV401", e);
+        }
     }
 
     @GetMapping("/balances_uk4/account_id/{accountId}")
     public Object getBalancesV401(@PathVariable String accountId, HttpSession session) {
-        String accessToken = SessionData.getAccessToken(session);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = new HttpEntity<>(ukConsentHeaders(session));
 
-        ResponseEntity<HashMap> exchange = restTemplate.exchange(getBalanceUrlV401.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
-        return exchange.getBody();
+        try {
+            ResponseEntity<HashMap> exchange = restTemplate.exchange(getBalanceUrlV401.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+            return exchange.getBody();
+        } catch (HttpClientErrorException e) {
+            return passThroughObpError("getBalancesV401", e);
+        }
     }
     @GetMapping("/transactions_uk4/account_id/{accountId}")
     public Object getTransactionsV401(@PathVariable String accountId, HttpSession session) {
-        String accessToken = SessionData.getAccessToken(session);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = new HttpEntity<>(ukConsentHeaders(session));
 
-        ResponseEntity<HashMap> exchange = restTemplate.exchange(getTransactionsUrlV401.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
-        return exchange.getBody();
+        try {
+            ResponseEntity<HashMap> exchange = restTemplate.exchange(getTransactionsUrlV401.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+            return exchange.getBody();
+        } catch (HttpClientErrorException e) {
+            return passThroughObpError("getTransactionsV401", e);
+        }
+    }
+
+    /**
+     * Forward an OBP-API client error to the browser verbatim, preserving its status code.
+     *
+     * Without this the exception reaches the generic handler and the caller sees a 500 with the
+     * real cause lost -- which is precisely how a consent rejection used to disappear silently.
+     * The body is passed through unparsed so the OBP error code survives intact for the page to
+     * render: OBP-35005 (consent not AUTHORISED), OBP-35015 (consent belongs to another consumer),
+     * OBP-35036 (consent belongs to another API standard), OBP-35004 (bad consent signature).
+     */
+    private ResponseEntity<String> passThroughObpError(String operation, HttpClientErrorException e) {
+        logger.warn(operation + " failed: " + e.getStatusCode() + " " + e.getResponseBodyAsString());
+        return ResponseEntity.status(e.getStatusCode())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(e.getResponseBodyAsString());
     }
 
 
     // Berlin Group
+    //
+    // Consent-ID is Berlin Group's spelling and is what routes the request into OBP-API's Berlin
+    // Group consent path (`Consent-Id` is the OBP/UK spelling and routes elsewhere).
+    //
+    // Consumer-Key has to travel with it. OBP-API matches the requesting consumer against the one
+    // the consent was lodged with; with no way to identify the caller the check sees consumer_id
+    // NONE, cannot match, and answers OBP-35001 -- indistinguishable, from the browser, from a
+    // consent that genuinely does not exist. The UK calls above and the OBP-native ones below have
+    // always sent it; Berlin Group was the one standard here that did not.
+    private HttpHeaders bgConsentHeaders(HttpSession session) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Consent-ID", SessionData.getConsentId(session));
+        headers.add("Consumer-Key", consumerKey);
+        return headers;
+    }
+
     @GetMapping("/account_bg")
     public Object getAccountsBerlinGroup(HttpSession session) {
         String consentId = SessionData.getConsentId(session);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Consent-ID", consentId);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = new HttpEntity<>(bgConsentHeaders(session));
         logger.debug("Consent-ID: " + consentId);
 
         try {
             ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupAccountsUrl, HttpMethod.GET, entity, HashMap.class);
             return exchange.getBody();
         } catch (HttpClientErrorException e) {
-            // A freshly-created Berlin Group consent starts in status "received" and only becomes
-            // usable after the SCA confirmation step OBP-API points to via the create-consent
-            // response's _links.scaRedirect — a step Hola doesn't drive automatically. OBP-API's
-            // account lookup rejects an unconfirmed consent with a generic "not found", so surface
-            // what's actually going on instead of forwarding that as-is.
-            logger.error("getAccountsBerlinGroup failed for Consent-ID " + consentId, e);
-            HashMap<String, Object> error = new HashMap<>();
-            error.put("code", e.getStatusCode().value());
-            error.put("message", e.getResponseBodyAsString());
-            error.put("hint", "This usually means the Berlin Group consent (Consent-ID: " + consentId
-                    + ") was never confirmed via SCA after creation and is still in status 'received', "
-                    + "so OBP-API won't use it yet. Hola's Berlin Group flow does not currently perform "
-                    + "that SCA confirmation step.");
-            return error;
+            // Pass OBP's own error through, as the UK calls do, rather than guessing at a cause.
+            //
+            // This used to answer 200 with a hint that asserted the consent "was never confirmed
+            // via SCA and is still in status received". That was one possible cause presented as
+            // the certain one, and it outlived the situation it described: Hola does drive SCA
+            // now, and the same message was still shown for a consent that had completed it and
+            // was valid -- for a while it was the only thing on screen while the real cause was a
+            // missing Consumer-Key header. A guess that cannot be wrong out loud is worse than no
+            // guess: OBP's own code says which of OBP-35001, OBP-35005, OBP-20017 it actually is.
+            return passThroughObpError("getAccountsBerlinGroup", e);
         }
     }
     @GetMapping("/account_bg/{accountId}")
     public Object getAccountBerlinGroup(@PathVariable String accountId, HttpSession session) {
-        String consentId = SessionData.getConsentId(session);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Consent-ID", consentId);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = new HttpEntity<>(bgConsentHeaders(session));
 
-        ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupAccountUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
-        return  exchange.getBody();
+        try {
+            ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupAccountUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+            return exchange.getBody();
+        } catch (HttpClientErrorException e) {
+            return passThroughObpError("getAccountBerlinGroup", e);
+        }
     }
     @GetMapping("/balances_bg/account_id/{accountId}")
     public Object getBalanceBerlinGroups(@PathVariable String accountId, HttpSession session) {
-        String consentId = SessionData.getConsentId(session);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Consent-ID", consentId);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = new HttpEntity<>(bgConsentHeaders(session));
 
-        ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupBalanceUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
-        return exchange.getBody();
+        try {
+            ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupBalanceUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity, HashMap.class);
+            return exchange.getBody();
+        } catch (HttpClientErrorException e) {
+            return passThroughObpError("getBalanceBerlinGroups", e);
+        }
     }
     @GetMapping("/initiate_payment_bg/{creditorIban}/{creditorName}/{debtorIban}/{amount}/{currency}")
     public Object initiatePaymentBerlinGroupUrl(@PathVariable String creditorIban,
@@ -257,11 +323,9 @@ public class OtherController {
                                                 @PathVariable String amount,
                                                 @PathVariable String currency,
                                                 HttpSession session) {
-        String consentId = SessionData.getConsentId(session);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Consent-ID", consentId);
-        
-        SepaCreditTransfersBerlinGroupV13 body = 
+        HttpHeaders headers = bgConsentHeaders(session);
+
+        SepaCreditTransfersBerlinGroupV13 body =
                 new SepaCreditTransfersBerlinGroupV13(
                         new DebtorAccount(debtorIban),
                         new InstructedAmount(currency, amount),
@@ -273,22 +337,23 @@ public class OtherController {
             ResponseEntity<HashMap> response = restTemplate.exchange(initiatePaymentBerlinGroupUrl, HttpMethod.POST, request,  HashMap.class);
             return response.getBody();
         } catch (HttpClientErrorException e) {
-            String error = "Sorry! Cannot initiate the payment.";
-            logger.error(error, e);
-            return error + System.lineSeparator() + e.getResponseBodyAsString();
+            // Was: a prose sentence with the response body glued on, returned as 200. That threw
+            // away the status code and gave the browser something that is not JSON to parse.
+            return passThroughObpError("initiatePaymentBerlinGroup", e);
         }
     }
     @GetMapping("/transactions_bg/account_id/{accountId}")
     public Object getTransactionsBerlinGroup(@PathVariable String accountId, HttpSession session) {
-        String consentId = SessionData.getConsentId(session);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Consent-ID", consentId);
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = new HttpEntity<>(bgConsentHeaders(session));
 
-        ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupTransactionsUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
-        logger.debug("getTransactionsBerlinGroup status:" + exchange.getStatusCode().toString());
-        logger.debug("getTransactionsBerlinGroup body:" + exchange.getBody().toString());
-        return exchange.getBody();
+        try {
+            ResponseEntity<HashMap> exchange = restTemplate.exchange(getBerlinGroupTransactionsUrl.replace("ACCOUNT_ID", accountId), HttpMethod.GET, entity,  HashMap.class);
+            logger.debug("getTransactionsBerlinGroup status:" + exchange.getStatusCode().toString());
+            logger.debug("getTransactionsBerlinGroup body:" + exchange.getBody().toString());
+            return exchange.getBody();
+        } catch (HttpClientErrorException e) {
+            return passThroughObpError("getTransactionsBerlinGroup", e);
+        }
     }
 
 

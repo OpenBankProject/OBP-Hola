@@ -75,6 +75,8 @@ public class IndexController implements ServletContextAware {
     private String createConsentsUrl;
     @Value("${endpoint.path.prefix.v401}/account-access-consents")
     private String createConsentsUrlV401;
+    @Value("${endpoint.path.prefix.v401}/account-access-consents/CONSENT_ID")
+    private String getConsentInformationUrlV401;
     @Value("${obp.base_url}/berlin-group/v1.3/consents")
     private String createBerlinGroupConsentsUrl;
     @Value("${obp.base_url}/berlin-group/v1.3/consents/CONSENT_ID")
@@ -164,11 +166,7 @@ public class IndexController implements ServletContextAware {
     @GetMapping({ "/index_uk", "index_uk.html"})
     public String index_uk(Model model) throws ParseException, JOSEException {
         {// initiate consent names
-            // exclude "openid" and "offline", they are used by hydra
-            String[] consents = allScopes.stream()
-                    .filter(it -> !"openid".equals(it) && !"offline".equals(it))
-                    .filter(it -> !it.contains("BerlinGroup"))
-                    .toArray(String[]::new);
+            String[] consents = ukPermissionScopes();
             model.addAttribute("consents", consents);
         }
         { // initiate all bank names and bank ids
@@ -186,11 +184,7 @@ public class IndexController implements ServletContextAware {
     @GetMapping({ "/index_uk4", "index_uk4.html"})
     public String index_uk4(Model model) throws ParseException, JOSEException {
         {// initiate consent names
-            // exclude "openid" and "offline", they are used by hydra
-            String[] consents = allScopes.stream()
-                    .filter(it -> !"openid".equals(it) && !"offline".equals(it))
-                    .filter(it -> !it.contains("BerlinGroup"))
-                    .toArray(String[]::new);
+            String[] consents = ukPermissionScopes();
             model.addAttribute("consents", consents);
         }
         { // initiate all bank names and bank ids
@@ -206,6 +200,21 @@ public class IndexController implements ServletContextAware {
     }
 
 
+
+    /**
+     * The UK permission codes among the configured scopes, for the consent checkboxes on the two UK
+     * pages. Whatever the PSU ticks is sent verbatim as the consent's Permissions array, and the
+     * ASPSP rejects an array holding anything that is not a UK permission code, so the OIDC scopes
+     * configured alongside them (openid, offline, profile, email) must not be offered as choices.
+     * Selecting by the UK "Read" prefix stays correct as codes are added, where excluding a fixed
+     * list of non-permissions did not: every newly configured OIDC scope leaked into the form.
+     */
+    private String[] ukPermissionScopes() {
+        return allScopes.stream()
+                .filter(it -> it.startsWith("Read"))
+                .filter(it -> !it.contains("BerlinGroup"))
+                .toArray(String[]::new);
+    }
 
     private Banks getBanks() {
         Banks banks = restTemplate.getForObject(getBanksUrl, Banks.class);
@@ -368,6 +377,9 @@ public class IndexController implements ServletContextAware {
             queryParam.put("bank_id", bankId);
             queryParam.put("api_standard", "UKOpenBanking");
             SessionData.setApiStandard(session, "UKOpenBanking");
+            // The consent is the credential the data calls will present, so hold on to it now
+            // rather than waiting to read it back off the id_token in the callback.
+            SessionData.setConsentId(session, consentId);
             // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.
             //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
@@ -413,7 +425,10 @@ public class IndexController implements ServletContextAware {
                                   ) throws UnsupportedEncodingException, ParseException, JOSEException {
         try {
             final String consentId;
-            {   // Create Account Access Consents (v4.0.1 endpoint — body is ignored server-side, always returns canned example)
+            // Create Account Access Consents (v4.0.1). The server validates Permissions against the
+            // UK combination rules and answers 400 for a set it must reject, so a checkbox selection
+            // the profile forbids surfaces here as an HttpStatusCodeException carrying that reason.
+            {
                 String clientCredentialsToken = getClientCredentialsToken();
                 HttpHeaders headers = new HttpHeaders();
                 headers.setBearerAuth(clientCredentialsToken);
@@ -459,6 +474,9 @@ public class IndexController implements ServletContextAware {
             queryParam.put("api_standard", "UKOpenBankingV401");
             SessionData.setApiStandard(session, "UKOpenBankingV401");
             SessionData.setBankId(session, bankId);
+            // The consent is the credential the data calls will present, so hold on to it now
+            // rather than waiting to read it back off the id_token in the callback.
+            SessionData.setConsentId(session, consentId);
             // TODO the acr_values is just temp example value, can be space split values, need check and supply real values.
             //queryParam.put("acr_values", "urn:openbankproject:psd2:sca");
 
@@ -534,6 +552,20 @@ public class IndexController implements ServletContextAware {
             SessionData.setConsentId(session, consentId);
         }
         SessionData.setCode(session, code);
+
+        // The UK standards stop here. The PSU has just authorised the consent, which is all these
+        // flows need: the data calls present that consent and nothing else, so there is no reason
+        // to exchange the code for an access token we would never send. Same shape as Berlin Group,
+        // which returns from its SCA redirect without any token round-trip at all.
+        //
+        // The redirect through OIDC is still required -- it is what carries the PSU through the
+        // authorise ceremony that binds the consent to them and grants the consented views. Only
+        // the token exchange is dropped.
+        String apiStandard = SessionData.getApiStandard(session);
+        if ("UKOpenBanking".equals(apiStandard) || "UKOpenBankingV401".equals(apiStandard)) {
+            return "redirect:/main";
+        }
+
         // get tokens use code
         {
             HttpHeaders headers = new HttpHeaders();
@@ -624,20 +656,80 @@ public class IndexController implements ServletContextAware {
         // the other flows this can't be captured once at OIDC-callback time — fetch it fresh here,
         // authenticating with the Consent-ID header the same way getAccountsBerlinGroup does.
         if ("BerlinGroup".equalsIgnoreCase(apiStandard) && StringUtils.isNotBlank(consentId)) {
+            // Cleared first. These live in the session, so anything left from an earlier consent
+            // would still be on the page if this fetch fails -- the previous consent's status and
+            // validity, shown as if they described the one now in play. Blank is the honest answer
+            // when we could not read it.
+            for (String attribute : CONSENT_INFO_ATTRIBUTES) {
+                session.removeAttribute(attribute);
+            }
             try {
+                // Authenticate as the TPP, not with the consent. This endpoint carries the consent id
+                // in its path, and OBP refuses a Consent-ID header on the /consents/... family for
+                // that reason (OBP-20256), so authenticating the way the *data* calls do could never
+                // work here -- the four fields below were always blank because every attempt was
+                // refused and the failure only reached a log line.
                 HttpHeaders consentInfoHeaders = new HttpHeaders();
-                consentInfoHeaders.add("Consent-ID", consentId);
+                consentInfoHeaders.setBearerAuth(getClientCredentialsToken());
                 HttpEntity<String> consentInfoEntity = new HttpEntity<>(consentInfoHeaders);
                 ResponseEntity<Map> consentInfoResponse = restTemplate.exchange(
                         getConsentInformationBerlinGroup.replace("CONSENT_ID", consentId),
                         HttpMethod.GET, consentInfoEntity, Map.class);
                 Map consentInfoBody = consentInfoResponse.getBody();
-                session.setAttribute("frequencyPerDay", String.valueOf(consentInfoBody.get("frequencyPerDay")));
-                session.setAttribute("consentStatus", String.valueOf(consentInfoBody.get("consentStatus")));
-                session.setAttribute("validUntil", String.valueOf(consentInfoBody.get("validUntil")));
-                session.setAttribute("recurringIndicator", String.valueOf(consentInfoBody.get("recurringIndicator")));
-            } catch (RestClientException e) {
+                for (String attribute : CONSENT_INFO_ATTRIBUTES) {
+                    setIfPresent(session, attribute, consentInfoBody);
+                }
+            } catch (Exception e) {
+                // Best effort: minting the client-credentials token can fail too, and a missing
+                // status line must not take the whole page down with it.
                 logger.warn("Could not fetch Berlin Group consent info for consent_id=" + consentId, e);
+            }
+        }
+        // UK v4.0.1: show the consent that governs the data calls -- the same one they present, read
+        // back from OBP-API so the status and permissions shown are the live server-side values
+        // rather than anything this app remembers.
+        if ("UKOpenBankingV401".equals(apiStandard)) {
+            String ukConsentId = SessionData.getConsentId(session);
+            model.addAttribute("ukConsentId", ukConsentId);
+            if (StringUtils.isNotBlank(ukConsentId)) {
+                try {
+                    // Read through the consent itself, exactly as the data calls do. This endpoint
+                    // enforces ownership -- only the PSU the consent is bound to may read it -- and
+                    // the consent resolves to that PSU, so it passes.
+                    HttpHeaders ukConsentHeaders = new HttpHeaders();
+                    ukConsentHeaders.add("Consent-Id", ukConsentId);
+                    ukConsentHeaders.add("Consumer-Key", clientId);
+                    HttpEntity<String> ukConsentEntity = new HttpEntity<>(ukConsentHeaders);
+                    ResponseEntity<Map> ukConsentResponse = restTemplate.exchange(
+                            getConsentInformationUrlV401.replace("CONSENT_ID", ukConsentId),
+                            HttpMethod.GET, ukConsentEntity, Map.class);
+                    Map ukConsentData = (Map) ukConsentResponse.getBody().get("Data");
+                    model.addAttribute("ukConsentStatus", String.valueOf(ukConsentData.get("Status")));
+                    // The consent stores one view per (account, permission) pair, so a consent covering
+                    // several accounts repeats each permission. De-duplicate for display -- what the PSU
+                    // cares about is which permissions were granted, not how many accounts they span.
+                    Object rawPermissions = ukConsentData.get("Permissions");
+                    if (rawPermissions instanceof Collection) {
+                        Set<String> permissions = ((Collection<?>) rawPermissions).stream()
+                                .map(String::valueOf)
+                                .collect(Collectors.toCollection(LinkedHashSet::new));
+                        model.addAttribute("ukConsentPermissions", permissions);
+                        // Machine-readable copy for the page script: GET /aisp/accounts answers 200
+                        // with an empty list when the consent grants no ReadAccounts* view, so the
+                        // script needs the granted permissions to explain an empty result rather
+                        // than scraping the text it just rendered.
+                        model.addAttribute("ukConsentPermissionsCsv", String.join(",", permissions));
+                    } else {
+                        model.addAttribute("ukConsentPermissions", rawPermissions);
+                        model.addAttribute("ukConsentPermissionsCsv",
+                                rawPermissions == null ? "" : String.valueOf(rawPermissions));
+                    }
+                    model.addAttribute("ukConsentExpiration", String.valueOf(ukConsentData.get("ExpirationDateTime")));
+                } catch (RestClientException e) {
+                    // Non-fatal: the page still works, it just can't show the consent's live status.
+                    logger.warn("Could not fetch UK v4.0.1 consent info for consent_id=" + ukConsentId, e);
+                    model.addAttribute("ukConsentError", e.getMessage());
+                }
             }
         }
         String consentStatus = (String)session.getAttribute("consentStatus");
@@ -878,7 +970,8 @@ public class IndexController implements ServletContextAware {
             "to_branch_routing_scheme", "to_branch_routing_address",
             "to_routing_scheme", "to_routing_address", 
             "currency", "max_single_amount", "counterparty_name",
-            "max_monthly_amount", "max_yearly_amount", "max_number_of_monthly_transactions", "max_number_of_yearly_transactions"})
+            "max_monthly_amount", "max_yearly_amount", "max_number_of_monthly_transactions", "max_number_of_yearly_transactions",
+            "max_total_amount", "max_number_of_transactions"})
     public String requestConsentsVrpOpenBankProject(@RequestParam("bank") String bankId, 
                                                     @RequestParam("time_to_live_in_seconds") String timeToLiveInSeconds,
                                                     @RequestParam("valid_from") String validFrom,
@@ -901,6 +994,8 @@ public class IndexController implements ServletContextAware {
                                                     @RequestParam("max_yearly_amount") String maxYearlyAmount,
                                                     @RequestParam("max_number_of_monthly_transactions") String maxNumberOfMonthlyTransactions,
                                                     @RequestParam("max_number_of_yearly_transactions") String maxNumberOfYearlyTransactions,
+                                                    @RequestParam("max_total_amount") String maxTotalAmount,
+                                                    @RequestParam("max_number_of_transactions") String maxNumberOfTransactions,
                                                  HttpSession session, Model model
     ) throws UnsupportedEncodingException, ParseException, JOSEException, RestClientException {
         try {
@@ -917,17 +1012,27 @@ public class IndexController implements ServletContextAware {
                             new AccountRouting(fromRoutingScheme, fromRoutingAddress)
                     ),
                     new ToAccount(
-                            "",
+                            // The PSU's own label for the payee. It is bound from the form above and
+                            // was being dropped here, so the approval screen had no name to show for
+                            // who may be paid under this mandate, and the counterparty OBP creates
+                            // from it was left unnamed too.
+                            counterpartyName,
                             new BankRouting(toBankRoutingScheme, toBankRoutingAddress),
                             new BranchRouting(toBranchRoutingScheme, toBranchRoutingAddress),
                             new AccountRouting(toRoutingScheme, toRoutingAddress),
+                            // Argument order follows OBP-API's PostCounterpartyLimitV510: the
+                            // amounts are Strings and each is followed by its own transaction
+                            // count. Passing them in form order instead silently swapped
+                            // max_yearly_amount with max_number_of_monthly_transactions.
                             new Limit(
-                                    currency = currency,
-                                    Integer.parseInt(maxSingleAmount),
-                                    Integer.parseInt(maxMonthlyAmount),
-                                    Integer.parseInt(maxYearlyAmount),
+                                    currency,
+                                    maxSingleAmount,
+                                    maxMonthlyAmount,
                                     Integer.parseInt(maxNumberOfMonthlyTransactions),
-                                    Integer.parseInt(maxNumberOfYearlyTransactions)
+                                    maxYearlyAmount,
+                                    Integer.parseInt(maxNumberOfYearlyTransactions),
+                                    maxTotalAmount,
+                                    Integer.parseInt(maxNumberOfTransactions)
                             )
                     ),
                     Integer.parseInt(timeToLiveInSeconds),
@@ -1083,6 +1188,25 @@ public class IndexController implements ServletContextAware {
     }
 
 
+
+    /** The Berlin Group consent fields the accounts page shows, in the order they are rendered. */
+    private static final String[] CONSENT_INFO_ATTRIBUTES =
+            {"frequencyPerDay", "consentStatus", "validUntil", "recurringIndicator"};
+
+    /**
+     * Copy one consent field onto the session, but only if the API actually reported it.
+     *
+     * String.valueOf(null) is the four-character string "null", and the template writes whatever it
+     * is given straight into the page -- so a consent with no validUntil, which OBP returns as an
+     * explicit JSON null, rendered as "Valid until: null". Leaving the attribute unset renders an
+     * empty span, which is what an absent value should look like.
+     */
+    private static void setIfPresent(HttpSession session, String attribute, Map body) {
+        Object value = body == null ? null : body.get(attribute);
+        if (value != null) {
+            session.setAttribute(attribute, String.valueOf(value));
+        }
+    }
 
     private String getClientCredentialsToken() throws ParseException, JOSEException {
         HttpHeaders headers = new HttpHeaders();

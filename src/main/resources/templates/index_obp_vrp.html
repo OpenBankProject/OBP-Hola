@@ -152,13 +152,26 @@
                                 <input type="number" min="0" value="12" name="max_number_of_yearly_transactions" id="max_number_of_yearly_transactions" class="form-control">
                             </div>
                         </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="max_total_amount">Max total amount</label>
+                                <input type="number" min="0" value="12000" name="max_total_amount" id="max_total_amount" class="form-control">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="max_number_of_transactions">Max number of transactions</label>
+                                <input type="number" min="0" value="120" name="max_number_of_transactions" id="max_number_of_transactions" class="form-control">
+                            </div>
+                        </div>
                     </div>
                     <h4>Other</h4>
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-group col-md-12">
+                                <!-- OBP-API caps consent lifetime (consents.max_time_to_live, 3600000s
+                                     by default) and rejects anything above it with OBP-35020. The
+                                     previous default of a full year always failed out of the box. -->
                                 <label for="time_to_live_in_seconds">Time to live in seconds</label>
-                                <input type="number" min="1" value="31556926" name="time_to_live_in_seconds" id="time_to_live_in_seconds" class="form-control">
+                                <input type="number" min="1" max="3600000" value="3600000" name="time_to_live_in_seconds" id="time_to_live_in_seconds" class="form-control">
                             </div>
                         </div>
                         <div class="form-row">

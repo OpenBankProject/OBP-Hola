@@ -34,3 +34,6 @@ build/
 /src/main/resources/application-local.properties
 /src/main/resources/application-remote.properties
 /src/main/resources/cert/
+
+# Regenerated on every build by git-commit-id-maven-plugin
+/src/main/resources/git.properties
