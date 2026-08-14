@@ -20,20 +20,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Set up JDK 11
-        uses: actions/setup-java@v4
-        with:
-          java-version: '11'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Build with Maven
-        run: MAVEN_OPTS="-Dmaven.test.failure.ignore=false -Xmx3G -Xss4m" mvn clean package
-
-      # A branch name may contain '/', which a Docker tag may not, so replace it. Keeping the
-      # whole name means fix/xyz and bugfix/xyz stay distinct images; taking only the segment
-      # after the last '/' would tag both of them 'xyz' and let one overwrite the other.
-      # Derived once, and outside the publishing guard, so the tag is visible in every build.
       - name: Derive the image tag from the branch name
         run: |
           echo "IMAGE_TAG=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_ENV"
