@@ -1,0 +1,98 @@
+name: build and publish container
+
+on: [push]
+
+env:
+  ## Sets environment variable
+  # Falls back to a throwaway namespace when the var is unset, so the unpublished
+  # build below still produces a valid (lowercase) image reference on a fork.
+  DOCKER_HUB_ORGANIZATION: ${{ vars.DOCKER_HUB_ORGANIZATION || 'local' }}
+  DOCKER_HUB_REPOSITORY: obp-hola
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # Mapped to env so the publishing steps can gate on its presence: secrets.*
+      # cannot be read in an `if:`, env can. Empty on forks and on repos that have
+      # not configured Docker Hub, so publishing skips instead of failing login.
+      DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build with Maven
+        run: MAVEN_OPTS="-Dmaven.test.failure.ignore=false -Xmx3G -Xss4m" mvn clean package
+
+      # A branch name may contain '/', which a Docker tag may not, so replace it. Keeping the
+      # whole name means fix/xyz and bugfix/xyz stay distinct images; taking only the segment
+      # after the last '/' would tag both of them 'xyz' and let one overwrite the other.
+      # Derived once, and outside the publishing guard, so the tag is visible in every build.
+      - name: Derive the image tag from the branch name
+        run: |
+          echo "IMAGE_TAG=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_ENV"
+          echo "Branch ${GITHUB_REF_NAME} publishes as tag ${GITHUB_REF_NAME//\//-}"
+
+      # Unguarded: building is what proves the Dockerfile still works, so it has to
+      # run on forks and on every branch, whether or not the result gets published.
+      - name: Build the Docker image
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+            echo "Release branch build - tagging :latest"
+            docker build . \
+              --tag docker.io/${{ env.DOCKER_HUB_ORGANIZATION }}/${{ env.DOCKER_HUB_REPOSITORY }}:$GITHUB_SHA \
+              --tag docker.io/${{ env.DOCKER_HUB_ORGANIZATION }}/${{ env.DOCKER_HUB_REPOSITORY }}:latest \
+              --tag docker.io/${{ env.DOCKER_HUB_ORGANIZATION }}/${{ env.DOCKER_HUB_REPOSITORY }}:$IMAGE_TAG
+          else
+            echo "Non-release branch build - no :latest tag"
+            docker build . \
+              --tag docker.io/${{ env.DOCKER_HUB_ORGANIZATION }}/${{ env.DOCKER_HUB_REPOSITORY }}:$GITHUB_SHA \
+              --tag docker.io/${{ env.DOCKER_HUB_ORGANIZATION }}/${{ env.DOCKER_HUB_REPOSITORY }}:$IMAGE_TAG
+          fi
+
+      # Publishing needs Docker Hub and cosign credentials. Forks that have not configured
+      # them skip these steps, so the builds above still validate every push.
+      - name: Push the Docker image
+        if: env.DOCKER_HUB_TOKEN != ''
+        run: |
+          echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin docker.io
+          docker push docker.io/${{ env.DOCKER_HUB_ORGANIZATION }}/${{ env.DOCKER_HUB_REPOSITORY }} --all-tags
+          echo docker done
+
+      # Pinned to a commit hash rather than @main: this job holds the signing key,
+      # so a moving tag here would be a supply-chain hole.
+      - uses: sigstore/cosign-installer@4d14d7f17e7112af04ea6108fbb4bfc714c00390  # v3.7.0
+        if: env.DOCKER_HUB_TOKEN != ''
+
+      - name: Write signing key to disk (only needed for `cosign sign --key`)
+        if: env.DOCKER_HUB_TOKEN != ''
+        run: echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
+
+      - name: Sign container image
+        if: env.DOCKER_HUB_TOKEN != ''
+        env:
+          COSIGN_PASSWORD: "${{ secrets.COSIGN_PASSWORD }}"
+        run: |
+          cosign sign -y --key cosign.key \
+            -a "repo=${{ github.repository }}" \
+            -a "workflow=${{ github.workflow }}" \
+            -a "ref=${{ github.sha }}" \
+            docker.io/${{ env.DOCKER_HUB_ORGANIZATION }}/${{ env.DOCKER_HUB_REPOSITORY }}:$IMAGE_TAG
+          cosign sign -y --key cosign.key \
+            -a "repo=${{ github.repository }}" \
+            -a "workflow=${{ github.workflow }}" \
+            -a "ref=${{ github.sha }}" \
+            docker.io/${{ env.DOCKER_HUB_ORGANIZATION }}/${{ env.DOCKER_HUB_REPOSITORY }}:$GITHUB_SHA
+          if [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+            cosign sign -y --key cosign.key \
+              -a "repo=${{ github.repository }}" \
+              -a "workflow=${{ github.workflow }}" \
+              -a "ref=${{ github.sha }}" \
+              docker.io/${{ env.DOCKER_HUB_ORGANIZATION }}/${{ env.DOCKER_HUB_REPOSITORY }}:latest
+          fi
