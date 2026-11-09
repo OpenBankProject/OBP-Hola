@@ -6,9 +6,9 @@ Wiring up OBP-OIDC + OBP-Portal + Hola for OBP consent flows. OBP-OIDC should st
 
 ## What OBP-API already provides
 
-- **`GET /obp/v5.0.0/consumer/consent-requests/{ID}`** — Fetch consent request details. **No user auth required.**
-- **`POST /obp/v5.0.0/consumer/consent-requests/{ID}/IMPLICIT/consents`** — Create consent from a consent request. **Requires user authentication.**
-- **`POST /obp/v3.1.0/banks/{BANK_ID}/consents/{CONSENT_ID}/challenge`** — Answer consent challenge (SCA). **Requires user auth.**
+- **`GET /obp/v5.1.0/consumer/consent-requests/{ID}`** — Fetch consent request details. **No user auth required.**
+- **`POST /obp/v5.1.0/consumer/consent-requests/{ID}/IMPLICIT/consents`** — Create consent from a consent request. **Requires user authentication.**
+- **`POST /obp/v5.1.0/banks/{BANK_ID}/consents/{CONSENT_ID}/challenge`** — Answer consent challenge (SCA). **Requires user auth.**
 
 ## The core problem
 
