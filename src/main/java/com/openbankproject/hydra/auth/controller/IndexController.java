@@ -67,9 +67,9 @@ public class IndexController implements ServletContextAware {
 
     @Value("${obp.base_url:#}")
     private String obpBaseUrl;
-    @Value("${obp.base_url}/obp/v4.0.0/users/current")
+    @Value("${obp.base_url}/obp/v5.1.0/users/current")
     private String currentUserUrl;
-    @Value("${obp.base_url}/obp/v4.0.0/banks")
+    @Value("${obp.base_url}/obp/v5.1.0/banks")
     private String getBanksUrl;
     @Value("${endpoint.path.prefix}/account-access-consents")
     private String createConsentsUrl;
