@@ -22,4 +22,13 @@ class ForceJwsStandardsTest {
         assertThat(RestTemplateConfig.standardsMatchingNoCall("")).isEmpty();
         assertThat(RestTemplateConfig.standardsMatchingNoCall(null)).isEmpty();
     }
+
+    @Test
+    @DisplayName("a standard listed after a comma and a space still forces JWS")
+    void entriesAreTrimmed() {
+        assertThat(RestTemplateConfig.forcesJws("BGv1.3, OBPv5.1.0", "https://api.example.com/obp/v5.1.0/banks")).isTrue();
+        assertThat(RestTemplateConfig.forcesJws(" bgv1.3 ", "https://api.example.com/berlin-group/v1.3/accounts")).isTrue();
+        assertThat(RestTemplateConfig.forcesJws("BGv1.3", "https://api.example.com/obp/v5.1.0/banks")).isFalse();
+        assertThat(RestTemplateConfig.forcesJws("", "https://api.example.com/obp/v5.1.0/banks")).isFalse();
+    }
 }
