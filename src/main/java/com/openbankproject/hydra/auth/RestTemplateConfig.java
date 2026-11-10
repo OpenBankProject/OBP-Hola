@@ -296,7 +296,13 @@ public class RestTemplateConfig {
     }
 
     private boolean forceJws(String url) {
-        String[] standards  = forceJws.split(",");
+        return forcesJws(forceJws, url);
+    }
+
+    /** Whether the force_jws setting (comma-separated standards, spaces allowed) asks for JWS on this URL. */
+    static boolean forcesJws(String forceJwsSetting, String url) {
+        if (forceJwsSetting == null || url == null) return false;
+        String[] standards = Arrays.stream(forceJwsSetting.split(",")).map(String::trim).toArray(String[]::new);
         HashMap<String, String> pathOfStandard = new HashMap<String, String>();
         pathOfStandard.put("BGv1.3", "berlin-group/v1.3");
         pathOfStandard.put("OBPv5.1.0", "obp/v5.1.0");
