@@ -45,10 +45,14 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.time.Instant;
+import javax.annotation.PostConstruct;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.openbankproject.SessionUtils.getSessionId;
 
@@ -269,6 +273,26 @@ public class RestTemplateConfig {
             logger.debug("X-JWS-Signature: " + xJwsSignature);
         }
         traceRequest(request, httpBody);
+    }
+
+    /** force_jws values Hola no longer has calls for: it calls OBP-API on v5.1.0, not on these versions. */
+    private static final List<String> STANDARDS_WITHOUT_CALLS = Arrays.asList("OBPv4.0.0", "OBPv3.1.0");
+
+    /** The configured force_jws standards that match none of Hola's calls, so they sign nothing. */
+    static List<String> standardsMatchingNoCall(String forceJwsSetting) {
+        if (forceJwsSetting == null || forceJwsSetting.trim().isEmpty()) return Collections.emptyList();
+        return Arrays.stream(forceJwsSetting.split(","))
+                .map(String::trim)
+                .filter(s -> STANDARDS_WITHOUT_CALLS.stream().anyMatch(s::equalsIgnoreCase))
+                .collect(Collectors.toList());
+    }
+
+    @PostConstruct
+    void warnAboutStandardsMatchingNoCall() {
+        List<String> stale = standardsMatchingNoCall(forceJws);
+        if (!stale.isEmpty()) {
+            logger.warn("force_jws lists " + stale + ", but Hola calls OBP-API on v5.1.0: these entries sign no request. Use OBPv5.1.0 to sign OBP-API calls.");
+        }
     }
 
     private boolean forceJws(String url) {
