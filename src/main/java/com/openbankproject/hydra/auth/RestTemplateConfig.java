@@ -300,8 +300,6 @@ public class RestTemplateConfig {
         HashMap<String, String> pathOfStandard = new HashMap<String, String>();
         pathOfStandard.put("BGv1.3", "berlin-group/v1.3");
         pathOfStandard.put("OBPv5.1.0", "obp/v5.1.0");
-        pathOfStandard.put("OBPv4.0.0", "obp/v4.0.0");
-        pathOfStandard.put("OBPv3.1.0", "obp/v3.1.0");
         pathOfStandard.put("UKv1.3", "open-banking/v3.1");
         boolean force = false;
         for (Map.Entry<String,String> path : pathOfStandard.entrySet()) {
