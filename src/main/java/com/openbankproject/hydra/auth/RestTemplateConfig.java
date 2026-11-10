@@ -45,10 +45,14 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.time.Instant;
+import javax.annotation.PostConstruct;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.openbankproject.SessionUtils.getSessionId;
 
@@ -271,12 +275,37 @@ public class RestTemplateConfig {
         traceRequest(request, httpBody);
     }
 
+    /** force_jws values Hola no longer has calls for: it calls OBP-API on v5.1.0, not on these versions. */
+    private static final List<String> STANDARDS_WITHOUT_CALLS = Arrays.asList("OBPv4.0.0", "OBPv3.1.0");
+
+    /** The configured force_jws standards that match none of Hola's calls, so they sign nothing. */
+    static List<String> standardsMatchingNoCall(String forceJwsSetting) {
+        if (forceJwsSetting == null || forceJwsSetting.trim().isEmpty()) return Collections.emptyList();
+        return Arrays.stream(forceJwsSetting.split(","))
+                .map(String::trim)
+                .filter(s -> STANDARDS_WITHOUT_CALLS.stream().anyMatch(s::equalsIgnoreCase))
+                .collect(Collectors.toList());
+    }
+
+    @PostConstruct
+    void warnAboutStandardsMatchingNoCall() {
+        List<String> stale = standardsMatchingNoCall(forceJws);
+        if (!stale.isEmpty()) {
+            logger.warn("force_jws lists " + stale + ", but Hola calls OBP-API on v5.1.0: these entries sign no request. Use OBPv5.1.0 to sign OBP-API calls.");
+        }
+    }
+
     private boolean forceJws(String url) {
-        String[] standards  = forceJws.split(",");
+        return forcesJws(forceJws, url);
+    }
+
+    /** Whether the force_jws setting (comma-separated standards, spaces allowed) asks for JWS on this URL. */
+    static boolean forcesJws(String forceJwsSetting, String url) {
+        if (forceJwsSetting == null || url == null) return false;
+        String[] standards = Arrays.stream(forceJwsSetting.split(",")).map(String::trim).toArray(String[]::new);
         HashMap<String, String> pathOfStandard = new HashMap<String, String>();
         pathOfStandard.put("BGv1.3", "berlin-group/v1.3");
-        pathOfStandard.put("OBPv4.0.0", "obp/v4.0.0");
-        pathOfStandard.put("OBPv3.1.0", "obp/v3.1.0");
+        pathOfStandard.put("OBPv5.1.0", "obp/v5.1.0");
         pathOfStandard.put("UKv1.3", "open-banking/v3.1");
         boolean force = false;
         for (Map.Entry<String,String> path : pathOfStandard.entrySet()) {

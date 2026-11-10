@@ -67,9 +67,9 @@ public class IndexController implements ServletContextAware {
 
     @Value("${obp.base_url:#}")
     private String obpBaseUrl;
-    @Value("${obp.base_url}/obp/v4.0.0/users/current")
+    @Value("${obp.base_url}/obp/v5.1.0/users/current")
     private String currentUserUrl;
-    @Value("${obp.base_url}/obp/v4.0.0/banks")
+    @Value("${obp.base_url}/obp/v5.1.0/banks")
     private String getBanksUrl;
     @Value("${endpoint.path.prefix}/account-access-consents")
     private String createConsentsUrl;
@@ -88,7 +88,7 @@ public class IndexController implements ServletContextAware {
     @Value("${obp.base_url}/obp/v5.1.0/consumer/vrp-consent-requests")
     private String createConsentRequestVrp;
     
-    @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/consents/CONSENT_ID")
+    @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/consents/CONSENT_ID")
     private String updateConsentStatusUrl;
     
     @Value("${obp.base_url}/obp/v5.1.0/consumer/consent-requests/CONSENT_REQUEST_ID/consents")
