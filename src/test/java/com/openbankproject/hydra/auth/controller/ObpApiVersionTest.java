@@ -52,6 +52,10 @@ class ObpApiVersionTest {
         return false;
     }
 
+    /**
+     * Tests the OBP-API URLs the controllers inject with @Value (current user, banks, consent status...):
+     * none of them may use a version below v5.1.0.
+     */
     @Test
     @DisplayName("controllers declare OBP-API URLs on v5.1.0 or newer")
     void controllersUseV510OrNewer() {
@@ -59,13 +63,20 @@ class ObpApiVersionTest {
         urls.addAll(declaredObpUrls(IndexController.class));
         urls.addAll(declaredObpUrls(OtherController.class));
 
+        // The controllers do declare OBP-API URLs, so the check below is not vacuous.
         assertThat(urls).as("OBP-API URLs found").isNotEmpty();
+        // None of them is below v5.1.0; a failure lists the field and its URL.
         assertThat(urls).filteredOn(ObpApiVersionTest::olderThanMinimum).isEmpty();
     }
 
     /** obp/vX.Y.Z anywhere in a source line, also built by concatenation or ending at the version. */
     private static final Pattern OBP_VERSION_IN_SOURCE = Pattern.compile("obp/v(\\d+)\\.(\\d+)\\.(\\d+)(?![\\d.])");
 
+    /**
+     * Tests every text file under src/main (Java, properties, YAML, templates, scripts, Dockerfiles) for
+     * obp/vX.Y.Z below v5.1.0, so a path built by concatenation, kept in a property or in a template is
+     * caught too, not only the @Value fields checked above.
+     */
     @Test
     @DisplayName("no main source file builds an OBP-API path below v5.1.0")
     void sourcesUseV510OrNewer() throws IOException {
@@ -84,6 +95,7 @@ class ObpApiVersionTest {
                 }
             }
         }
+        // A failure lists each file, line and version found.
         assertThat(found).isEmpty();
     }
 }
