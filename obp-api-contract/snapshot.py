@@ -18,6 +18,16 @@ Matching: OBP writes placeholders in capitals (BANK_ID) and so are some literal 
 (the transaction request type OPEN_CORRIDOR_PROMISE). A segment matches when it is equal,
 when the documented one is in capitals (a placeholder for a value the call fills in), or
 when both are in capitals. The documented path with the most equal segments wins.
+
+A literal segment also matches a placeholder, so a call whose own endpoint is gone can match
+a neighbouring one (/consumers/current/scopes against /consumers/CONSUMER_ID/scopes). To keep
+that from passing unnoticed, a call that matched one operation in the snapshot.json already on
+disk and now matches another is listed and nothing is written; check each one, then rerun
+with --accept-rebind.
+
+A path with no /obp/vX.Y.Z prefix (DirectLogin at /my/logins/direct, the unversioned
+/obp/dynamic-entity/... routes) belongs to no version's resource docs, so it is not looked
+up: it is recorded as missing and unversioned, and the contract must say why.
 """
 import argparse
 import datetime
@@ -30,6 +40,7 @@ import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PLACEHOLDER = re.compile(r"^[A-Z][A-Z0-9_]*$")
+VERSION = re.compile(r"^v\d+\.\d+\.\d+$")
 
 
 def get_json(url):
@@ -73,7 +84,9 @@ def schema_fields(schema, prefix=""):
 
 
 def version_of(path):
-    return segments(path)[1]
+    """The version of an /obp/vX.Y.Z/... path, or None for a path without one."""
+    s = segments(path)
+    return s[1] if len(s) > 1 and s[0] == "obp" and VERSION.match(s[1]) else None
 
 
 def main():
@@ -81,6 +94,8 @@ def main():
     ap.add_argument("--base", required=True, help="OBP-API base URL")
     ap.add_argument("--fallback", help="OBP-API that still serves the versions --base switched off")
     ap.add_argument("--out", default=os.path.join(HERE, "snapshot.json"))
+    ap.add_argument("--accept-rebind", action="store_true",
+                    help="write the snapshot although calls now match a different operation than before")
     args = ap.parse_args()
     base = args.base.rstrip("/")
     contract = json.load(open(os.path.join(HERE, "contract.json")))
@@ -88,7 +103,7 @@ def main():
 
     fallback = args.fallback.rstrip("/") if args.fallback else None
     docs, docs_from = {}, {}
-    for v in sorted({version_of(c["path"]) for c in calls}):
+    for v in sorted({version_of(c["path"]) for c in calls} - {None}):
         for host in [base] + ([fallback] if fallback else []):
             url = f"{host}/obp/{v}/resource-docs/{v}/obp"
             print(f"reading {url}", file=sys.stderr)
@@ -111,6 +126,9 @@ def main():
     endpoints = []
     for c in calls:
         v = version_of(c["path"])
+        if v is None:
+            endpoints.append({"verb": c["verb"], "path": c["path"], "unversioned": True, "missing": True})
+            continue
         scored = []
         for d in docs[v]:
             if d["request_verb"] != c["verb"]:
@@ -132,6 +150,20 @@ def main():
         else:
             entry["missing"] = True
         endpoints.append(entry)
+
+    try:
+        with open(args.out) as f:
+            before = {(e["verb"], e["path"]): e.get("operation_id") for e in json.load(f)["endpoints"]}
+    except (OSError, ValueError, KeyError):
+        before = {}
+    rebound = [f'{e["verb"]} {e["path"]}: was {before[(e["verb"], e["path"])]}, now {e["operation_id"]}'
+               for e in endpoints
+               if e.get("operation_id") and before.get((e["verb"], e["path"])) not in (None, e["operation_id"])]
+    for line in rebound:
+        print(f"  matches another operation: {line}", file=sys.stderr)
+    if rebound and not args.accept_rebind:
+        sys.exit(f"{args.out} not written: {len(rebound)} call(s) match a different operation than before, "
+                 "which usually means their own endpoint is gone. Check each one, then rerun with --accept-rebind.")
 
     snapshot = {
         "about": "Written by obp-api-contract/snapshot.py; do not edit by hand.",
