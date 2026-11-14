@@ -1,0 +1,469 @@
+{
+ "about": "Every OBP-API call Hola makes: verb, path (OBP placeholders in capitals), the source file and the text that makes the call (needles: the @Value URL and where it is used, which gives the verb), and the response fields the code reads, in Java or in the page scripts the body is passed to. calls are the OBP-API calls; obp-api-contract/snapshot.py writes snapshot.json for them from an OBP-API's resource docs. standard_calls are the UK Open Banking and Berlin Group calls, which have no OBP resource docs, so only their place in the source is checked. declared_but_unused are @Value URLs no code uses. src/test/java/com/openbankproject/hydra/auth/ObpApiContractTest.java checks all of this offline.",
+ "calls": [
+  {
+   "verb": "GET",
+   "path": "/obp/v5.1.0/users/current",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/IndexController.java",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/users/current\"",
+    "restTemplate.exchange(currentUserUrl, HttpMethod.GET"
+   ],
+   "reads": [
+    "username"
+   ],
+   "note": "The body is kept in the session as UserInfo, but only username is read (login log line); main.html only checks that a user is present."
+  },
+  {
+   "verb": "GET",
+   "path": "/obp/v5.1.0/banks",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/IndexController.java",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/banks\"",
+    "restTemplate.getForObject(getBanksUrl, Banks.class)"
+   ],
+   "reads": [
+    "banks[].id",
+    "banks[].full_name"
+   ],
+   "note": "Banks sorts by full_name and id; the index_*.html and consents.html bank pickers show both."
+  },
+  {
+   "verb": "POST",
+   "path": "/obp/v5.1.0/consumer/consent-requests",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/IndexController.java",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/consumer/consent-requests\"",
+    "restTemplate.postForObject(createConsentRequest, request, Map.class)"
+   ],
+   "reads": [
+    "consent_request_id"
+   ]
+  },
+  {
+   "verb": "POST",
+   "path": "/obp/v5.1.0/consumer/vrp-consent-requests",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/IndexController.java",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/consumer/vrp-consent-requests\"",
+    "restTemplate.postForObject(createConsentRequestVrp, request, Map.class)"
+   ],
+   "reads": [
+    "consent_request_id"
+   ]
+  },
+  {
+   "verb": "GET",
+   "path": "/obp/v5.1.0/root",
+   "source": "src/main/java/com/openbankproject/health/HealthCheckRegistry.java",
+   "needles": [
+    "obpBaseUrl + \"/obp/v5.1.0/root\""
+   ],
+   "reads": [],
+   "note": "Health probe: only the HTTP status is used, the body is never parsed."
+  },
+  {
+   "verb": "GET",
+   "path": "/obp/v5.1.0/banks/BANK_ID/accounts/private",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/private\"",
+    ".exchange(getObpAccountsUrl.replace(\"BANK_ID\", bankId), HttpMethod.GET"
+   ],
+   "reads": [
+    "accounts[].id",
+    "accounts[].bank_id",
+    "accounts[].views[].id"
+   ],
+   "note": "The body goes to the page as is; static/js/main-html-obp-consent-flow.js reads these fields."
+  },
+  {
+   "verb": "GET",
+   "path": "/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/views/VIEW_ID",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/views/VIEW_ID\"",
+    ".exchange(getCoreAccountByIdThroughView"
+   ],
+   "reads": [],
+   "note": "Passed to the page and shown as JSON; no field is read."
+  },
+  {
+   "verb": "GET",
+   "path": "/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/views/VIEW_ID/balances",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/views/VIEW_ID/balances\"",
+    ".exchange(getBankAccountBalancesThroughView.replace("
+   ],
+   "reads": [],
+   "note": "Passed to the page and shown as JSON; no field is read."
+  },
+  {
+   "verb": "GET",
+   "path": "/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transactions",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transactions\"",
+    ".exchange(getTransactionsForBankAccount.replace("
+   ],
+   "reads": [],
+   "note": "Passed to the page and shown as JSON; no field is read."
+  },
+  {
+   "verb": "GET",
+   "path": "/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/counterparties",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/counterparties\"",
+    ".exchange(getExplicitCounterpartiesForAccount.replace("
+   ],
+   "reads": [],
+   "note": "Passed to the page and shown as JSON; no field is read."
+  },
+  {
+   "verb": "GET",
+   "path": "/obp/v5.1.0/consumer/current/consents/CONSENT_ID",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/consumer/current/consents/CONSENT_ID\"",
+    ".exchange(getConsentByConsentId.replace(\"CONSENT_ID\", consentId), HttpMethod.GET"
+   ],
+   "reads": [],
+   "note": "Passed to the page and shown as JSON; no field is read."
+  },
+  {
+   "verb": "DELETE",
+   "path": "/obp/v5.1.0/my/consent/current",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/my/consent/current\"",
+    ".exchange(selfRevokeConsentUrl, HttpMethod.DELETE"
+   ],
+   "reads": [],
+   "note": "Passed to the page and shown as JSON; no field is read."
+  },
+  {
+   "verb": "GET",
+   "path": "/obp/v5.1.0/my/mtls/certificate/current",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/my/mtls/certificate/current\"",
+    ".exchange(mtlsClientCertificateInfo, HttpMethod.GET"
+   ],
+   "reads": [],
+   "note": "Passed to the page and shown as JSON; no field is read."
+  },
+  {
+   "verb": "POST",
+   "path": "/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transaction-request-types/COUNTERPARTY/transaction-requests",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transaction-request-types/COUNTERPARTY/transaction-requests\"",
+    "String url = makePaymentCouterpartyObp"
+   ],
+   "reads": [],
+   "note": "Passed to the page and shown as JSON; no field is read."
+  },
+  {
+   "verb": "POST",
+   "path": "/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transaction-request-types/SEPA/transaction-requests",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transaction-request-types/SEPA/transaction-requests\"",
+    "String url = makePaymentSepaObp"
+   ],
+   "reads": [],
+   "note": "Passed to the page and shown as JSON; no field is read."
+  },
+  {
+   "verb": "POST",
+   "path": "/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transaction-request-types/ACCOUNT/transaction-requests",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/VIEW_ID/transaction-request-types/ACCOUNT/transaction-requests\"",
+    "String url = makePaymentAccountObp"
+   ],
+   "reads": [],
+   "note": "Passed to the page and shown as JSON; no field is read."
+  }
+ ],
+ "standard_calls": [
+  {
+   "verb": "POST",
+   "path": "/open-banking/v3.1/account-access-consents",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/IndexController.java",
+   "needles": [
+    "\"${endpoint.path.prefix}/account-access-consents\"",
+    "restTemplate.postForObject(createConsentsUrl, request, Map.class)"
+   ],
+   "reads": [
+    "Data.ConsentId"
+   ],
+   "note": "Bearer client-credentials token.",
+   "undocumented_endpoint": "UK/Berlin Group standard path; OBP-API publishes no resource docs for it"
+  },
+  {
+   "verb": "POST",
+   "path": "/open-banking/v4.0.1/aisp/account-access-consents",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/IndexController.java",
+   "needles": [
+    "\"${endpoint.path.prefix.v401}/account-access-consents\"",
+    "restTemplate.postForObject(createConsentsUrlV401, request, Map.class)"
+   ],
+   "reads": [
+    "Data.ConsentId"
+   ],
+   "note": "Bearer client-credentials token.",
+   "undocumented_endpoint": "UK/Berlin Group standard path; OBP-API publishes no resource docs for it"
+  },
+  {
+   "verb": "GET",
+   "path": "/open-banking/v4.0.1/aisp/account-access-consents/CONSENT_ID",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/IndexController.java",
+   "needles": [
+    "\"${endpoint.path.prefix.v401}/account-access-consents/CONSENT_ID\"",
+    "getConsentInformationUrlV401.replace(\"CONSENT_ID\", ukConsentId)"
+   ],
+   "reads": [
+    "Data.Status",
+    "Data.Permissions",
+    "Data.ExpirationDateTime"
+   ],
+   "note": "Sent with the Consent-Id and Consumer-Key headers, no Authorization.",
+   "undocumented_endpoint": "UK/Berlin Group standard path; OBP-API publishes no resource docs for it"
+  },
+  {
+   "verb": "POST",
+   "path": "/berlin-group/v1.3/consents",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/IndexController.java",
+   "needles": [
+    "\"${obp.base_url}/berlin-group/v1.3/consents\"",
+    "restTemplate.postForObject(createBerlinGroupConsentsUrl, request, Map.class)"
+   ],
+   "reads": [
+    "consentId",
+    "_links.scaRedirect.href"
+   ],
+   "note": "Bearer client-credentials token plus TPP-Redirect-URI and TPP-Nok-Redirect-URI.",
+   "undocumented_endpoint": "UK/Berlin Group standard path; OBP-API publishes no resource docs for it"
+  },
+  {
+   "verb": "GET",
+   "path": "/berlin-group/v1.3/consents/CONSENT_ID",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/IndexController.java",
+   "needles": [
+    "\"${obp.base_url}/berlin-group/v1.3/consents/CONSENT_ID\"",
+    "getConsentInformationBerlinGroup.replace(\"CONSENT_ID\", consentId)"
+   ],
+   "reads": [
+    "frequencyPerDay",
+    "consentStatus",
+    "validUntil",
+    "recurringIndicator"
+   ],
+   "note": "Bearer client-credentials token and no Consent-ID header: OBP-API refuses one on this endpoint.",
+   "undocumented_endpoint": "UK/Berlin Group standard path; OBP-API publishes no resource docs for it"
+  },
+  {
+   "verb": "GET",
+   "path": "/open-banking/v3.1/accounts",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${endpoint.path.prefix}/accounts\"",
+    "restTemplate.exchange(getAccountsUrl, HttpMethod.GET"
+   ],
+   "reads": [
+    "Data.Account[].AccountId"
+   ],
+   "note": "Sent with the Consent-Id and Consumer-Key headers, no Authorization. Data goes to the page; main.html reads Account[].AccountId.",
+   "undocumented_endpoint": "UK/Berlin Group standard path; OBP-API publishes no resource docs for it"
+  },
+  {
+   "verb": "GET",
+   "path": "/open-banking/v3.1/accounts/ACCOUNT_ID",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${endpoint.path.prefix}/accounts/ACCOUNT_ID\"",
+    "restTemplate.exchange(getAccountUrl.replace(\"ACCOUNT_ID\", accountId)"
+   ],
+   "reads": [],
+   "note": "Sent with the Consent-Id and Consumer-Key headers, no Authorization.",
+   "undocumented_endpoint": "UK/Berlin Group standard path; OBP-API publishes no resource docs for it"
+  },
+  {
+   "verb": "GET",
+   "path": "/open-banking/v3.1/accounts/ACCOUNT_ID/balances",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${endpoint.path.prefix}/accounts/ACCOUNT_ID/balances\"",
+    "restTemplate.exchange(getBalanceUrl.replace(\"ACCOUNT_ID\", accountId)"
+   ],
+   "reads": [],
+   "note": "Sent with the Consent-Id and Consumer-Key headers, no Authorization.",
+   "undocumented_endpoint": "UK/Berlin Group standard path; OBP-API publishes no resource docs for it"
+  },
+  {
+   "verb": "GET",
+   "path": "/open-banking/v3.1/accounts/ACCOUNT_ID/transactions",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${endpoint.path.prefix}/accounts/ACCOUNT_ID/transactions\"",
+    "restTemplate.exchange(getTransactionsUrl.replace(\"ACCOUNT_ID\", accountId)"
+   ],
+   "reads": [],
+   "note": "Sent with the Consent-Id and Consumer-Key headers, no Authorization.",
+   "undocumented_endpoint": "UK/Berlin Group standard path; OBP-API publishes no resource docs for it"
+  },
+  {
+   "verb": "GET",
+   "path": "/open-banking/v4.0.1/aisp/accounts",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${endpoint.path.prefix.v401}/accounts\"",
+    "restTemplate.exchange(getAccountsUrlV401, HttpMethod.GET"
+   ],
+   "reads": [
+    "Data.Account[].AccountId"
+   ],
+   "note": "Sent with the Consent-Id and Consumer-Key headers, no Authorization. Data goes to the page; static/js/main-html-uk4-flow.js reads Account[].AccountId.",
+   "undocumented_endpoint": "UK/Berlin Group standard path; OBP-API publishes no resource docs for it"
+  },
+  {
+   "verb": "GET",
+   "path": "/open-banking/v4.0.1/aisp/accounts/ACCOUNT_ID",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${endpoint.path.prefix.v401}/accounts/ACCOUNT_ID\"",
+    "restTemplate.exchange(getAccountUrlV401.replace(\"ACCOUNT_ID\", accountId)"
+   ],
+   "reads": [],
+   "note": "Sent with the Consent-Id and Consumer-Key headers, no Authorization.",
+   "undocumented_endpoint": "UK/Berlin Group standard path; OBP-API publishes no resource docs for it"
+  },
+  {
+   "verb": "GET",
+   "path": "/open-banking/v4.0.1/aisp/accounts/ACCOUNT_ID/balances",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${endpoint.path.prefix.v401}/accounts/ACCOUNT_ID/balances\"",
+    "restTemplate.exchange(getBalanceUrlV401.replace(\"ACCOUNT_ID\", accountId)"
+   ],
+   "reads": [],
+   "note": "Sent with the Consent-Id and Consumer-Key headers, no Authorization.",
+   "undocumented_endpoint": "UK/Berlin Group standard path; OBP-API publishes no resource docs for it"
+  },
+  {
+   "verb": "GET",
+   "path": "/open-banking/v4.0.1/aisp/accounts/ACCOUNT_ID/transactions",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${endpoint.path.prefix.v401}/accounts/ACCOUNT_ID/transactions\"",
+    "restTemplate.exchange(getTransactionsUrlV401.replace(\"ACCOUNT_ID\", accountId)"
+   ],
+   "reads": [],
+   "note": "Sent with the Consent-Id and Consumer-Key headers, no Authorization.",
+   "undocumented_endpoint": "UK/Berlin Group standard path; OBP-API publishes no resource docs for it"
+  },
+  {
+   "verb": "GET",
+   "path": "/berlin-group/v1.3/accounts",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${obp.base_url}/berlin-group/v1.3/accounts\"",
+    "restTemplate.exchange(getBerlinGroupAccountsUrl, HttpMethod.GET"
+   ],
+   "reads": [
+    "accounts[].resourceId",
+    "accounts[].id"
+   ],
+   "note": "Sent with the Consent-ID (Berlin Group spelling) and Consumer-Key headers. The body goes to the page; static/js/main-html-berlin-group-flow.js reads these fields.",
+   "undocumented_endpoint": "UK/Berlin Group standard path; OBP-API publishes no resource docs for it"
+  },
+  {
+   "verb": "GET",
+   "path": "/berlin-group/v1.3/accounts/ACCOUNT_ID",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${obp.base_url}/berlin-group/v1.3/accounts/ACCOUNT_ID\"",
+    "restTemplate.exchange(getBerlinGroupAccountUrl.replace(\"ACCOUNT_ID\", accountId)"
+   ],
+   "reads": [],
+   "note": "Sent with the Consent-ID (Berlin Group spelling) and Consumer-Key headers.",
+   "undocumented_endpoint": "UK/Berlin Group standard path; OBP-API publishes no resource docs for it"
+  },
+  {
+   "verb": "GET",
+   "path": "/berlin-group/v1.3/accounts/ACCOUNT_ID/balances",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${obp.base_url}/berlin-group/v1.3/accounts/ACCOUNT_ID/balances\"",
+    "restTemplate.exchange(getBerlinGroupBalanceUrl.replace(\"ACCOUNT_ID\", accountId)"
+   ],
+   "reads": [],
+   "note": "Sent with the Consent-ID (Berlin Group spelling) and Consumer-Key headers.",
+   "undocumented_endpoint": "UK/Berlin Group standard path; OBP-API publishes no resource docs for it"
+  },
+  {
+   "verb": "GET",
+   "path": "/berlin-group/v1.3/accounts/ACCOUNT_ID/transactions",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${obp.base_url}/berlin-group/v1.3/accounts/ACCOUNT_ID/transactions?bookingStatus=both\"",
+    "restTemplate.exchange(getBerlinGroupTransactionsUrl.replace(\"ACCOUNT_ID\", accountId)"
+   ],
+   "reads": [],
+   "note": "Sent with the Consent-ID (Berlin Group spelling) and Consumer-Key headers. bookingStatus is mandatory; OBP-API answers OBP-10034 without it.",
+   "undocumented_endpoint": "UK/Berlin Group standard path; OBP-API publishes no resource docs for it"
+  },
+  {
+   "verb": "POST",
+   "path": "/berlin-group/v1.3/payments/sepa-credit-transfers",
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "needles": [
+    "\"${obp.base_url}/berlin-group/v1.3/payments/sepa-credit-transfers\"",
+    "restTemplate.exchange(initiatePaymentBerlinGroupUrl, HttpMethod.POST"
+   ],
+   "reads": [],
+   "note": "Sent with the Consent-ID (Berlin Group spelling) and Consumer-Key headers.",
+   "undocumented_endpoint": "UK/Berlin Group standard path; OBP-API publishes no resource docs for it"
+  }
+ ],
+ "declared_but_unused": [
+  {
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/IndexController.java",
+   "field": "updateConsentStatusUrl",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/banks/BANK_ID/consents/CONSENT_ID\""
+   ]
+  },
+  {
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/IndexController.java",
+   "field": "getConsentByConsentRequestId",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/consumer/consent-requests/CONSENT_REQUEST_ID/consents\""
+   ]
+  },
+  {
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "field": "getCoreAccountById",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/my/banks/BANK_ID/accounts/ACCOUNT_ID/account\""
+   ]
+  },
+  {
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "field": "getBankAccountBalances",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/banks/BANK_ID/accounts/ACCOUNT_ID/balances\""
+   ]
+  },
+  {
+   "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
+   "field": "getCoreTransactionsForBankAccount",
+   "needles": [
+    "\"${obp.base_url}/obp/v5.1.0/my/banks/BANK_ID/accounts/ACCOUNT_ID/transactions\""
+   ]
+  }
+ ]
+}
