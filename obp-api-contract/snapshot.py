@@ -113,8 +113,14 @@ def main():
                 break
             except urllib.error.HTTPError as e:
                 print(f"  HTTP {e.code}", file=sys.stderr)
+                # 404 / 400 is how OBP-API says a version is switched off; any other
+                # status (401, 429, 5xx) is a broken server, not a reason to read another one.
+                if e.code not in (400, 404):
+                    sys.exit(f"{url} answered HTTP {e.code}; not falling back to another OBP-API for that")
         if v not in docs:
             sys.exit(f"no OBP-API given serves the resource docs of {v}")
+        if not docs[v]:
+            sys.exit(f"{docs_from[v]} returned no resource docs for {v}; refusing to record every call as missing")
 
     def about(host):
         newest = max((v for v in docs if docs_from[v] == host),
@@ -153,12 +159,22 @@ def main():
 
     try:
         with open(args.out) as f:
-            before = {(e["verb"], e["path"]): e.get("operation_id") for e in json.load(f)["endpoints"]}
+            before = {(e["verb"], e["path"]): e for e in json.load(f)["endpoints"]}
     except (OSError, ValueError, KeyError):
         before = {}
-    rebound = [f'{e["verb"]} {e["path"]}: was {before[(e["verb"], e["path"])]}, now {e["operation_id"]}'
-               for e in endpoints
-               if e.get("operation_id") and before.get((e["verb"], e["path"])) not in (None, e["operation_id"])]
+    rebound = []
+    for e in endpoints:
+        was = before.get((e["verb"], e["path"]))
+        if was is None:
+            continue
+        name = f'{e["verb"]} {e["path"]}'
+        was_op, now_op = was.get("operation_id"), e.get("operation_id")
+        if was_op and now_op and was_op != now_op:
+            rebound.append(f"{name}: was {was_op}, now {now_op}")
+        elif was_op and not now_op:
+            rebound.append(f"{name}: was {was_op}, now no endpoint")
+        elif not was_op and now_op and not was.get("unversioned"):
+            rebound.append(f"{name}: had no endpoint, now {now_op}")
     for line in rebound:
         print(f"  matches another operation: {line}", file=sys.stderr)
     if rebound and not args.accept_rebind:
