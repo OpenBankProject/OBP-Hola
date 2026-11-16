@@ -33,6 +33,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * endpoint OBP-API documents, with every field the code reads. Retake the snapshot from a new OBP-API
  * build to learn whether that build breaks Hola.
  *
+ * The reads in contract.json are kept by hand. Hola reads most answers from maps and in page scripts, so
+ * no test compares them with the fields the code reads: a field added to the code but not to the reads
+ * escapes these tests, which only compare the reads with the snapshot.
+ *
  * The UK Open Banking and Berlin Group calls (standard_calls) have no OBP resource docs, so for them only
  * their place in the source is checked; the @Value URLs that nothing uses are listed in
  * declared_but_unused so that they are not taken for calls.
