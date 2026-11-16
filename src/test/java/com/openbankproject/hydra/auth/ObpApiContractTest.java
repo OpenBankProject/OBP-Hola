@@ -102,11 +102,24 @@ class ObpApiContractTest {
                 .collect(Collectors.toList());
     }
 
-    /** Whether a source line builds an OBP-API URL: code, not a comment, with a string holding a marker. */
+    /**
+     * Pieces of a path that has no contiguous marker: a literal that is the obp segment ("obp", "/obp/",
+     * "x/obp"), a literal that starts with a version segment ("v6.0.0", "/v6.0.0/banks"), and a literal joined to the OBP-API
+     * base URL, which also catches the other standards served below it, such as "${obp.base_url}/stet/...".
+     */
+    private static final List<Pattern> OBP_PATH_PIECES = Arrays.asList(
+            Pattern.compile("\"(?:[^\"]*/)?obp/?\""),
+            Pattern.compile("\"/?v\\d+\\.\\d+\\.\\d+(?:/[^\"]*)?\""),
+            Pattern.compile("\\$\\{obp\\.base_url\\}[^\"]"),
+            Pattern.compile("\\bobpBaseUrl\\s*\\+"),
+            Pattern.compile("\\+\\s*obpBaseUrl\\b"));
+
+    /** Whether a source line builds an OBP-API URL: code, not a comment, with a string holding a marker or a piece. */
     static boolean buildsObpPath(String line) {
         String code = line.trim();
         if (code.startsWith("//") || code.startsWith("*") || code.startsWith("/*")) return false;
-        return code.contains("\"") && OBP_PATH_MARKERS.stream().anyMatch(code::contains);
+        return code.contains("\"") && (OBP_PATH_MARKERS.stream().anyMatch(code::contains)
+                || OBP_PATH_PIECES.stream().anyMatch(p -> p.matcher(code).find()));
     }
 
     /** Lines of main Java source that build an OBP-API URL: {file relative to the repo, line number, line}. */
@@ -172,6 +185,27 @@ class ObpApiContractTest {
         assertThat(buildsObpPath("@Value(\"${obp.base_url}/berlin-group/v1.3/consents\")")).isTrue();
         assertThat(buildsObpPath("// see \"/obp/v5.1.0/banks\"")).isFalse();
         assertThat(buildsObpPath("pathOfStandard.put(\"OBPv5.1.0\", \"obp/v5.1.0\");")).isFalse();
+    }
+
+    /**
+     * Tests that a path assembled from pieces, or another standard served below the OBP-API base URL, is
+     * taken for an OBP-API URL, and that lines that only mention the base URL are left alone.
+     */
+    @Test
+    @DisplayName("the coverage scan finds paths built in pieces")
+    void theCoverageScanFindsPathsBuiltInPieces() {
+        assertThat(buildsObpPath("String a = base + \"/obp/\" + \"v6.0.0\" + \"/banks\";")).isTrue();
+        assertThat(buildsObpPath("String b = String.join(\"/\", base, \"obp\", \"v6.0.0\", \"banks\");")).isTrue();
+        assertThat(buildsObpPath("String c = obpBaseUrl + \"/\" + version + \"/banks\";")).isTrue();
+        assertThat(buildsObpPath("String d = \"/banks/\" + obpBaseUrl;")).isTrue();
+        assertThat(buildsObpPath("@Value(\"${obp.base_url}/stet/v1.4/accounts\")")).isTrue();
+        assertThat(buildsObpPath("String e = base + \"/v6.0.0/banks\";")).isTrue();
+        assertThat(buildsObpPath("@Value(\"${obp.base_url}\")")).isFalse();
+        assertThat(buildsObpPath("@Value(\"${obp.base_url:#}\")")).isFalse();
+        assertThat(buildsObpPath("model.addAttribute(\"obpBaseUrl\", obpBaseUrl);")).isFalse();
+        assertThat(buildsObpPath("servletContext.setAttribute(\"obp_url\", obpBaseUrl);")).isFalse();
+        assertThat(buildsObpPath("String redirect = \"/login/obp/callback\";")).isFalse();
+        assertThat(buildsObpPath("String t = \"UK Open Banking v4.0.1 consent\";")).isFalse();
     }
 
     /**

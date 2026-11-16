@@ -73,6 +73,45 @@ class ObpApiVersionTest {
     private static final Pattern OBP_VERSION_IN_SOURCE = Pattern.compile("obp/v(\\d+)\\.(\\d+)\\.(\\d+)(?![\\d.])");
 
     /**
+     * A literal that starts with a version segment: "v4.0.0", "/v4.0.0/banks". It is what is left of a path
+     * built in pieces ("/obp/" + "v4.0.0"), which has no contiguous obp/vX.Y.Z.
+     */
+    private static final Pattern VERSION_LITERAL = Pattern.compile("[\"']/?v(\\d+)\\.(\\d+)\\.(\\d+)(?:/[^\"']*)?[\"']");
+
+    /** The OBP-API versions below v5.1.0 in a source line: obp/vX.Y.Z, and a literal that is a version segment. */
+    static List<String> versionsBelowMinimum(String line) {
+        List<String> found = new ArrayList<>();
+        Matcher m = OBP_VERSION_IN_SOURCE.matcher(line);
+        while (m.find()) {
+            if (olderThanMinimum("/obp/v" + m.group(1) + "." + m.group(2) + "." + m.group(3) + "/")) found.add(m.group());
+        }
+        Matcher literal = VERSION_LITERAL.matcher(line);
+        while (literal.find()) {
+            if (olderThanMinimum("/obp/v" + literal.group(1) + "." + literal.group(2) + "." + literal.group(3) + "/")) {
+                found.add(literal.group());
+            }
+        }
+        return found;
+    }
+
+    /**
+     * Tests the matcher: an old version is found written together with obp, or apart from it in a piece of
+     * a path; newer versions, and the versions of other standards in free text, are not.
+     */
+    @Test
+    @DisplayName("the version matcher finds old versions written apart from obp")
+    void theVersionMatcherFindsOldVersionsWrittenApartFromObp() {
+        assertThat(versionsBelowMinimum("String u = base + \"/obp/v4.0.0/banks\";")).containsExactly("obp/v4.0.0");
+        assertThat(versionsBelowMinimum("String u = base + \"/obp/\" + \"v4.0.0\" + \"/banks\";")).containsExactly("\"v4.0.0\"");
+        assertThat(versionsBelowMinimum("String u = base + \"/obp\" + \"/v3.1.0/banks\";")).containsExactly("\"/v3.1.0/banks\"");
+        assertThat(versionsBelowMinimum("String.join(\"/\", base, \"obp\", \"v2.2.0\", \"banks\")")).containsExactly("\"v2.2.0\"");
+        assertThat(versionsBelowMinimum("String u = base + \"/obp/\" + \"v5.1.0\" + \"/banks\";")).isEmpty();
+        assertThat(versionsBelowMinimum("String u = base + \"/obp/\" + \"v7.0.0\";")).isEmpty();
+        assertThat(versionsBelowMinimum("@Value(\"${obp.base_url}/berlin-group/v1.3/accounts\")")).isEmpty();
+        assertThat(versionsBelowMinimum("String t = \"UK Open Banking v4.0.1 consent\";")).isEmpty();
+    }
+
+    /**
      * Tests every text file under src/main (Java, properties, YAML, templates, scripts, Dockerfiles) for
      * obp/vX.Y.Z below v5.1.0, so a path built by concatenation, kept in a property or in a template is
      * caught too, not only the @Value fields checked above.
@@ -86,11 +125,8 @@ class ObpApiVersionTest {
                     .filter(f -> f.toString().matches(".*\\.(java|properties|yml|yaml|html|js|docker)$"))::iterator) {
                 List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
                 for (int i = 0; i < lines.size(); i++) {
-                    Matcher m = OBP_VERSION_IN_SOURCE.matcher(lines.get(i));
-                    while (m.find()) {
-                        if (olderThanMinimum("/obp/v" + m.group(1) + "." + m.group(2) + "." + m.group(3) + "/")) {
-                            found.add(file + ":" + (i + 1) + " " + m.group());
-                        }
+                    for (String old : versionsBelowMinimum(lines.get(i))) {
+                        found.add(file + ":" + (i + 1) + " " + old);
                     }
                 }
             }
