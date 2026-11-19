@@ -195,7 +195,7 @@
    "path": "/open-banking/v3.1/account-access-consents",
    "source": "src/main/java/com/openbankproject/hydra/auth/controller/IndexController.java",
    "needles": [
-    "\"${endpoint.path.prefix}/account-access-consents\"",
+    "\"${obp.base_url}/open-banking/v3.1/account-access-consents\"",
     "restTemplate.postForObject(createConsentsUrl, request, Map.class)"
    ],
    "reads": [
@@ -209,7 +209,7 @@
    "path": "/open-banking/v4.0.1/aisp/account-access-consents",
    "source": "src/main/java/com/openbankproject/hydra/auth/controller/IndexController.java",
    "needles": [
-    "\"${endpoint.path.prefix.v401}/account-access-consents\"",
+    "\"${obp.base_url}/open-banking/v4.0.1/aisp/account-access-consents\"",
     "restTemplate.postForObject(createConsentsUrlV401, request, Map.class)"
    ],
    "reads": [
@@ -223,7 +223,7 @@
    "path": "/open-banking/v4.0.1/aisp/account-access-consents/CONSENT_ID",
    "source": "src/main/java/com/openbankproject/hydra/auth/controller/IndexController.java",
    "needles": [
-    "\"${endpoint.path.prefix.v401}/account-access-consents/CONSENT_ID\"",
+    "\"${obp.base_url}/open-banking/v4.0.1/aisp/account-access-consents/CONSENT_ID\"",
     "getConsentInformationUrlV401.replace(\"CONSENT_ID\", ukConsentId)"
    ],
    "reads": [
@@ -271,7 +271,7 @@
    "path": "/open-banking/v3.1/accounts",
    "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
    "needles": [
-    "\"${endpoint.path.prefix}/accounts\"",
+    "\"${obp.base_url}/open-banking/v3.1/accounts\"",
     "restTemplate.exchange(getAccountsUrl, HttpMethod.GET"
    ],
    "reads": [
@@ -285,7 +285,7 @@
    "path": "/open-banking/v3.1/accounts/ACCOUNT_ID",
    "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
    "needles": [
-    "\"${endpoint.path.prefix}/accounts/ACCOUNT_ID\"",
+    "\"${obp.base_url}/open-banking/v3.1/accounts/ACCOUNT_ID\"",
     "restTemplate.exchange(getAccountUrl.replace(\"ACCOUNT_ID\", accountId)"
    ],
    "reads": [],
@@ -297,7 +297,7 @@
    "path": "/open-banking/v3.1/accounts/ACCOUNT_ID/balances",
    "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
    "needles": [
-    "\"${endpoint.path.prefix}/accounts/ACCOUNT_ID/balances\"",
+    "\"${obp.base_url}/open-banking/v3.1/accounts/ACCOUNT_ID/balances\"",
     "restTemplate.exchange(getBalanceUrl.replace(\"ACCOUNT_ID\", accountId)"
    ],
    "reads": [],
@@ -309,7 +309,7 @@
    "path": "/open-banking/v3.1/accounts/ACCOUNT_ID/transactions",
    "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
    "needles": [
-    "\"${endpoint.path.prefix}/accounts/ACCOUNT_ID/transactions\"",
+    "\"${obp.base_url}/open-banking/v3.1/accounts/ACCOUNT_ID/transactions\"",
     "restTemplate.exchange(getTransactionsUrl.replace(\"ACCOUNT_ID\", accountId)"
    ],
    "reads": [],
@@ -321,7 +321,7 @@
    "path": "/open-banking/v4.0.1/aisp/accounts",
    "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
    "needles": [
-    "\"${endpoint.path.prefix.v401}/accounts\"",
+    "\"${obp.base_url}/open-banking/v4.0.1/aisp/accounts\"",
     "restTemplate.exchange(getAccountsUrlV401, HttpMethod.GET"
    ],
    "reads": [
@@ -335,7 +335,7 @@
    "path": "/open-banking/v4.0.1/aisp/accounts/ACCOUNT_ID",
    "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
    "needles": [
-    "\"${endpoint.path.prefix.v401}/accounts/ACCOUNT_ID\"",
+    "\"${obp.base_url}/open-banking/v4.0.1/aisp/accounts/ACCOUNT_ID\"",
     "restTemplate.exchange(getAccountUrlV401.replace(\"ACCOUNT_ID\", accountId)"
    ],
    "reads": [],
@@ -347,7 +347,7 @@
    "path": "/open-banking/v4.0.1/aisp/accounts/ACCOUNT_ID/balances",
    "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
    "needles": [
-    "\"${endpoint.path.prefix.v401}/accounts/ACCOUNT_ID/balances\"",
+    "\"${obp.base_url}/open-banking/v4.0.1/aisp/accounts/ACCOUNT_ID/balances\"",
     "restTemplate.exchange(getBalanceUrlV401.replace(\"ACCOUNT_ID\", accountId)"
    ],
    "reads": [],
@@ -359,7 +359,7 @@
    "path": "/open-banking/v4.0.1/aisp/accounts/ACCOUNT_ID/transactions",
    "source": "src/main/java/com/openbankproject/hydra/auth/controller/OtherController.java",
    "needles": [
-    "\"${endpoint.path.prefix.v401}/accounts/ACCOUNT_ID/transactions\"",
+    "\"${obp.base_url}/open-banking/v4.0.1/aisp/accounts/ACCOUNT_ID/transactions\"",
     "restTemplate.exchange(getTransactionsUrlV401.replace(\"ACCOUNT_ID\", accountId)"
    ],
    "reads": [],

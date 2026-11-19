@@ -49,7 +49,7 @@ class ObpApiContractTest {
 
     /** Text that marks a source line as building the URL of an OBP-API call. */
     private static final List<String> OBP_PATH_MARKERS = Arrays.asList(
-            "/obp/v", "/obp/${", "/berlin-group/", "/open-banking/", "${endpoint.path.prefix");
+            "/obp/v", "/obp/${", "/berlin-group/", "/open-banking/");
 
     private static JsonNode load(String name) throws IOException {
         return JSON.readTree(CONTRACT_DIR.resolve(name).toFile());
@@ -185,7 +185,7 @@ class ObpApiContractTest {
     void theCoverageScanFindsObpApiUrls() {
         assertThat(buildsObpPath("    @Value(\"${obp.base_url}/obp/v5.1.0/banks\")")).isTrue();
         assertThat(buildsObpPath("String url = obpBaseUrl + \"/obp/v7.0.0/root\";")).isTrue();
-        assertThat(buildsObpPath("@Value(\"${endpoint.path.prefix.v401}/accounts\")")).isTrue();
+        assertThat(buildsObpPath("@Value(\"${obp.base_url}/open-banking/v4.0.1/aisp/accounts\")")).isTrue();
         assertThat(buildsObpPath("@Value(\"${obp.base_url}/berlin-group/v1.3/consents\")")).isTrue();
         assertThat(buildsObpPath("// see \"/obp/v5.1.0/banks\"")).isFalse();
         assertThat(buildsObpPath("pathOfStandard.put(\"OBPv5.1.0\", \"obp/v5.1.0\");")).isFalse();
@@ -326,5 +326,31 @@ class ObpApiContractTest {
         JsonNode either = JSON.readTree("{\"reads\": [\"consent_request_id|id\"]}");
         assertThat(undocumentedReads(either, new TreeSet<>(Collections.singletonList("id")))).isEmpty();
         assertThat(undocumentedReads(either, new TreeSet<>())).containsExactly("consent_request_id|id");
+    }
+
+    /**
+     * Tests that the UK Open Banking versions are written in the code, like the OBP-API versions: no source line
+     * and no properties file takes a path prefix from a setting.
+     */
+    @Test
+    @DisplayName("the UK Open Banking paths are written in the code, not read from a setting")
+    void theUkPathsAreWrittenInTheCode() throws IOException {
+        List<String> files = new ArrayList<>();
+        try (java.util.stream.Stream<Path> paths = java.nio.file.Files.walk(Paths.get("src/main"))) {
+            paths.filter(java.nio.file.Files::isRegularFile)
+                    .filter(f -> f.toString().endsWith(".java") || f.toString().endsWith(".properties"))
+                    .forEach(f -> files.add(f.toString()));
+        }
+        files.add("application.properties.docker");
+        files.add("application properties.example");
+        List<String> reading = new ArrayList<>();
+        for (String file : files) {
+            if (java.nio.file.Files.exists(Paths.get(file))
+                    && new String(java.nio.file.Files.readAllBytes(Paths.get(file)), java.nio.charset.StandardCharsets.UTF_8)
+                            .contains("endpoint.path.prefix")) {
+                reading.add(file);
+            }
+        }
+        assertThat(reading).isEmpty();
     }
 }

@@ -1,8 +1,6 @@
 server.port=${SERVER_PORT}
 oauth2.public_url=${OAUTH_2_PUBLIC_URL}
 obp.base_url=${OBP_BASE_URL}
-endpoint.path.prefix=${OBP_BASE_URL}/open-banking/v3.1
-endpoint.path.prefix.v401=${OBP_BASE_URL}/open-banking/v4.0.1/aisp
 
 mtls.keyStore.path=file:///keystore/keystore.jks
 mtls.keyStore.password=${KEYSTORE_PASSWD}

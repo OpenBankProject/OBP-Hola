@@ -71,11 +71,11 @@ public class IndexController implements ServletContextAware {
     private String currentUserUrl;
     @Value("${obp.base_url}/obp/v5.1.0/banks")
     private String getBanksUrl;
-    @Value("${endpoint.path.prefix}/account-access-consents")
+    @Value("${obp.base_url}/open-banking/v3.1/account-access-consents")
     private String createConsentsUrl;
-    @Value("${endpoint.path.prefix.v401}/account-access-consents")
+    @Value("${obp.base_url}/open-banking/v4.0.1/aisp/account-access-consents")
     private String createConsentsUrlV401;
-    @Value("${endpoint.path.prefix.v401}/account-access-consents/CONSENT_ID")
+    @Value("${obp.base_url}/open-banking/v4.0.1/aisp/account-access-consents/CONSENT_ID")
     private String getConsentInformationUrlV401;
     @Value("${obp.base_url}/berlin-group/v1.3/consents")
     private String createBerlinGroupConsentsUrl;
