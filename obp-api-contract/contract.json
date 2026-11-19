@@ -1,5 +1,6 @@
 {
  "about": "Every OBP-API call Hola makes: verb, path (OBP placeholders in capitals), the source file and the text that makes the call (needles: the @Value URL and where it is used, which gives the verb), and the response fields the code reads, in Java or in the page scripts the body is passed to. The reads are kept by hand: Hola reads most answers from maps and in page scripts, so no test compares them with what the code reads; the tests compare them with snapshot.json only. calls are the OBP-API calls; obp-api-contract/snapshot.py writes snapshot.json for them from an OBP-API's resource docs. standard_calls are the UK Open Banking and Berlin Group calls, which have no OBP resource docs, so only their place in the source is checked. declared_but_unused are @Value URLs no code uses. src/test/java/com/openbankproject/hydra/auth/ObpApiContractTest.java checks all of this offline.",
+ "version_policy": "Each call writes the OBP-API version it needs in its own path. One configured version cannot serve them all, because an endpoint exists only in the versions OBP-API documents it for. The contract test checks every call against the endpoint documented for the version it names and fails on any version below v5.1.0. To move a call to a newer version, change its path and run snapshot.py again.",
  "calls": [
   {
    "verb": "GET",
