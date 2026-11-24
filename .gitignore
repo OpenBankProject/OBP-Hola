@@ -37,3 +37,12 @@ build/
 
 # Regenerated on every build by git-commit-id-maven-plugin
 /src/main/resources/git.properties
+
+# Backups of .env, which hold secrets
+.env.bak*
+
+# Zed editor settings, which open_dev_env writes for each project
+.zed/
+
+
+application.properties.bak*
