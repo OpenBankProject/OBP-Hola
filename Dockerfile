@@ -1,6 +1,7 @@
 FROM maven:3-eclipse-temurin-17 AS maven
 COPY pom.xml .
 COPY src /src
+COPY obp-api-contract /obp-api-contract
 RUN MAVEN_OPTS="-Xmx3G -Xss2m" mvn clean package
 
 FROM eclipse-temurin:17-jre-alpine

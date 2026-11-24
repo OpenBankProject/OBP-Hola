@@ -26,29 +26,29 @@ public class OtherController {
     private static final Logger logger = LoggerFactory.getLogger(OtherController.class);
     
     // UK Open Banking
-    @Value("${endpoint.path.prefix}/accounts")
+    @Value("${obp.base_url}/open-banking/v3.1/accounts")
     private String getAccountsUrl;
     
-    @Value("${endpoint.path.prefix}/accounts/ACCOUNT_ID")
+    @Value("${obp.base_url}/open-banking/v3.1/accounts/ACCOUNT_ID")
     private String getAccountUrl;
     
-    @Value("${endpoint.path.prefix}/accounts/ACCOUNT_ID/balances")
+    @Value("${obp.base_url}/open-banking/v3.1/accounts/ACCOUNT_ID/balances")
     private String getBalanceUrl;
     
-    @Value("${endpoint.path.prefix}/accounts/ACCOUNT_ID/transactions")
+    @Value("${obp.base_url}/open-banking/v3.1/accounts/ACCOUNT_ID/transactions")
     private String getTransactionsUrl;
 
     // UK Open Banking v4.0.1
-    @Value("${endpoint.path.prefix.v401}/accounts")
+    @Value("${obp.base_url}/open-banking/v4.0.1/aisp/accounts")
     private String getAccountsUrlV401;
 
-    @Value("${endpoint.path.prefix.v401}/accounts/ACCOUNT_ID")
+    @Value("${obp.base_url}/open-banking/v4.0.1/aisp/accounts/ACCOUNT_ID")
     private String getAccountUrlV401;
 
-    @Value("${endpoint.path.prefix.v401}/accounts/ACCOUNT_ID/balances")
+    @Value("${obp.base_url}/open-banking/v4.0.1/aisp/accounts/ACCOUNT_ID/balances")
     private String getBalanceUrlV401;
 
-    @Value("${endpoint.path.prefix.v401}/accounts/ACCOUNT_ID/transactions")
+    @Value("${obp.base_url}/open-banking/v4.0.1/aisp/accounts/ACCOUNT_ID/transactions")
     private String getTransactionsUrlV401;
 
     // Berlin Group
